@@ -2,5 +2,9 @@
 **/*.rs.bk
 Cargo.lock
 
+node_modules
+pkg
+package-lock.json
+
 .idea
 *.iml
