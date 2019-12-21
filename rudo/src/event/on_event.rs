@@ -6,12 +6,14 @@ use std::task::{Context, Poll};
 use futures::Stream;
 use gloo_events::EventListener;
 
-// TODO: are we leaking when we queue infinite event streams as tasks and all other references to
-// the actual event target node get dropped (and the node is removed from the DOM)? Should we be
-// using a WeakMap to attach the listener to the target and decide on some "garbage collection"
-// triggers to periodically check if any of the weak references have expired (e.g. trigger a poll
-// that will return "finished" if the weak reference is dead)? Note that probably means we cant use
-// gloo-events.
+// TODO: we are leaking when we queue infinite event streams as tasks and all other references to
+// the actual event target node get dropped (and the node is removed from the DOM). The can
+// eventually be resolved once the [WeakReferences TC39 proposal](https://github.com/tc39/proposal-weakrefs)
+// is accepted (it's stage 3 as of this writing). For now, the solution is to ensure that a stream
+// is not infinite, e.g. by using the `stream_cancel::TakeUntil` combinator. Note that the same
+// problem exists for e.g. a raw `gloo_events::EventListener`, the difference being that for the
+// stream case one gives away ownership to the executor (which will keep it alive until it
+// finishes), thus requiring additional effort to trigger a drop (by making it finish).
 
 pub(super) struct OnEvent<T> {
     target: web_sys::EventTarget,
