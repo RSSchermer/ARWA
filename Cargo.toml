@@ -2,4 +2,5 @@
 members = [
     "rudo",
     "examples/events",
+    "examples/media_element",
 ]

@@ -1,131 +1,71 @@
-use futures::Stream;
-use futures::task::{Context, Poll};
-use std::pin::Pin;
-use web_sys::{window, Event, EventTarget};
-use std::cell::{Cell, RefCell};
-use std::rc::Rc;
-use gloo_events::EventListener;
-use wasm_bindgen::JsCast;
+pub mod error;
+pub mod event;
+pub mod html;
 
-pub struct HtmlButtonElement {
-    inner: web_sys::HtmlButtonElement
-}
+//mod window;
 
-impl From<web_sys::HtmlButtonElement> for HtmlButtonElement {
-    fn from(inner: web_sys::HtmlButtonElement) -> Self {
-        HtmlButtonElement {
-            inner
-        }
-    }
-}
+mod attribute;
+pub use self::attribute::*;
 
-impl HtmlButtonElement {
-    pub fn on_click(&self) -> OnClick {
-        OnClick::new( self.inner.clone().into())
-    }
-}
+mod audio_track;
+pub use self::audio_track::*;
 
-struct OnEvent<T> {
-    target: EventTarget,
-    event_type: &'static str,
-    // Note: the actual event listener should be deregistered when the `gloo_events::EventListener`
-    // is dropped. This means that if the stream completes (even though the event stream itself is
-    // an infinite stream it can be cut short by a combinator), then the event listener should be
-    // properly removed when the async runtime drops the task without leaking.
-    listener: Option<EventListener>,
-    next: Rc<RefCell<Option<T>>>
-}
+mod cors;
+pub use self::cors::*;
 
-impl<T> OnEvent<T> {
-    fn new(target: EventTarget, event_type: &'static str) -> Self {
-        OnEvent {
-            target,
-            event_type,
-            listener: None,
-            next: Rc::new(RefCell::new(None))
-        }
-    }
-}
+mod document;
+pub use self::document::*;
 
-impl<T> Stream for OnEvent<T> where T: FromEvent + 'static {
-    type Item = T;
+mod document_fragment;
+pub use self::document_fragment::*;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if self.listener.is_none() {
-            let next = self.next.clone();
-            let waker = cx.waker().clone();
+mod document_type;
+pub use self::document_type::*;
 
-            self.listener = Some(EventListener::new(&self.target, self.event_type, move |event| {
-                // We should not be dropping events here if this gets run with wasm-bindgen-futures
-                // `spawn_local`, as invoking the waker will immediately queue running the task as a
-                // micro-task on the current thread/workers event queue, whereas all user events get
-                // queued as macro tasks: this means that there's always a call to `poll_next`
-                // before the next event gets processed and we get away with only buffering 1 event.
-                //
-                // However, can this behaviour be assumed for all async runtimes that people may use
-                // in the browser?
-                //
-                // The following consideration perhaps helps: this stream is not `Send`, it has to
-                // be run on the local thread. This should only leave 3 options for the waker
-                // implementation:
-                //
-                // 1.  Poll synchronously/immediately upon calling the waker.
-                // 2.  Schedule a micro-task on the local thread's event loop to poll later
-                //     (wasm-bindgen-futures current approach).
-                // 3.  Schedule a macro-task on the local thread's event loop to poll later.
-                //
-                // Only 3. would be problematic and I think it can be argued that any reasonable
-                // implementation would favor 2. over 3.
+mod element;
+pub use self::element::*;
 
-                next.borrow_mut().replace(T::from_event(event.clone()));
+mod global_event_handlers;
+pub use self::global_event_handlers::*;
 
-                waker.wake_by_ref();
-            }));
-        }
+mod image_quality;
+pub use self::image_quality::*;
 
-        if let Some(event) = self.next.borrow_mut().take() {
-            Poll::Ready(Some(event))
-        } else {
-            Poll::Pending
-        }
-    }
-}
+mod location;
+pub use self::location::*;
 
-trait FromEvent {
-    fn from_event(event: Event) -> Self;
-}
+//mod indexed_collection;
+//pub use indexed_collection::IndexedCollection;
 
-#[must_use = "streams do nothing unless polled or spawned"]
-pub struct OnClick {
-    inner: OnEvent<MouseEvent>
-}
+mod node;
+pub use self::node::*;
 
-impl OnClick {
-    fn new(target: EventTarget) -> Self {
-        OnClick {
-            inner: OnEvent::new(target, "click")
-        }
-    }
-}
+mod pointer_id;
+pub use self::pointer_id::*;
 
-impl Stream for OnClick {
-    type Item = MouseEvent;
+mod query_selector_all;
+pub use self::query_selector_all::*;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        unsafe {
-            self.map_unchecked_mut(|s| &mut s.inner).poll_next(cx)
-        }
-    }
-}
+mod referrer_policy;
+pub use self::referrer_policy::*;
 
-pub struct MouseEvent {
-    inner: web_sys::MouseEvent
-}
+mod selection_direction;
+pub use self::selection_direction::*;
 
-impl FromEvent for MouseEvent {
-    fn from_event(event: Event) -> Self {
-        MouseEvent {
-            inner: event.unchecked_into()
-        }
-    }
-}
+mod style_sheet;
+pub use self::style_sheet::*;
+
+mod text_directionality;
+pub use self::text_directionality::*;
+
+mod text_track;
+pub use self::text_track::*;
+
+mod text_wrap;
+pub use self::text_wrap::*;
+
+mod video_track;
+pub use self::video_track::*;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct InvalidCast<T>(pub T);

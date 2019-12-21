@@ -1,9 +1,9 @@
 #![feature(async_closure)]
-
+/*
 use futures::StreamExt;
 use rudo::HtmlButtonElement;
-use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 
 #[wasm_bindgen(start)]
@@ -24,3 +24,4 @@ pub fn start() {
         web_sys::console::log_1(&"click!".into());
     }));
 }
+*/
