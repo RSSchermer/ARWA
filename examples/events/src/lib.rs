@@ -1,27 +1,24 @@
 #![feature(async_closure)]
-/*
+use std::convert::TryInto;
+
+use arwa::html::HtmlButtonElement;
+use arwa::{document, Document, GlobalEventHandlers};
 use futures::StreamExt;
-use rudo::HtmlButtonElement;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    // Obtain a reference to the `web_sys::HtmlButtonElement` we want to listen to.
-    let button: web_sys::HtmlButtonElement = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .get_element_by_id("button")
-        .unwrap()
-        .dyn_into()
-        .unwrap();
+    let document = document().unwrap();
 
-    let button = HtmlButtonElement::from(button);
+    // Obtain a reference to the HtmlButtonElement we want to listen to.
+    let button: HtmlButtonElement = document
+        .query_id("button")
+        .expect("No element with id `button`.")
+        .try_into()
+        .expect("Element is not a button element.");
 
     spawn_local(button.on_click().for_each(async move |_| {
         web_sys::console::log_1(&"click!".into());
     }));
 }
-*/

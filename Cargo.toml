@@ -1,6 +1,8 @@
 [workspace]
 members = [
-    "rudo",
+    "arwa",
+    "examples/animation_frame",
     "examples/events",
+    "examples/geolocation",
     "examples/media_element",
 ]
