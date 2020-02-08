@@ -1,3 +1,4 @@
+use crate::console::{Write, Writer};
 use crate::SubtleCrypto;
 
 #[derive(Clone)]
@@ -27,6 +28,12 @@ impl From<web_sys::Crypto> for Crypto {
 impl AsRef<web_sys::Crypto> for Crypto {
     fn as_ref(&self) -> &web_sys::Crypto {
         &self.inner
+    }
+}
+
+impl Write for Crypto {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

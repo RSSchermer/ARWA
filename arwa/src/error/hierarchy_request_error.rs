@@ -1,3 +1,4 @@
+use crate::console::{Write, Writer};
 use std::fmt;
 
 #[derive(Clone, PartialEq)]
@@ -14,6 +15,12 @@ impl HierarchyRequestError {
 impl fmt::Debug for HierarchyRequestError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "Hierarchy request error: {}", self.inner.message())
+    }
+}
+
+impl Write for HierarchyRequestError {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

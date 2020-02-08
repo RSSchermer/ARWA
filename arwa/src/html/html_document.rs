@@ -1,6 +1,7 @@
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::html::{
     GenericHtmlElement, HtmlAnchorElement, HtmlAreaElement, HtmlAudioElement, HtmlBaseElement,
     HtmlBodyElement, HtmlBrElement, HtmlButtonElement, HtmlCanvasElement, HtmlDListElement,
@@ -972,6 +973,12 @@ impl AsRef<web_sys::Node> for HtmlDocument {
 impl AsRef<web_sys::EventTarget> for HtmlDocument {
     fn as_ref(&self) -> &web_sys::EventTarget {
         self.inner.as_ref()
+    }
+}
+
+impl Write for HtmlDocument {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

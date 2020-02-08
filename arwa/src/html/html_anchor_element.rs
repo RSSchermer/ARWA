@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
     Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node, ReferrerPolicy,
@@ -166,6 +167,12 @@ impl<'a> AnchorRel<'a> {
             anchor_rel: self,
             current: 0,
         }
+    }
+}
+
+impl<'a> Write for AnchorRel<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.rel_list.as_ref());
     }
 }
 

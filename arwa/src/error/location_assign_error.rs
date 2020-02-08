@@ -1,3 +1,4 @@
+use crate::console::{Write, Writer};
 use crate::error::{SecurityError, SyntaxError};
 
 #[derive(Clone, PartialEq, Debug)]
@@ -15,5 +16,14 @@ impl From<SyntaxError> for LocationAssignError {
 impl From<SecurityError> for LocationAssignError {
     fn from(err: SecurityError) -> Self {
         LocationAssignError::SecurityError(err)
+    }
+}
+
+impl Write for LocationAssignError {
+    fn write(&self, writer: &mut Writer) {
+        match self {
+            LocationAssignError::SyntaxError(error) => error.write(writer),
+            LocationAssignError::SecurityError(error) => error.write(writer),
+        }
     }
 }

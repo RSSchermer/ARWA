@@ -2,7 +2,7 @@
 use std::convert::TryInto;
 
 use arwa::html::{GenericHtmlElement, HtmlElement};
-use arwa::{document, navigator, Document, PositionOptions};
+use arwa::{console, document, navigator, Document, PositionOptions};
 use futures::{future, StreamExt};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
@@ -33,7 +33,7 @@ pub fn start() {
                             coordinates.longitude()
                         ));
                     }
-                    Err(err) => web_sys::console::log_1(&format!("Error: {:?}", err).into()),
+                    Err(err) => console::log!("Error: {:?}", err),
                 };
 
                 future::ready(())

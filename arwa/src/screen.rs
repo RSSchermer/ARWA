@@ -1,3 +1,5 @@
+use crate::console::{Write, Writer};
+
 pub struct Screen {
     inner: web_sys::Screen,
 }
@@ -35,5 +37,11 @@ impl From<web_sys::Screen> for Screen {
 impl AsRef<web_sys::Screen> for Screen {
     fn as_ref(&self) -> &web_sys::Screen {
         &self.inner
+    }
+}
+
+impl Write for Screen {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }

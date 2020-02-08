@@ -20,6 +20,12 @@ macro_rules! impl_common_event_traits {
             }
         }
 
+        impl $crate::console::Write for $crate_tpe {
+            fn write(&self, writer: &mut $crate::console::Writer) {
+                writer.write_1(self.inner.as_ref())
+            }
+        }
+
         impl Event for $crate_tpe {}
     };
     ($tpe:ident) => {

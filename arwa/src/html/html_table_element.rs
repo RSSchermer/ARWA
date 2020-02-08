@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::error::RangeError;
 use crate::html::{
     GenericHtmlElement, HtmlElement, HtmlTableCaptionElement, HtmlTableRowElement,
@@ -156,6 +157,12 @@ impl TableBodies {
     }
 }
 
+impl Write for TableBodies {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
+    }
+}
+
 impl IntoIterator for TableBodies {
     type Item = HtmlTableSectionElement;
     type IntoIter = TableBodiesIntoIter;
@@ -286,6 +293,12 @@ impl<'a> TableRows<'a> {
             table_rows: self,
             current: 0,
         }
+    }
+}
+
+impl<'a> Write for TableRows<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.rows.as_ref());
     }
 }
 

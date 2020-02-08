@@ -8,6 +8,7 @@ use delegate::delegate;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
+use crate::console::{Write, Writer};
 use crate::error::TypeError;
 use crate::{
     Crypto, CssStyleDeclaration, Element, GenericDocument, GenericElement, GlobalEventHandlers,
@@ -395,6 +396,12 @@ impl AsRef<web_sys::Window> for Window {
 impl AsRef<web_sys::EventTarget> for Window {
     fn as_ref(&self) -> &web_sys::EventTarget {
         self.inner.as_ref()
+    }
+}
+
+impl Write for Window {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

@@ -9,6 +9,7 @@ use wasm_bindgen_futures::JsFuture;
 use crate::error::ServiceWorkerRegistrationError;
 use crate::event::{OnControllerChange, OnError, OnMessage, OnStateChange};
 
+use crate::console::{Write, Writer};
 pub use web_sys::ServiceWorkerState;
 
 pub struct ServiceWorkerDescriptor<'a, 'b> {
@@ -113,6 +114,12 @@ impl From<web_sys::ServiceWorkerContainer> for ServiceWorkerContainer {
 impl AsRef<web_sys::ServiceWorkerContainer> for ServiceWorkerContainer {
     fn as_ref(&self) -> &web_sys::ServiceWorkerContainer {
         &self.inner
+    }
+}
+
+impl Write for ServiceWorkerContainer {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -237,6 +244,12 @@ impl AsRef<web_sys::ServiceWorkerRegistration> for ServiceWorkerRegistration {
     }
 }
 
+impl Write for ServiceWorkerRegistration {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct ServiceWorkerRegistrationUpdate {
     inner: JsFuture,
 }
@@ -312,5 +325,11 @@ impl From<web_sys::ServiceWorker> for ServiceWorker {
 impl AsRef<web_sys::ServiceWorker> for ServiceWorker {
     fn as_ref(&self) -> &web_sys::ServiceWorker {
         &self.inner
+    }
+}
+
+impl Write for ServiceWorker {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }

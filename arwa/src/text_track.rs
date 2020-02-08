@@ -1,3 +1,5 @@
+use crate::console::{Write, Writer};
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TextTrackReadyState {
     None,
@@ -20,5 +22,11 @@ impl From<web_sys::TextTrack> for TextTrack {
 impl AsRef<web_sys::TextTrack> for TextTrack {
     fn as_ref(&self) -> &web_sys::TextTrack {
         &self.inner
+    }
+}
+
+impl Write for TextTrack {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }

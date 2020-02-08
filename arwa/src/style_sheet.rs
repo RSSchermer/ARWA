@@ -1,3 +1,4 @@
+use crate::console::{Write, Writer};
 use crate::GenericNode;
 use delegate::delegate;
 use std::convert::TryFrom;
@@ -56,6 +57,12 @@ impl From<web_sys::StyleSheet> for StyleSheet {
     }
 }
 
+impl Write for StyleSheet {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct InvalidMedium(String);
 
@@ -111,6 +118,12 @@ impl StylesheetMedia {
             stylesheet_media: self,
             current: 0,
         }
+    }
+}
+
+impl Write for StylesheetMedia {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

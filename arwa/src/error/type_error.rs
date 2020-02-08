@@ -1,3 +1,4 @@
+use crate::console::{Write, Writer};
 use std::fmt;
 
 #[derive(Clone, PartialEq)]
@@ -14,6 +15,12 @@ impl TypeError {
 impl fmt::Debug for TypeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         self.inner.message().fmt(f)
+    }
+}
+
+impl Write for TypeError {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

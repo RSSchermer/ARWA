@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::event::OnSlotChange;
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
@@ -96,6 +97,12 @@ impl SlotAssignedNodes {
             slot_assigned_nodes: self,
             current: 0,
         }
+    }
+}
+
+impl Write for SlotAssignedNodes {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

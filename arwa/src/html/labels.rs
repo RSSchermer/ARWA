@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::html::HtmlLabelElement;
 
 pub struct Labels {
@@ -55,6 +56,12 @@ impl Labels {
             labels: self,
             current: 0,
         }
+    }
+}
+
+impl Write for Labels {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

@@ -1,3 +1,5 @@
+use crate::console::{Write, Writer};
+
 pub struct History {
     inner: web_sys::History,
 }
@@ -22,5 +24,11 @@ impl From<web_sys::History> for History {
 impl AsRef<web_sys::History> for History {
     fn as_ref(&self) -> &web_sys::History {
         &self.inner
+    }
+}
+
+impl Write for History {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }

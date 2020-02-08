@@ -1,5 +1,6 @@
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::error::{LocationAssignError, SecurityError, SyntaxError};
 
 pub struct Location {
@@ -131,5 +132,11 @@ impl From<Location> for web_sys::Location {
 impl AsRef<web_sys::Location> for Location {
     fn as_ref(&self) -> &web_sys::Location {
         &self.inner
+    }
+}
+
+impl Write for Location {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }

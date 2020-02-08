@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::{
     CssStyleDeclaration, Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast,
     Node, TextDirectionality,
@@ -216,6 +217,12 @@ impl AsRef<web_sys::Element> for GenericHtmlElement {
 impl AsRef<web_sys::HtmlElement> for GenericHtmlElement {
     fn as_ref(&self) -> &web_sys::HtmlElement {
         &self.inner
+    }
+}
+
+impl Write for GenericHtmlElement {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

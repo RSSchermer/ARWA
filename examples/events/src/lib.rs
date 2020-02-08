@@ -2,7 +2,7 @@
 use std::convert::TryInto;
 
 use arwa::html::HtmlButtonElement;
-use arwa::{document, Document, GlobalEventHandlers};
+use arwa::{console, document, Document, GlobalEventHandlers};
 use futures::StreamExt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
@@ -19,6 +19,6 @@ pub fn start() {
         .expect("Element is not a button element.");
 
     spawn_local(button.on_click().for_each(async move |_| {
-        web_sys::console::log_1(&"click!".into());
+        console::log!("Click!");
     }));
 }

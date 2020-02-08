@@ -1,5 +1,6 @@
 use delegate::delegate;
 
+use crate::console::{Write, Writer};
 use crate::Node;
 
 pub struct Attribute {
@@ -37,6 +38,12 @@ impl AsRef<web_sys::Attr> for Attribute {
 impl AsRef<web_sys::Node> for Attribute {
     fn as_ref(&self) -> &web_sys::Node {
         self.inner.as_ref()
+    }
+}
+
+impl Write for Attribute {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

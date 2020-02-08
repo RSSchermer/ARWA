@@ -2,6 +2,7 @@ use delegate::delegate;
 use js_sys::Uint32Array;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::error::{RegisterProtocolHandlerError, SecurityError, SyntaxError};
 use crate::Geolocation;
 
@@ -78,6 +79,12 @@ impl From<web_sys::Navigator> for Navigator {
 impl AsRef<web_sys::Navigator> for Navigator {
     fn as_ref(&self) -> &web_sys::Navigator {
         &self.inner
+    }
+}
+
+impl Write for Navigator {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

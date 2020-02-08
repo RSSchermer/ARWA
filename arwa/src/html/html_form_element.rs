@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::html::{AutoComplete, GenericHtmlElement, HtmlElement};
 use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
 
@@ -124,6 +125,12 @@ impl FormControlElements {
     }
 }
 
+impl Write for FormControlElements {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
+    }
+}
+
 pub struct FormControl {
     inner: js_sys::Object,
 }
@@ -149,6 +156,12 @@ impl TryFrom<FormControl> for GenericHtmlElement {
             .dyn_into::<web_sys::HtmlElement>()
             .map(|e| e.into())
             .map_err(|inner| InvalidCast(FormControl { inner }))
+    }
+}
+
+impl Write for FormControl {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 
@@ -206,6 +219,12 @@ impl RadioNodes {
             radio_nodes: self,
             current: 0,
         }
+    }
+}
+
+impl Write for RadioNodes {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

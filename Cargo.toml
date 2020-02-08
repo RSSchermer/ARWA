@@ -2,6 +2,7 @@
 members = [
     "arwa",
     "examples/animation_frame",
+    "examples/console",
     "examples/events",
     "examples/geolocation",
     "examples/media_element",

@@ -10,6 +10,7 @@ use crate::event::{
 };
 use crate::{AudioTrack, TextTrack, VideoTrack, CORS};
 
+use crate::console::{Write, Writer};
 use std::convert::TryFrom;
 pub use web_sys::TextTrackKind;
 
@@ -368,6 +369,12 @@ impl AsRef<web_sys::MediaStream> for MediaStream {
     }
 }
 
+impl Write for MediaStream {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
+    }
+}
+
 pub struct MediaPlay {
     inner: JsFuture,
 }
@@ -439,6 +446,12 @@ impl MediaBuffered {
             media_buffered: self,
             current: 0,
         }
+    }
+}
+
+impl Write for MediaBuffered {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 
@@ -566,6 +579,12 @@ impl MediaAudioTracks {
     }
 }
 
+impl Write for MediaAudioTracks {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
+    }
+}
+
 impl IntoIterator for MediaAudioTracks {
     type Item = AudioTrack;
     type IntoIter = MediaAudioTracksIntoIter;
@@ -682,6 +701,12 @@ impl MediaVideoTracks {
 
     pub fn on_remove_video_track(&self) -> OnRemoveVideoTrack {
         OnRemoveVideoTrack::new(self.inner.clone().into())
+    }
+}
+
+impl Write for MediaVideoTracks {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

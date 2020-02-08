@@ -9,6 +9,7 @@ use crate::html::{
 };
 use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
 
+use crate::console::{Write, Writer};
 pub use web_sys::ValidityState;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -272,6 +273,12 @@ impl<'a> SelectOptions<'a> {
     }
 }
 
+impl<'a> Write for SelectOptions<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.select.options().as_ref());
+    }
+}
+
 impl<'a> IntoIterator for SelectOptions<'a> {
     type Item = HtmlOptionElement;
     type IntoIter = SelectOptionsIntoIter<'a>;
@@ -356,6 +363,12 @@ impl SelectSelectedOptions {
             select_selected_options: self,
             current: 0,
         }
+    }
+}
+
+impl Write for SelectSelectedOptions {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

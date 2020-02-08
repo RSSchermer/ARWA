@@ -6,6 +6,7 @@ use wasm_bindgen::JsCast;
 use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement};
 use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
 
+use crate::console::{Write, Writer};
 pub use web_sys::ValidityState;
 
 #[derive(Clone)]
@@ -109,6 +110,12 @@ impl FieldSetElements {
             field_set_elements: self,
             current: 0,
         }
+    }
+}
+
+impl Write for FieldSetElements {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

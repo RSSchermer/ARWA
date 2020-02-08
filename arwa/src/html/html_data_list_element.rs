@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::html::{GenericHtmlElement, HtmlElement, HtmlOptionElement};
 use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
 
@@ -75,6 +76,12 @@ impl DataListOptions {
             data_list_options: self,
             current: 0,
         }
+    }
+}
+
+impl Write for DataListOptions {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

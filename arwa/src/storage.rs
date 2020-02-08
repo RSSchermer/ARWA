@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::error::QuotaExceededError;
 
 pub struct Storage {
@@ -62,6 +63,12 @@ impl From<web_sys::Storage> for Storage {
 impl AsRef<web_sys::Storage> for Storage {
     fn as_ref(&self) -> &web_sys::Storage {
         &self.inner
+    }
+}
+
+impl Write for Storage {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

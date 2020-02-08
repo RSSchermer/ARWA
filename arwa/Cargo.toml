@@ -22,6 +22,7 @@ wasm-bindgen-futures = "0.4.5"
 [dependencies.web-sys]
 version = "0.3.31"
 features = [
+    "console",
     "AnimationEvent",
     "AssignedNodesOptions",
     "Attr",
@@ -89,6 +90,7 @@ features = [
     "HtmlOListElement",
     "HtmlOptGroupElement",
     "HtmlOptionElement",
+    "HtmlOptionsCollection",
     "HtmlOutputElement",
     "HtmlParagraphElement",
     "HtmlParamElement",

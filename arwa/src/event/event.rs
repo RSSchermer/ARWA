@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 
+use crate::console::{Write, Writer};
 use crate::event::on_event::FromEvent;
 use wasm_bindgen::JsCast;
 
@@ -73,6 +74,7 @@ pub enum EventPhase {
     BubblingPhase,
 }
 
+#[derive(Clone, Debug)]
 pub struct GenericEventTarget {
     inner: web_sys::EventTarget,
 }
@@ -89,6 +91,13 @@ impl AsRef<web_sys::EventTarget> for GenericEventTarget {
     }
 }
 
+impl Write for GenericEventTarget {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
+#[derive(Debug)]
 pub struct ComposedPath {
     inner: js_sys::Array,
 }
@@ -124,6 +133,12 @@ impl ComposedPath {
         } else {
             None
         }
+    }
+}
+
+impl Write for ComposedPath {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -173,6 +188,7 @@ impl Iterator for ComposedPathIntoIter {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct GenericEvent {
     inner: web_sys::Event,
 }
@@ -192,6 +208,12 @@ impl FromEvent for GenericEvent {
 impl AsRef<web_sys::Event> for GenericEvent {
     fn as_ref(&self) -> &web_sys::Event {
         &self.inner
+    }
+}
+
+impl Write for GenericEvent {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

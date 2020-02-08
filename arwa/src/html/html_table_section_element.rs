@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::error::RangeError;
 use crate::html::{GenericHtmlElement, HtmlElement, HtmlTableRowElement};
 use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
@@ -107,6 +108,12 @@ impl<'a> TableSectionRows<'a> {
             table_section_rows: self,
             current: 0,
         }
+    }
+}
+
+impl<'a> Write for TableSectionRows<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.rows.as_ref());
     }
 }
 

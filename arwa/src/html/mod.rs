@@ -36,6 +36,12 @@ macro_rules! impl_html_common_traits {
             }
         }
 
+        impl $crate::console::Write for $crate_tpe {
+            fn write(&self, writer: &mut $crate::console::Writer) {
+                writer.write_1(self.inner.as_ref());
+            }
+        }
+
         impl GlobalEventHandlers for $crate_tpe {}
         impl Node for $crate_tpe {}
         impl Element for $crate_tpe {}

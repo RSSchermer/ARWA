@@ -1,3 +1,4 @@
+pub mod console;
 pub mod error;
 pub mod event;
 pub mod html;

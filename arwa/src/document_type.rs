@@ -1,5 +1,6 @@
 use delegate::delegate;
 
+use crate::console::{Write, Writer};
 use crate::Node;
 
 pub struct DocumentType {
@@ -33,6 +34,12 @@ impl AsRef<web_sys::DocumentType> for DocumentType {
 impl AsRef<web_sys::Node> for DocumentType {
     fn as_ref(&self) -> &web_sys::Node {
         self.inner.as_ref()
+    }
+}
+
+impl Write for DocumentType {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

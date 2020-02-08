@@ -2,7 +2,7 @@
 use std::convert::TryInto;
 
 use arwa::html::{HtmlAudioElement, HtmlButtonElement, HtmlMediaElement};
-use arwa::{document, Document, GlobalEventHandlers};
+use arwa::{console, document, Document, GlobalEventHandlers};
 use futures::{FutureExt, StreamExt, TryFutureExt};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
@@ -25,15 +25,15 @@ pub fn start() {
         .expect("Element is not an button element");
 
     spawn_local(play_button.on_click().for_each(move |_| {
-        web_sys::console::log_1(&"Click!".into());
+        console::log!("Click!");
 
         audio
             .play()
             .map_ok(|_| {
-                web_sys::console::log_1(&"Started playing!".into());
+                console::log!("Started playing!");
             })
             .map_err(|err| {
-                web_sys::console::log_1(&format!("{:?}", err).into());
+                console::log!("{:?}", err);
             })
             .map(|_| ())
     }));

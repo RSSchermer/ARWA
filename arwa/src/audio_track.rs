@@ -1,3 +1,4 @@
+use crate::console::{Write, Writer};
 use delegate::delegate;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -51,5 +52,11 @@ impl From<web_sys::AudioTrack> for AudioTrack {
 impl AsRef<web_sys::AudioTrack> for AudioTrack {
     fn as_ref(&self) -> &web_sys::AudioTrack {
         &self.inner
+    }
+}
+
+impl Write for AudioTrack {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }

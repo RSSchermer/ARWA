@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::InvalidCast;
 
 // TODO: the spec also allows just and end-mark (from navigation to named mark) by specifying
@@ -141,6 +142,12 @@ impl AsRef<web_sys::Performance> for Performance {
     }
 }
 
+impl Write for Performance {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct PerformanceEntry {
     inner: web_sys::PerformanceEntry,
 }
@@ -160,6 +167,12 @@ impl From<PerformanceEntry> for web_sys::PerformanceEntry {
 impl AsRef<web_sys::PerformanceEntry> for PerformanceEntry {
     fn as_ref(&self) -> &web_sys::PerformanceEntry {
         &self.inner
+    }
+}
+
+impl Write for PerformanceEntry {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -213,6 +226,12 @@ impl PerformanceEntries {
             performance_entries: self,
             current: 0,
         }
+    }
+}
+
+impl Write for PerformanceEntries {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -308,6 +327,12 @@ impl AsRef<web_sys::PerformanceEntry> for PerformanceMark {
     }
 }
 
+impl Write for PerformanceMark {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct PerformanceMarks {
     inner: js_sys::Array,
 }
@@ -358,6 +383,12 @@ impl PerformanceMarks {
             performance_marks: self,
             current: 0,
         }
+    }
+}
+
+impl Write for PerformanceMarks {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -453,6 +484,12 @@ impl AsRef<web_sys::PerformanceEntry> for PerformanceMeasure {
     }
 }
 
+impl Write for PerformanceMeasure {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct PerformanceMeasures {
     inner: js_sys::Array,
 }
@@ -503,6 +540,12 @@ impl PerformanceMeasures {
             performance_measures: self,
             current: 0,
         }
+    }
+}
+
+impl Write for PerformanceMeasures {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -644,6 +687,12 @@ impl AsRef<web_sys::PerformanceEntry> for PerformanceResourceTiming {
     }
 }
 
+impl Write for PerformanceResourceTiming {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct PerformanceResourceTimings {
     inner: js_sys::Array,
 }
@@ -694,6 +743,12 @@ impl PerformanceResourceTimings {
             performance_resource_timings: self,
             current: 0,
         }
+    }
+}
+
+impl Write for PerformanceResourceTimings {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -771,6 +826,12 @@ impl AsRef<web_sys::PerformanceServerTiming> for PerformanceServerTiming {
     }
 }
 
+impl Write for PerformanceServerTiming {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct PerformanceServerTimings {
     inner: js_sys::Array,
 }
@@ -821,6 +882,12 @@ impl PerformanceServerTimings {
             performance_server_timings: self,
             current: 0,
         }
+    }
+}
+
+impl Write for PerformanceServerTimings {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

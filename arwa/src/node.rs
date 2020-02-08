@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use bitflags::bitflags;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::element::GenericElement;
 use crate::error::HierarchyRequestError;
 
@@ -226,6 +227,12 @@ impl<'a> ChildNodes<'a> {
     }
 }
 
+impl<'a> Write for ChildNodes<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.children.as_ref())
+    }
+}
+
 impl<'a> IntoIterator for ChildNodes<'a> {
     type Item = GenericNode;
     type IntoIter = ChildNodesIter<'a>;
@@ -274,6 +281,12 @@ impl From<web_sys::Node> for GenericNode {
 impl From<GenericNode> for web_sys::Node {
     fn from(value: GenericNode) -> Self {
         value.inner
+    }
+}
+
+impl Write for GenericNode {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

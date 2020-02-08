@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
     Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node, StyleSheet,
@@ -135,6 +136,12 @@ impl<'a> LinkRel<'a> {
     }
 }
 
+impl<'a> Write for LinkRel<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.rel_list.as_ref());
+    }
+}
+
 impl<'a> ToString for LinkRel<'a> {
     fn to_string(&self) -> String {
         self.link.rel()
@@ -240,6 +247,12 @@ impl LinkSizes {
             link_sizes: self,
             current: 0,
         }
+    }
+}
+
+impl Write for LinkSizes {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.size_list.as_ref());
     }
 }
 

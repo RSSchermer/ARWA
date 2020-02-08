@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::error::{AdoptNodeError, HierarchyRequestError, NotSupportedError, SyntaxError};
 use crate::event::{OnFullscreenChange, OnFullscreenError, OnReadyStateChange, OnVisibilityChange};
 use crate::html::{
@@ -254,6 +255,12 @@ impl AsRef<web_sys::EventTarget> for GenericDocument {
     }
 }
 
+impl Write for GenericDocument {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
+    }
+}
+
 impl GlobalEventHandlers for GenericDocument {}
 impl Node for GenericDocument {}
 impl Document for GenericDocument {}
@@ -314,6 +321,12 @@ impl<'a> DocumentChildElements<'a> {
             document_child_elements: self,
             current: 0,
         }
+    }
+}
+
+impl<'a> Write for DocumentChildElements<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.children.as_ref());
     }
 }
 
@@ -476,6 +489,12 @@ impl DocumentForms {
     }
 }
 
+impl Write for DocumentForms {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
+    }
+}
+
 impl IntoIterator for DocumentForms {
     type Item = HtmlFormElement;
     type IntoIter = DocumentFormsIntoIter;
@@ -580,6 +599,12 @@ impl DocumentImages {
     }
 }
 
+impl Write for DocumentImages {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
+    }
+}
+
 impl IntoIterator for DocumentImages {
     type Item = HtmlImageElement;
     type IntoIter = DocumentImagesIntoIter;
@@ -681,6 +706,12 @@ impl DocumentLinks {
             document_links: self,
             current: 0,
         }
+    }
+}
+
+impl Write for DocumentLinks {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref());
     }
 }
 

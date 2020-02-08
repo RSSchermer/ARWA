@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::console::{Write, Writer};
 use crate::error::SyntaxError;
 use crate::{Element, GenericElement, Node, QuerySelectorAll};
 
@@ -54,6 +55,12 @@ impl AsRef<web_sys::DocumentFragment> for DocumentFragment {
 impl AsRef<web_sys::Node> for DocumentFragment {
     fn as_ref(&self) -> &web_sys::Node {
         self.inner.as_ref()
+    }
+}
+
+impl Write for DocumentFragment {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -119,6 +126,12 @@ impl<'a> DocumentFragmentChildElements<'a> {
             document_fragment_child_elements: self,
             current: 0,
         }
+    }
+}
+
+impl<'a> Write for DocumentFragmentChildElements<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.children.as_ref())
     }
 }
 

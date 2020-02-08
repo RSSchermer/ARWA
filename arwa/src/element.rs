@@ -5,6 +5,7 @@ use delegate::delegate;
 use wasm_bindgen::JsCast;
 
 use crate::attribute::Attribute;
+use crate::console::{Write, Writer};
 use crate::error::SyntaxError;
 use crate::{
     GenericNode, InvalidCast, InvalidPointerId, Node, PointerId, QuerySelectorAll, ScrollByOptions,
@@ -394,6 +395,12 @@ impl<'a> Attributes<'a> {
     }
 }
 
+impl<'a> Write for Attributes<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.attributes.as_ref())
+    }
+}
+
 pub struct AttributeNames {
     inner: js_sys::Array,
 }
@@ -438,6 +445,12 @@ impl AttributeNames {
             attribute_names: self,
             current: 0,
         }
+    }
+}
+
+impl Write for AttributeNames {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -541,6 +554,12 @@ impl<'a> Classes<'a> {
             classes: self,
             current: 0,
         }
+    }
+}
+
+impl<'a> Write for Classes<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.class_list.as_ref())
     }
 }
 
@@ -660,6 +679,12 @@ impl<'a> ChildElements<'a> {
             child_elements: self,
             current: 0,
         }
+    }
+}
+
+impl<'a> Write for ChildElements<'a> {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.children.as_ref())
     }
 }
 
@@ -904,6 +929,12 @@ impl AsRef<web_sys::Element> for GenericElement {
     }
 }
 
+impl Write for GenericElement {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct ClientRect {
     inner: web_sys::DomRect,
 }
@@ -927,6 +958,12 @@ impl ClientRect {
 
             pub fn right(&self) -> f64;
         }
+    }
+}
+
+impl Write for ClientRect {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -973,6 +1010,12 @@ impl ClientRects {
             client_rects: self,
             current: 0,
         }
+    }
+}
+
+impl Write for ClientRects {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 

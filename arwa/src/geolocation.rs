@@ -11,6 +11,7 @@ use wasm_bindgen::{JsCast, JsValue};
 
 use crate::error::PositionError;
 
+use crate::console::{Write, Writer};
 pub use web_sys::PositionOptions;
 
 pub struct Geolocation {
@@ -49,6 +50,12 @@ impl From<web_sys::Geolocation> for Geolocation {
 impl AsRef<web_sys::Geolocation> for Geolocation {
     fn as_ref(&self) -> &web_sys::Geolocation {
         &self.inner
+    }
+}
+
+impl Write for Geolocation {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
 
@@ -209,6 +216,12 @@ impl AsRef<web_sys::Position> for Position {
     }
 }
 
+impl Write for Position {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
+    }
+}
+
 pub struct Coordinates {
     inner: web_sys::Coordinates,
 }
@@ -242,5 +255,11 @@ impl From<web_sys::Coordinates> for Coordinates {
 impl AsRef<web_sys::Coordinates> for Coordinates {
     fn as_ref(&self) -> &web_sys::Coordinates {
         &self.inner
+    }
+}
+
+impl Write for Coordinates {
+    fn write(&self, writer: &mut Writer) {
+        writer.write_1(self.inner.as_ref())
     }
 }
