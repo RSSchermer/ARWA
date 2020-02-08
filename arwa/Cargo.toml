@@ -1,6 +1,6 @@
 [package]
 name = "arwa"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Rusty wrapper around the web_sys APIs."
 keywords = ["web", "wasm"]
 authors = ["RSSchermer <roland0507@gmail.com>"]
