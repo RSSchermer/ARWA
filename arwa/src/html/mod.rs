@@ -47,6 +47,19 @@ macro_rules! impl_html_common_traits {
         impl Element for $crate_tpe {}
         impl HtmlElement for $crate_tpe {}
 
+        impl TryFrom<GenericEventTarget> for $crate_tpe {
+            type Error = InvalidCast<GenericEventTarget>;
+
+            fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
+                let value: web_sys::EventTarget = value.into();
+
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .map(|e| e.into())
+                    .map_err(|e| InvalidCast(e.into()))
+            }
+        }
+
         impl TryFrom<GenericNode> for $crate_tpe {
             type Error = InvalidCast<GenericNode>;
 

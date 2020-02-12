@@ -4,14 +4,11 @@ use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
 use crate::error::{AdoptNodeError, HierarchyRequestError, NotSupportedError, SyntaxError};
-use crate::event::{OnFullscreenChange, OnFullscreenError, OnReadyStateChange, OnVisibilityChange};
+use crate::event::{OnFullscreenChange, OnFullscreenError, OnReadyStateChange, OnVisibilityChange, GenericEventTarget};
 use crate::html::{
     GenericHtmlElement, HtmlBodyElement, HtmlFormElement, HtmlHeadElement, HtmlImageElement,
 };
-use crate::{
-    DocumentFragment, DocumentType, Element, GenericElement, GenericNode, GlobalEventHandlers,
-    Location, Node, QuerySelectorAll, TextDirectionality,
-};
+use crate::{DocumentFragment, DocumentType, Element, GenericElement, GenericNode, GlobalEventHandlers, Location, Node, QuerySelectorAll, TextDirectionality, InvalidCast};
 
 pub trait Document: AsRef<web_sys::Document> {
     // TODO: implement new() for concrete implementations rather than trait.
@@ -234,6 +231,38 @@ pub struct GenericDocument {
 impl From<web_sys::Document> for GenericDocument {
     fn from(inner: web_sys::Document) -> Self {
         GenericDocument { inner }
+    }
+}
+
+impl From<GenericDocument> for web_sys::Document {
+    fn from(value: GenericDocument) -> Self {
+        value.inner
+    }
+}
+
+impl TryFrom<GenericEventTarget> for GenericDocument {
+    type Error = InvalidCast<GenericEventTarget>;
+
+    fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
+        let value: web_sys::EventTarget = value.into();
+
+        value
+            .dyn_into::<web_sys::Document>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
+    }
+}
+
+impl TryFrom<GenericNode> for GenericDocument {
+    type Error = InvalidCast<GenericNode>;
+
+    fn try_from(value: GenericNode) -> Result<Self, Self::Error> {
+        let value: web_sys::Node = value.into();
+
+        value
+            .dyn_into::<web_sys::Document>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
     }
 }
 

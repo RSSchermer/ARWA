@@ -11,6 +11,7 @@ use crate::{
     GenericNode, InvalidCast, InvalidPointerId, Node, PointerId, QuerySelectorAll, ScrollByOptions,
     ScrollIntoViewOptions, ScrollToOptions,
 };
+use crate::event::GenericEventTarget;
 
 pub trait Element: AsRef<web_sys::Element> {
     // TODO: skip `attach_shadow` here, add it to the specific elements for which it is valid.
@@ -99,6 +100,10 @@ pub trait Element: AsRef<web_sys::Element> {
         self.as_ref()
             .release_pointer_capture(pointer_id.into())
             .map_err(|_| InvalidPointerId(pointer_id))
+    }
+
+    fn request_pointer_lock(&self) {
+        self.as_ref().request_pointer_lock();
     }
 
     fn bounding_client_rect(&self) -> ClientRect {
@@ -808,6 +813,19 @@ impl From<web_sys::Element> for GenericElement {
 impl From<GenericElement> for web_sys::Element {
     fn from(value: GenericElement) -> Self {
         value.inner
+    }
+}
+
+impl TryFrom<GenericEventTarget> for GenericElement {
+    type Error = InvalidCast<GenericEventTarget>;
+
+    fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
+        let value: web_sys::EventTarget = value.into();
+
+        value
+            .dyn_into::<web_sys::Element>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
     }
 }
 

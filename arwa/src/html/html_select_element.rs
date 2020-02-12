@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::event::GenericEventTarget;
 use crate::html::{
     AutoComplete, GenericHtmlElement, HtmlElement, HtmlFormElement, HtmlOptGroupElement,
     HtmlOptionElement, Labels,

@@ -5,6 +5,7 @@ use delegate::delegate;
 use wasm_bindgen::JsCast;
 
 use crate::error::{InvalidStateError, RangeError, SetTextRangeError};
+use crate::event::GenericEventTarget;
 use crate::html::{
     AutoComplete, FormMethod, GenericHtmlElement, HtmlDataListElement, HtmlElement,
     HtmlFormElement, Labels,

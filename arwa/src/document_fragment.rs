@@ -4,7 +4,8 @@ use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
 use crate::error::SyntaxError;
-use crate::{Element, GenericElement, Node, QuerySelectorAll};
+use crate::{Element, GenericElement, Node, QuerySelectorAll, InvalidCast};
+use crate::event::GenericEventTarget;
 
 pub struct DocumentFragment {
     inner: web_sys::DocumentFragment,
@@ -43,6 +44,19 @@ impl DocumentFragment {
 impl From<web_sys::DocumentFragment> for DocumentFragment {
     fn from(inner: web_sys::DocumentFragment) -> Self {
         DocumentFragment { inner }
+    }
+}
+
+impl TryFrom<GenericEventTarget> for DocumentFragment {
+    type Error = InvalidCast<GenericEventTarget>;
+
+    fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
+        let value: web_sys::EventTarget = value.into();
+
+        value
+            .dyn_into::<web_sys::DocumentFragment>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
     }
 }
 

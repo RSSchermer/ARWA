@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
     Element, GenericDocument, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node,

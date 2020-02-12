@@ -18,7 +18,9 @@ use crate::html::{
     HtmlTextAreaElement, HtmlTimeElement, HtmlTitleElement, HtmlTrackElement, HtmlUListElement,
     HtmlVideoElement,
 };
-use crate::{Document, GlobalEventHandlers, Node};
+use crate::{Document, GlobalEventHandlers, Node, InvalidCast, GenericNode, GenericDocument};
+use crate::event::GenericEventTarget;
+use std::convert::TryFrom;
 
 pub struct HtmlDocument {
     inner: web_sys::HtmlDocument,
@@ -949,6 +951,51 @@ impl HtmlDocument {
 impl From<web_sys::HtmlDocument> for HtmlDocument {
     fn from(inner: web_sys::HtmlDocument) -> Self {
         HtmlDocument { inner }
+    }
+}
+
+impl From<HtmlDocument> for web_sys::HtmlDocument {
+    fn from(document: HtmlDocument) -> Self {
+        document.inner
+    }
+}
+
+impl TryFrom<GenericEventTarget> for HtmlDocument {
+    type Error = InvalidCast<GenericEventTarget>;
+
+    fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
+        let value: web_sys::EventTarget = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlDocument>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
+    }
+}
+
+impl TryFrom<GenericNode> for HtmlDocument {
+    type Error = InvalidCast<GenericNode>;
+
+    fn try_from(value: GenericNode) -> Result<Self, Self::Error> {
+        let value: web_sys::Node = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlDocument>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
+    }
+}
+
+impl TryFrom<GenericDocument> for HtmlDocument {
+    type Error = InvalidCast<GenericDocument>;
+
+    fn try_from(value: GenericDocument) -> Result<Self, Self::Error> {
+        let value: web_sys::Document = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlDocument>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
     }
 }
 

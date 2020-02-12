@@ -4,7 +4,7 @@ use delegate::delegate;
 use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
-use crate::event::OnSlotChange;
+use crate::event::{GenericEventTarget, OnSlotChange};
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
 

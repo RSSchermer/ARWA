@@ -4,6 +4,7 @@ use delegate::delegate;
 use wasm_bindgen::JsCast;
 
 use crate::error::SecurityError;
+use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
     Element, GenericElement, GenericNode, GlobalEventHandlers, ImageQuality, InvalidCast, Node,

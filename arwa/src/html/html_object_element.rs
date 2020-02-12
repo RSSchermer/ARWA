@@ -4,6 +4,7 @@ use std::str::FromStr;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
+use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement};
 use crate::{
     Element, GenericDocument, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node,

@@ -85,6 +85,12 @@ impl From<web_sys::EventTarget> for GenericEventTarget {
     }
 }
 
+impl From<GenericEventTarget> for web_sys::EventTarget {
+    fn from(event_target: GenericEventTarget) -> Self {
+        event_target.inner
+    }
+}
+
 impl AsRef<web_sys::EventTarget> for GenericEventTarget {
     fn as_ref(&self) -> &web_sys::EventTarget {
         &self.inner

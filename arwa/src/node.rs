@@ -6,6 +6,8 @@ use wasm_bindgen::JsCast;
 use crate::console::{Write, Writer};
 use crate::element::GenericElement;
 use crate::error::HierarchyRequestError;
+use crate::event::GenericEventTarget;
+use crate::InvalidCast;
 
 bitflags! {
     pub struct CompareDocumentPosition: u16 {
@@ -281,6 +283,19 @@ impl From<web_sys::Node> for GenericNode {
 impl From<GenericNode> for web_sys::Node {
     fn from(value: GenericNode) -> Self {
         value.inner
+    }
+}
+
+impl TryFrom<GenericEventTarget> for GenericNode {
+    type Error = InvalidCast<GenericEventTarget>;
+
+    fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
+        let value: web_sys::EventTarget = value.into();
+
+        value
+            .dyn_into::<web_sys::Node>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
     }
 }
 

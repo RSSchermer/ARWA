@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use wasm_bindgen::JsCast;
 
+use crate::event::GenericEventTarget;
 use crate::event::{
     OnAfterPrint, OnBeforePrint, OnBeforeUnload, OnHashChange, OnMessage, OnMessageError,
     OnOffline, OnOnline, OnPageHide, OnPageShow, OnPopState, OnRejectionHandled, OnStorage,

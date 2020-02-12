@@ -5,6 +5,7 @@ use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
 use crate::error::RangeError;
+use crate::event::GenericEventTarget;
 use crate::html::{
     GenericHtmlElement, HtmlElement, HtmlTableCaptionElement, HtmlTableRowElement,
     HtmlTableSectionElement,

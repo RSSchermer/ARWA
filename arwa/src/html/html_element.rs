@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
+use crate::event::GenericEventTarget;
 use crate::{
     CssStyleDeclaration, Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast,
     Node, TextDirectionality,
@@ -167,6 +168,19 @@ impl From<web_sys::HtmlElement> for GenericHtmlElement {
 impl From<GenericHtmlElement> for web_sys::HtmlElement {
     fn from(value: GenericHtmlElement) -> Self {
         value.inner
+    }
+}
+
+impl TryFrom<GenericEventTarget> for GenericHtmlElement {
+    type Error = InvalidCast<GenericEventTarget>;
+
+    fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
+        let value: web_sys::EventTarget = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlElement>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
     }
 }
 
