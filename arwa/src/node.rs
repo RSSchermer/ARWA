@@ -264,6 +264,7 @@ impl<'a> Iterator for ChildNodesIter<'a> {
     }
 }
 
+#[derive(Clone, PartialEq)]
 pub struct GenericNode {
     inner: web_sys::Node,
 }

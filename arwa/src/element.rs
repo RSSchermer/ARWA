@@ -794,6 +794,7 @@ mod element_child_seal {
     impl Sealed for str {}
 }
 
+#[derive(Clone, PartialEq)]
 pub struct GenericElement {
     inner: web_sys::Element,
 }

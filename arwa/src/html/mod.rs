@@ -42,6 +42,12 @@ macro_rules! impl_html_common_traits {
             }
         }
 
+        impl PartialEq for $crate_tpe {
+            fn eq(&self, other: &$crate_tpe) -> bool {
+                self.inner.eq(&other.inner)
+            }
+        }
+
         impl GlobalEventHandlers for $crate_tpe {}
         impl Node for $crate_tpe {}
         impl Element for $crate_tpe {}

@@ -74,7 +74,7 @@ pub enum EventPhase {
     BubblingPhase,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct GenericEventTarget {
     inner: web_sys::EventTarget,
 }

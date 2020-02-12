@@ -154,7 +154,7 @@ pub enum ContentEditable {
     Inherit,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct GenericHtmlElement {
     inner: web_sys::HtmlElement,
 }
