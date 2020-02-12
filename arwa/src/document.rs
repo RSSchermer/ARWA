@@ -4,7 +4,7 @@ use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
 use crate::error::{AdoptNodeError, HierarchyRequestError, NotSupportedError, SyntaxError};
-use crate::event::{OnFullscreenChange, OnFullscreenError, OnReadyStateChange, OnVisibilityChange, GenericEventTarget};
+use crate::event::{OnFullscreenChange, OnFullscreenError, OnPointerLockChange, OnPointerLockError, OnReadyStateChange, OnVisibilityChange, GenericEventTarget};
 use crate::html::{
     GenericHtmlElement, HtmlBodyElement, HtmlFormElement, HtmlHeadElement, HtmlImageElement,
 };
@@ -127,6 +127,10 @@ pub trait Document: AsRef<web_sys::Document> {
         self.as_ref().set_title(title);
     }
 
+    fn pointer_lock_element(&self) -> Option<GenericElement> {
+        self.as_ref().pointer_lock_element().map(|e| e.into())
+    }
+
     // TODO: default_view when Window has been figured out
 
     fn on_fullscreen_change(&self) -> OnFullscreenChange {
@@ -135,6 +139,14 @@ pub trait Document: AsRef<web_sys::Document> {
 
     fn on_fullscreen_error(&self) -> OnFullscreenError {
         OnFullscreenError::new(self.as_ref().clone().into())
+    }
+
+    fn on_pointer_lock_change(&self) -> OnPointerLockChange {
+        OnPointerLockChange::new(self.as_ref().clone().into())
+    }
+
+    fn on_pointer_lock_error(&self) -> OnPointerLockError {
+        OnPointerLockError::new(self.as_ref().clone().into())
     }
 
     fn on_ready_state_change(&self) -> OnReadyStateChange {
@@ -221,6 +233,10 @@ pub trait Document: AsRef<web_sys::Document> {
 
     fn element_from_point(&self, x: f32, y: f32) -> Option<GenericElement> {
         self.as_ref().element_from_point(x, y).map(|e| e.into())
+    }
+
+    fn exit_pointer_lock(&self) {
+        self.as_ref().exit_pointer_lock();
     }
 }
 

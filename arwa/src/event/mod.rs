@@ -227,6 +227,8 @@ typed_event_stream!(OnPointerCancel, PointerEvent, "pointercancel");
 typed_event_stream!(OnPointerDown, PointerEvent, "pointerdown");
 typed_event_stream!(OnPointerEnter, PointerEvent, "pointerenter");
 typed_event_stream!(OnPointerLeave, PointerEvent, "pointerleave");
+typed_event_stream!(OnPointerLockChange, GenericEvent, "pointerlockchange");
+typed_event_stream!(OnPointerLockError, GenericEvent, "pointerlockerror");
 typed_event_stream!(OnPointerMove, PointerEvent, "pointermove");
 typed_event_stream!(OnPointerOut, PointerEvent, "pointerout");
 typed_event_stream!(OnPointerOver, PointerEvent, "pointerover");
