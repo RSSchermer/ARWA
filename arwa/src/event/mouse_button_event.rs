@@ -7,8 +7,8 @@ use crate::event::{Event, MouseEvent, UiEvent};
 #[repr(u16)]
 pub enum MouseButton {
     Primary = 0,
-    Secondary = 1,
-    Auxiliary = 2,
+    Auxiliary = 1,
+    Secondary = 2,
     Fourth = 3,
     Fifth = 4,
 }
@@ -21,8 +21,8 @@ impl MouseButtonEvent {
     pub fn button(&self) -> MouseButton {
         match self.inner.button() {
             0 => MouseButton::Primary,
-            1 => MouseButton::Secondary,
-            2 => MouseButton::Auxiliary,
+            1 => MouseButton::Auxiliary,
+            2 => MouseButton::Secondary,
             3 => MouseButton::Fourth,
             4 => MouseButton::Fifth,
             _ => unreachable!(),
