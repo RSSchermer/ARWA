@@ -4,7 +4,8 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 
 use futures::Stream;
-use gloo_events::EventListener;
+use gloo_events::{EventListener, EventListenerOptions, EventListenerPhase};
+use crate::event::{Phase, EventStreamOptions};
 
 // TODO: we are leaking when we queue infinite event streams as tasks and all other references to
 // the actual event target node get dropped (and the node is removed from the DOM). The can
@@ -73,6 +74,82 @@ where
                     // Only 3. would be problematic and I think it can be argued that any reasonable
                     // implementation would favor 2. over 3.
 
+                    next.borrow_mut().replace(T::from_event(event.clone()));
+
+                    waker.wake_by_ref();
+                },
+            ));
+        }
+
+        if let Some(event) = self.next.borrow_mut().take() {
+            Poll::Ready(Some(event))
+        } else {
+            Poll::Pending
+        }
+    }
+}
+
+pub(super) struct OnEventWithOptions<T> {
+    target: web_sys::EventTarget,
+    event_type: &'static str,
+    // Note: the actual event listener should be deregistered when the `gloo_events::EventListener`
+    // is dropped. This means that if the stream completes (even though the event stream itself is
+    // an infinite stream it can be cut short by a combinator), then the event listener should be
+    // properly removed when the async runtime drops the task without leaking.
+    listener: Option<EventListener>,
+    next: Rc<RefCell<Option<T>>>,
+    phase: Phase,
+    passive: bool
+}
+
+impl<T> OnEventWithOptions<T> {
+    pub(super) fn new(on_event: OnEvent<T>, options: EventStreamOptions) -> Self {
+        let OnEvent {
+            target,
+            event_type,
+            next,
+            ..
+        } = on_event;
+
+        let EventStreamOptions {
+            phase, passive
+        } = options;
+
+        OnEventWithOptions {
+            target,
+            event_type,
+            listener: None,
+            next,
+            phase,
+            passive
+        }
+    }
+}
+
+impl<T> Stream for OnEventWithOptions<T>
+    where
+        T: FromEvent + 'static,
+{
+    type Item = T;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        if self.listener.is_none() {
+            let next = self.next.clone();
+            let waker = cx.waker().clone();
+
+            let event_listener_phase = match self.phase {
+                Phase::Bubble => EventListenerPhase::Bubble,
+                Phase::Capture => EventListenerPhase::Capture,
+            };
+
+            self.listener = Some(EventListener::new_with_options(
+                &self.target,
+                self.event_type,
+                EventListenerOptions {
+                    phase: event_listener_phase,
+                    passive: self.passive
+                },
+                move |event| {
                     next.borrow_mut().replace(T::from_event(event.clone()));
 
                     waker.wake_by_ref();
