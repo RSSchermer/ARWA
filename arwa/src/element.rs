@@ -7,10 +7,7 @@ use wasm_bindgen::JsCast;
 use crate::attribute::Attribute;
 use crate::console::{Write, Writer};
 use crate::error::SyntaxError;
-use crate::{
-    GenericNode, InvalidCast, InvalidPointerId, Node, PointerId, QuerySelectorAll, ScrollByOptions,
-    ScrollIntoViewOptions, ScrollToOptions,
-};
+use crate::{GenericNode, InvalidCast, InvalidPointerId, Node, PointerId, QuerySelectorAll, ScrollByOptions, ScrollIntoViewOptions, ScrollToOptions, GlobalEventHandlers};
 use crate::event::GenericEventTarget;
 
 pub trait Element: AsRef<web_sys::Element> {
@@ -843,6 +840,18 @@ impl TryFrom<GenericNode> for GenericElement {
     }
 }
 
+impl AsRef<web_sys::EventTarget> for GenericElement {
+    fn as_ref(&self) -> &web_sys::EventTarget {
+        self.inner.as_ref()
+    }
+}
+
+impl AsRef<web_sys::Node> for GenericElement {
+    fn as_ref(&self) -> &web_sys::Node {
+        self.inner.as_ref()
+    }
+}
+
 impl AsRef<web_sys::Element> for GenericElement {
     fn as_ref(&self) -> &web_sys::Element {
         &self.inner
@@ -854,6 +863,10 @@ impl Write for GenericElement {
         writer.write_1(self.inner.as_ref())
     }
 }
+
+impl GlobalEventHandlers for GenericElement {}
+impl Node for GenericElement {}
+impl Element for GenericElement {}
 
 pub struct ClientRect {
     inner: web_sys::DomRect,
