@@ -35,6 +35,14 @@ pub trait MouseEvent: AsRef<web_sys::MouseEvent> {
         self.as_ref().client_y()
     }
 
+    fn offset_x(&self) -> i32 {
+        self.as_ref().offset_x()
+    }
+
+    fn offset_y(&self) -> i32 {
+        self.as_ref().offset_y()
+    }
+
     fn ctrl_key(&self) -> bool {
         self.as_ref().ctrl_key()
     }
