@@ -13,14 +13,14 @@ readme = "../README.md"
 [dependencies]
 bitflags = "1.2.1"
 delegate = "0.3.0"
-futures = "0.3.1"
+futures = "0.3.4"
 gloo-events = "0.1.1"
-js-sys = "0.3.31"
-wasm-bindgen = "0.2.55"
-wasm-bindgen-futures = "0.4.5"
+js-sys = "0.3.36"
+wasm-bindgen = "0.2.59"
+wasm-bindgen-futures = "0.4.9"
 
 [dependencies.web-sys]
-version = "0.3.31"
+version = "0.3.36"
 features = [
     "console",
     "AnimationEvent",
