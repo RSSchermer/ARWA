@@ -1,7 +1,7 @@
 [package]
 name = "arwa"
 version = "0.1.1"
-description = "A Rusty wrapper around the web_sys APIs."
+description = "A Rusty interface around the web-sys APIs."
 keywords = ["web", "wasm"]
 authors = ["RSSchermer <roland0507@gmail.com>"]
 edition = "2018"
@@ -13,14 +13,14 @@ readme = "../README.md"
 [dependencies]
 bitflags = "1.2.1"
 delegate = "0.3.0"
-futures = "0.3.4"
-gloo-events = "0.1.1"
-js-sys = "0.3.36"
-wasm-bindgen = "0.2.59"
-wasm-bindgen-futures = "0.4.9"
+futures = "0.3.19"
+js-sys = "0.3.55"
+url = "2.2.2"
+wasm-bindgen = "0.2.78"
+wasm-bindgen-futures = "0.4.28"
 
 [dependencies.web-sys]
-version = "0.3.36"
+version = "0.3.55"
 features = [
     "console",
     "AnimationEvent",

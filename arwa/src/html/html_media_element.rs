@@ -423,10 +423,6 @@ impl MediaBuffered {
         self.len() == 0
     }
 
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
     pub fn first(&self) -> Option<MediaTimeRange> {
         self.get(0)
     }
@@ -539,10 +535,6 @@ impl MediaAudioTracks {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn first(&self) -> Option<AudioTrack> {
@@ -664,10 +656,6 @@ impl MediaVideoTracks {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn first(&self) -> Option<VideoTrack> {

@@ -6,7 +6,7 @@ use wasm_bindgen::JsCast;
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
-    Element, GenericDocument, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node,
+    DynamicElement, DynamicNode, Element, GenericDocument, GlobalEventHandlers, InvalidCast, Node,
 };
 use std::str::FromStr;
 

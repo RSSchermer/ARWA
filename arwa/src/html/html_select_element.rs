@@ -8,7 +8,7 @@ use crate::html::{
     AutoComplete, GenericHtmlElement, HtmlElement, HtmlFormElement, HtmlOptGroupElement,
     HtmlOptionElement, Labels,
 };
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 use crate::console::{Write, Writer};
 pub use web_sys::ValidityState;
@@ -185,10 +185,6 @@ impl<'a> SelectOptions<'a> {
         self.len() == 0
     }
 
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
     pub fn first(&self) -> Option<HtmlOptionElement> {
         self.get(0)
     }
@@ -339,10 +335,6 @@ impl SelectSelectedOptions {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn first(&self) -> Option<HtmlOptionElement> {

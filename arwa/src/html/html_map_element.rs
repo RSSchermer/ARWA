@@ -5,7 +5,7 @@ use wasm_bindgen::JsCast;
 use crate::console::{Write, Writer};
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlAreaElement, HtmlElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone)]
 pub struct HtmlMapElement {
@@ -44,10 +44,6 @@ impl MapAreas {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn first(&self) -> Option<HtmlAreaElement> {

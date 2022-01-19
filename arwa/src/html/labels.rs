@@ -33,10 +33,6 @@ impl Labels {
         self.len() == 0
     }
 
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
     pub fn first(&self) -> Option<HtmlLabelElement> {
         self.get(0)
     }

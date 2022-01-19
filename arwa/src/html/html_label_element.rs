@@ -5,7 +5,7 @@ use wasm_bindgen::JsCast;
 
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone)]
 pub struct HtmlLabelElement {
@@ -51,10 +51,6 @@ impl OutputHtmlFor {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn first(&self) -> Option<String> {

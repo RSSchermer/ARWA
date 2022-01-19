@@ -10,7 +10,7 @@ use crate::html::{
     GenericHtmlElement, HtmlElement, HtmlTableCaptionElement, HtmlTableRowElement,
     HtmlTableSectionElement,
 };
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone)]
 pub struct HtmlTableElement {
@@ -132,10 +132,6 @@ impl TableBodies {
         self.len() == 0
     }
 
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
     pub fn first(&self) -> Option<HtmlTableSectionElement> {
         self.get(0)
     }
@@ -241,10 +237,6 @@ impl<'a> TableRows<'a> {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn first(&self) -> Option<HtmlTableRowElement> {

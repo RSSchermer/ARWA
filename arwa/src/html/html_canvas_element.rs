@@ -7,7 +7,7 @@ use crate::error::SecurityError;
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
-    Element, GenericElement, GenericNode, GlobalEventHandlers, ImageQuality, InvalidCast, Node,
+    DynamicElement, DynamicNode, Element, GlobalEventHandlers, ImageQuality, InvalidCast, Node,
 };
 
 #[derive(Clone)]

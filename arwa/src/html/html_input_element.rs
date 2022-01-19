@@ -11,7 +11,7 @@ use crate::html::{
     HtmlFormElement, Labels,
 };
 use crate::{
-    Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node,
+    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node,
     SelectionDirection,
 };
 

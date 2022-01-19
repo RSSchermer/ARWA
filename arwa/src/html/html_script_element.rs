@@ -5,7 +5,7 @@ use wasm_bindgen::JsCast;
 
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node, CORS};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node, CORS};
 
 #[derive(Clone)]
 pub struct HtmlScriptElement {

@@ -5,7 +5,7 @@ use wasm_bindgen::JsCast;
 use crate::console::{Write, Writer};
 use crate::event::GenericEventTarget;
 use crate::{
-    CssStyleDeclaration, Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast,
+    CssStyleDeclaration, DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast,
     Node, TextDirectionality,
 };
 
@@ -184,10 +184,10 @@ impl TryFrom<GenericEventTarget> for GenericHtmlElement {
     }
 }
 
-impl TryFrom<GenericNode> for GenericHtmlElement {
-    type Error = InvalidCast<GenericNode>;
+impl TryFrom<DynamicNode> for GenericHtmlElement {
+    type Error = InvalidCast<DynamicNode>;
 
-    fn try_from(value: GenericNode) -> Result<Self, Self::Error> {
+    fn try_from(value: DynamicNode) -> Result<Self, Self::Error> {
         let value: web_sys::Node = value.into();
 
         value
@@ -197,10 +197,10 @@ impl TryFrom<GenericNode> for GenericHtmlElement {
     }
 }
 
-impl TryFrom<GenericElement> for GenericHtmlElement {
-    type Error = InvalidCast<GenericElement>;
+impl TryFrom<DynamicElement> for GenericHtmlElement {
+    type Error = InvalidCast<DynamicElement>;
 
-    fn try_from(value: GenericElement) -> Result<Self, Self::Error> {
+    fn try_from(value: DynamicElement) -> Result<Self, Self::Error> {
         let value: web_sys::Element = value.into();
 
         value

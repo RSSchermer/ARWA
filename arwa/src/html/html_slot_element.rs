@@ -6,7 +6,7 @@ use wasm_bindgen::JsCast;
 use crate::console::{Write, Writer};
 use crate::event::{GenericEventTarget, OnSlotChange};
 use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone)]
 pub struct HtmlSlotElement {
@@ -52,7 +52,7 @@ pub struct SlotAssignedNodes {
 }
 
 impl SlotAssignedNodes {
-    pub fn get(&self, index: usize) -> Option<GenericNode> {
+    pub fn get(&self, index: usize) -> Option<DynamicNode> {
         u32::try_from(index).ok().and_then(|index| {
             let value = self.inner.get(index);
 
@@ -74,15 +74,11 @@ impl SlotAssignedNodes {
         self.len() == 0
     }
 
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<GenericNode> {
+    pub fn first(&self) -> Option<DynamicNode> {
         self.get(0)
     }
 
-    pub fn last(&self) -> Option<GenericNode> {
+    pub fn last(&self) -> Option<DynamicNode> {
         let len = self.len();
 
         if len > 0 {
@@ -107,7 +103,7 @@ impl Write for SlotAssignedNodes {
 }
 
 impl IntoIterator for SlotAssignedNodes {
-    type Item = GenericNode;
+    type Item = DynamicNode;
     type IntoIter = SlotAssignedNodesIntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -124,7 +120,7 @@ pub struct SlotAssignedNodesIter<'a> {
 }
 
 impl<'a> Iterator for SlotAssignedNodesIter<'a> {
-    type Item = GenericNode;
+    type Item = DynamicNode;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current;
@@ -141,7 +137,7 @@ pub struct SlotAssignedNodesIntoIter {
 }
 
 impl Iterator for SlotAssignedNodesIntoIter {
-    type Item = GenericNode;
+    type Item = DynamicNode;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current;

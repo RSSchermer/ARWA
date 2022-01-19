@@ -5,7 +5,7 @@ use wasm_bindgen::JsCast;
 
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone)]
 pub struct HtmlTableCellElement {

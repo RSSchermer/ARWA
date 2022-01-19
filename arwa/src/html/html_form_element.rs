@@ -6,7 +6,7 @@ use wasm_bindgen::JsCast;
 use crate::console::{Write, Writer};
 use crate::event::GenericEventTarget;
 use crate::html::{AutoComplete, GenericHtmlElement, HtmlElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum FormMethod {
@@ -182,7 +182,7 @@ impl RadioNodes {
         }
     }
 
-    pub fn get(&self, index: usize) -> Option<GenericNode> {
+    pub fn get(&self, index: usize) -> Option<DynamicNode> {
         u32::try_from(index)
             .ok()
             .and_then(|index| self.inner.get(index))
@@ -197,15 +197,11 @@ impl RadioNodes {
         self.len() == 0
     }
 
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<GenericNode> {
+    pub fn first(&self) -> Option<DynamicNode> {
         self.get(0)
     }
 
-    pub fn last(&self) -> Option<GenericNode> {
+    pub fn last(&self) -> Option<DynamicNode> {
         let len = self.len();
 
         if len > 0 {
@@ -230,7 +226,7 @@ impl Write for RadioNodes {
 }
 
 impl IntoIterator for RadioNodes {
-    type Item = GenericNode;
+    type Item = DynamicNode;
     type IntoIter = RadioNodesIntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -247,7 +243,7 @@ pub struct RadioNodesIter<'a> {
 }
 
 impl<'a> Iterator for RadioNodesIter<'a> {
-    type Item = GenericNode;
+    type Item = DynamicNode;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current;
@@ -264,7 +260,7 @@ pub struct RadioNodesIntoIter {
 }
 
 impl Iterator for RadioNodesIntoIter {
-    type Item = GenericNode;
+    type Item = DynamicNode;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current;

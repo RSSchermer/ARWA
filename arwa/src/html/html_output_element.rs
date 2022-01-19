@@ -5,7 +5,7 @@ use wasm_bindgen::JsCast;
 
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement, Labels};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 pub use web_sys::ValidityState;
 

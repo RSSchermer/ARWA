@@ -1,87 +1,250 @@
-use std::cell::RefCell;
+use std::borrow::Cow;
 use std::pin::Pin;
-use std::rc::Rc;
-use std::task::{Context, Poll};
+use std::task::{Context, Poll, Waker};
 
 use futures::Stream;
-use gloo_events::{EventListener, EventListenerOptions, EventListenerPhase};
-use crate::event::{Phase, EventStreamOptions};
+use wasm_bindgen::closure::Closure;
 
-// TODO: we are leaking when we queue infinite event streams as tasks and all other references to
-// the actual event target node get dropped (and the node is removed from the DOM). The can
-// eventually be resolved once the [WeakReferences TC39 proposal](https://github.com/tc39/proposal-weakrefs)
-// is accepted (it's stage 3 as of this writing). For now, the solution is to ensure that a stream
-// is not infinite, e.g. by using the `stream_cancel::TakeUntil` combinator. Note that the same
-// problem exists for e.g. a raw `gloo_events::EventListener`, the difference being that for the
-// stream case one gives away ownership to the executor (which will keep it alive until it
-// finishes), thus requiring additional effort to trigger a drop (by making it finish).
+use crate::event::Event;
+use wasm_bindgen::JsCast;
 
-pub(super) struct OnEvent<T> {
+// TODO: currently these spawn infinite tasks (unless combined with some terminating combinator
+// e.g. `Once` or `TakeUntil`). However, if the reference to the EventTarget held by a stream is
+// the only remaining reference, then we know the stream can be fused, the closure can be dropped,
+// and we can return `Ready(None)` the next time the stream is polled. We should be able to achieve
+// this through a combination of the new `WeakRef` and `FinalizationRegistry` web-APIs, where we
+// only hold on to a `WeakRef` to the event target and register a finalizer on the event target that
+// will clean up the closure and set the stream to a "terminated" state. However, as of yet,
+// wasm-bindgen does not expose these APIs.
+
+struct Internal<T> {
     target: web_sys::EventTarget,
-    event_type: &'static str,
-    // Note: the actual event listener should be deregistered when the `gloo_events::EventListener`
-    // is dropped. This means that if the stream completes (even though the event stream itself is
-    // an infinite stream it can be cut short by a combinator), then the event listener should be
-    // properly removed when the async runtime drops the task without leaking.
-    listener: Option<EventListener>,
-    next: Rc<RefCell<Option<T>>>,
+    event_type: Cow<'static, str>,
+    callback: Option<Closure<dyn FnMut(&web_sys::Event)>>,
+    use_capture: bool, // We need this to drop properly
+    state: CallbackState<T>,
 }
 
-impl<T> OnEvent<T> {
-    pub(super) fn new(target: web_sys::EventTarget, event_type: &'static str) -> Self {
-        OnEvent {
+impl<T> Internal<T>
+where
+    T: Event,
+{
+    fn uninitialized(target: web_sys::EventTarget, event_type: Cow<'static, str>) -> Self {
+        Internal {
             target,
             event_type,
-            listener: None,
-            next: Rc::new(RefCell::new(None)),
+            callback: None,
+            use_capture: false,
+            state: CallbackState::uninitialized(),
+        }
+    }
+
+    fn is_uninitialized(&self) -> bool {
+        self.callback.is_none()
+    }
+
+    fn initialize(mut self: Pin<&mut Self>, options: &EventStreamOptions) {
+        if self.callback.is_some() {
+            panic!("Cannot initialize an event stream twice.");
+        }
+
+        let state_ptr = (&mut self.state) as *mut CallbackState<T>;
+
+        let callback = move |event| {
+            // We should not be dropping events here if this gets run with wasm-bindgen-futures
+            // `spawn_local`, as invoking the waker will immediately queue running the task as a
+            // micro-task on the current thread/workers event queue, whereas all user events get
+            // queued as macro tasks: this means that there's always a call to `poll_next`
+            // before the next event gets processed and we get away with only buffering 1 event.
+            //
+            // This implementation is not meant to be tied to wasm-bindgen-futures specifically,
+            // however, as this stream is not `Send`, potential executor implementations should be
+            // limited to the following 3 execution patterns:
+            //
+            // 1.  Immediately poll the task synchronously when the waker is called.
+            // 2.  Schedule a micro-task on the event loop to poll later (wasm-bindgen-futures
+            //     current approach).
+            // 3.  Schedule a macro-task on the event loop to poll later.
+            //
+            // Only 3. would be problematic and I think it can be argued that any reasonable
+            // implementation would favor 2. over 3.
+
+            // We know the state_ptr will always deref successfully because of Pin's guarantees.
+            let CallbackState { next, waker } = unsafe { &mut *state_ptr };
+
+            if let Some(waker) = waker.take() {
+                next.replace(T::from_event(event.clone()));
+
+                waker.wake();
+            }
+        };
+
+        let boxed = Box::new(callback) as Box<dyn FnMut(&web_sys::Event)>;
+        let closure = Closure::wrap(boxed);
+
+        let use_capture = match options.phase {
+            Phase::Capture => true,
+            Phase::Bubble => false,
+        };
+
+        let mut add_event_lister_options = web_sys::AddEventListenerOptions::new();
+
+        add_event_lister_options.capture(use_capture);
+        add_event_lister_options.passive(options.passive);
+
+        self.target
+            .add_event_listener_with_callback_and_add_event_listener_options(
+                &self.event_type,
+                callback.as_ref().unchecked_ref(),
+                options,
+            )
+            .unwrap_throw();
+
+        // Hang on to the closure so we don't drop it while the listener is still active on the
+        // target.
+        self.callback = Some(closure);
+        self.use_capture = use_capture;
+    }
+
+    fn refresh_waker(&mut self, waker: Waker) {
+        self.state.waker = Some(waker)
+    }
+
+    fn next(&mut self) -> Option<T> {
+        self.state.next.take()
+    }
+}
+
+impl<T> Drop for Internal<T> {
+    fn drop(&mut self) {
+        if let Some(callback) = &self.callback {
+            self.target
+                .remove_event_listener_with_callback_and_bool(
+                    &self.event_type,
+                    callback.as_ref().unchecked_ref(),
+                    self.use_capture,
+                )
+                .unwrap_throw();
         }
     }
 }
 
+struct CallbackState<T> {
+    waker: Option<Waker>,
+    next: Option<T>,
+}
+
+impl<T> CallbackState<T> {
+    fn uninitialized() -> Self {
+        CallbackState {
+            waker: None,
+            next: None,
+        }
+    }
+}
+
+#[must_use = "streams do nothing unless polled or spawned"]
+pub struct OnEvent<T> {
+    internal: Internal<T>,
+}
+
+impl<T> OnEvent<T> {
+    pub(crate) fn new(target: web_sys::EventTarget, event_type: Cow<'static, str>) -> Self {
+        OnEvent {
+            internal: Internal::uninitialized(target, event_type),
+        }
+    }
+
+    pub fn with_options(self, options: EventStreamOptions) -> OnEventWithOptions<T> {
+        OnEventWithOptions::new(self, options)
+    }
+}
+
 impl<T> Stream for OnEvent<T>
+where
+    T: Event + 'static,
+{
+    type Item = T;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        // If the stream hasn't been initialized yet, initialize it
+        if self.internal.is_uninitialized() {
+            unsafe {
+                self.map_unchecked_mut(|v| &mut v.internal)
+                    .initialize(&EventStreamOptions::default())
+            }
+        }
+
+        // Set a new waker to keep the Stream alive (or set the initial waker if we've just
+        // initialized).
+        self.internal.refresh_waker(cx.waker().clone());
+
+        // Return the most recent event, if any.
+        if let Some(event) = self.internal.next() {
+            Poll::Ready(Some(event))
+        } else {
+            Poll::Pending
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Phase {
+    Bubble,
+    Capture,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct EventStreamOptions {
+    pub phase: Phase,
+    pub passive: bool,
+}
+
+impl Default for EventStreamOptions {
+    fn default() -> Self {
+        EventStreamOptions {
+            phase: Phase::Bubble,
+            passive: true,
+        }
+    }
+}
+
+#[must_use = "streams do nothing unless polled or spawned"]
+pub struct OnEventWithOptions<T> {
+    internal: Internal<T>,
+    options: EventStreamOptions,
+}
+
+impl<T> OnEventWithOptions<T> {
+    pub(crate) fn new(on_event: OnEvent<T>, options: EventStreamOptions) -> Self {
+        OnEventWithOptions {
+            internal: on_event.internal,
+            options,
+        }
+    }
+}
+
+impl<T> Stream for OnEventWithOptions<T>
 where
     T: FromEvent + 'static,
 {
     type Item = T;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if self.listener.is_none() {
-            let next = self.next.clone();
-            let waker = cx.waker().clone();
-
-            self.listener = Some(EventListener::new(
-                &self.target,
-                self.event_type,
-                move |event| {
-                    // We should not be dropping events here if this gets run with wasm-bindgen-futures
-                    // `spawn_local`, as invoking the waker will immediately queue running the task as a
-                    // micro-task on the current thread/workers event queue, whereas all user events get
-                    // queued as macro tasks: this means that there's always a call to `poll_next`
-                    // before the next event gets processed and we get away with only buffering 1 event.
-                    //
-                    // However, can this behaviour be assumed for all async runtimes that people may use
-                    // in the browser?
-                    //
-                    // The following consideration perhaps helps: this stream is not `Send`, it has to
-                    // be run on the local thread. This should only leave 3 options for the waker
-                    // implementation:
-                    //
-                    // 1.  Poll synchronously/immediately upon calling the waker.
-                    // 2.  Schedule a micro-task on the local thread's event loop to poll later
-                    //     (wasm-bindgen-futures current approach).
-                    // 3.  Schedule a macro-task on the local thread's event loop to poll later.
-                    //
-                    // Only 3. would be problematic and I think it can be argued that any reasonable
-                    // implementation would favor 2. over 3.
-
-                    next.borrow_mut().replace(T::from_event(event.clone()));
-
-                    waker.wake_by_ref();
-                },
-            ));
+        // If the stream hasn't been initialized yet, initialize it
+        if self.internal.is_uninitialized() {
+            unsafe {
+                self.map_unchecked_mut(|v| &mut v.internal)
+                    .initialize(&self.options)
+            }
         }
 
-        if let Some(event) = self.next.borrow_mut().take() {
+        // Set a new waker to keep the Stream alive (or set the initial waker if we've just
+        // initialized).
+        self.internal.refresh_waker(cx.waker().clone());
+
+        // Return the most recent event, if any.
+        if let Some(event) = self.internal.next() {
             Poll::Ready(Some(event))
         } else {
             Poll::Pending
@@ -89,82 +252,49 @@ where
     }
 }
 
-pub(super) struct OnEventWithOptions<T> {
-    target: web_sys::EventTarget,
-    event_type: &'static str,
-    // Note: the actual event listener should be deregistered when the `gloo_events::EventListener`
-    // is dropped. This means that if the stream completes (even though the event stream itself is
-    // an infinite stream it can be cut short by a combinator), then the event listener should be
-    // properly removed when the async runtime drops the task without leaking.
-    listener: Option<EventListener>,
-    next: Rc<RefCell<Option<T>>>,
-    phase: Phase,
-    passive: bool
-}
-
-impl<T> OnEventWithOptions<T> {
-    pub(super) fn new(on_event: OnEvent<T>, options: EventStreamOptions) -> Self {
-        let OnEvent {
-            target,
-            event_type,
-            next,
-            ..
-        } = on_event;
-
-        let EventStreamOptions {
-            phase, passive
-        } = options;
-
-        OnEventWithOptions {
-            target,
-            event_type,
-            listener: None,
-            next,
-            phase,
-            passive
-        }
-    }
-}
-
-impl<T> Stream for OnEventWithOptions<T>
-    where
-        T: FromEvent + 'static,
-{
-    type Item = T;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if self.listener.is_none() {
-            let next = self.next.clone();
-            let waker = cx.waker().clone();
-
-            let event_listener_phase = match self.phase {
-                Phase::Bubble => EventListenerPhase::Bubble,
-                Phase::Capture => EventListenerPhase::Capture,
-            };
-
-            self.listener = Some(EventListener::new_with_options(
-                &self.target,
-                self.event_type,
-                EventListenerOptions {
-                    phase: event_listener_phase,
-                    passive: self.passive
-                },
-                move |event| {
-                    next.borrow_mut().replace(T::from_event(event.clone()));
-
-                    waker.wake_by_ref();
-                },
-            ));
+macro_rules! typed_event_stream {
+    ($stream:ident, $stream_with_options:ident, $event:ident, $name:tt) => {
+        #[must_use = "streams do nothing unless polled or spawned"]
+        pub struct $stream<T> {
+            inner: $crate::event::OnEvent<$event<T>>,
         }
 
-        if let Some(event) = self.next.borrow_mut().take() {
-            Poll::Ready(Some(event))
-        } else {
-            Poll::Pending
-        }
-    }
-}
+        impl<T> $stream<T> {
+            pub(crate) fn new(target: web_sys::EventTarget) -> Self {
+                $stream {
+                    inner: $crate::event::OnEvent::new(target, $name),
+                }
+            }
 
-pub(super) trait FromEvent {
-    fn from_event(event: web_sys::Event) -> Self;
+            pub fn with_options(
+                self,
+                options: $crate::event::EventStreamOptions,
+            ) -> $stream_with_options<T> {
+                $stream_with_options {
+                    inner: $crate::event::OnEventWithOptions::new(self.inner, options),
+                }
+            }
+        }
+
+        impl<T> std::stream::Stream for $stream<T> {
+            type Item = $event<T>;
+
+            fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+                unsafe { self.map_unchecked_mut(|s| &mut s.inner).poll_next(cx) }
+            }
+        }
+
+        #[must_use = "streams do nothing unless polled or spawned"]
+        pub struct $stream_with_options<T> {
+            inner: $crate::event::OnEventWithOptions<$event<T>>,
+        }
+
+        impl<T> std::stream::Stream for $stream_with_options<T> {
+            type Item = $event<T>;
+
+            fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+                unsafe { self.map_unchecked_mut(|s| &mut s.inner).poll_next(cx) }
+            }
+        }
+    };
 }

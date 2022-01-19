@@ -10,7 +10,7 @@ use wasm_bindgen_futures::JsFuture;
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
-    Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node, ReferrerPolicy,
+    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node, ReferrerPolicy,
     CORS,
 };
 

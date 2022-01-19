@@ -7,7 +7,7 @@ use crate::console::{Write, Writer};
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement};
 use crate::{
-    Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node, ReferrerPolicy,
+    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node, ReferrerPolicy,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -167,10 +167,6 @@ impl<'a> AreaRel<'a> {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn contains(&self, rel: &str) -> bool {

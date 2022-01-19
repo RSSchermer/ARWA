@@ -1,32 +1,46 @@
 use std::convert::TryFrom;
 
-use crate::console::{Write, Writer};
+use crate::dom::event_target::EventTarget;
+use crate::event::event_target::{DynamicEventTarget, EventTarget};
 use crate::event::on_event::FromEvent;
+use std::marker;
 use wasm_bindgen::JsCast;
 
-pub trait Event: AsRef<web_sys::Event> {
+pub(crate) mod event_seal {
+    pub trait Seal {
+        #[doc(hidden)]
+        fn from_web_sys_event_unchecked(event: web_sys::Event) -> Self;
+
+        #[doc(hidden)]
+        fn as_web_sys_event(&self) -> web_sys::Event;
+    }
+}
+
+pub trait Event: event_seal::Seal {
+    type CurrentTarget: EventTarget;
+
     fn bubbles(&self) -> bool {
-        self.as_ref().bubbles()
+        self.as_web_sys_event().bubbles()
     }
 
     fn cancelable(&self) -> bool {
-        self.as_ref().cancelable()
+        self.as_web_sys_event().cancelable()
     }
 
     fn composed(&self) -> bool {
-        self.as_ref().composed()
+        self.as_web_sys_event().composed()
     }
 
     fn is_trusted(&self) -> bool {
-        self.as_ref().is_trusted()
+        self.as_web_sys_event().is_trusted()
     }
 
     fn default_prevented(&self) -> bool {
-        self.as_ref().default_prevented()
+        self.as_web_sys_event().default_prevented()
     }
 
     fn event_phase(&self) -> EventPhase {
-        match self.as_ref().event_phase() {
+        match self.as_web_sys_event().event_phase() {
             web_sys::Event::NONE => EventPhase::None,
             web_sys::Event::CAPTURING_PHASE => EventPhase::CapturingPhase,
             web_sys::Event::AT_TARGET => EventPhase::AtTarget,
@@ -35,36 +49,101 @@ pub trait Event: AsRef<web_sys::Event> {
         }
     }
 
-    fn event_type(&self) -> String {
-        self.as_ref().type_()
+    fn type_name(&self) -> String {
+        self.as_web_sys_event().type_()
     }
 
-    fn target(&self) -> Option<GenericEventTarget> {
-        self.as_ref().target().map(|t| t.into())
+    fn target(&self) -> Option<DynamicEventTarget> {
+        self.as_web_sys_event().target().map(|t| t.into())
     }
 
-    fn current_target(&self) -> Option<GenericEventTarget> {
-        self.as_ref().current_target().map(|t| t.into())
+    fn current_target(&self) -> Option<Self::CurrentTarget> {
+        self.as_web_sys_event().current_target().map(|t| t.into())
     }
 
     fn composed_path(&self) -> ComposedPath {
         ComposedPath {
-            inner: self.as_ref().composed_path(),
+            inner: self.as_web_sys_event().composed_path(),
         }
     }
 
     fn prevent_default(&self) {
-        self.as_ref().prevent_default()
+        self.as_web_sys_event().prevent_default()
     }
 
     fn stop_propagation(&self) {
-        self.as_ref().stop_propagation()
+        self.as_web_sys_event().stop_propagation()
     }
 
     fn stop_immediate_propagation(&self) {
-        self.as_ref().stop_immediate_propagation()
+        self.as_web_sys_event().stop_immediate_propagation()
     }
 }
+
+pub trait TypedEvent: Event {
+    const TYPE_NAME: &'static str;
+}
+
+macro_rules! impl_typed_event_traits {
+    ($tpe:ident, $web_sys_tpe:ident, $tpe_name:literal) => {
+        impl<T> AsRef<web_sys::Event> for $tpe<T> {
+            fn as_ref(&self) -> &web_sys::Event {
+                &self.inner
+            }
+        }
+
+        impl<T> $crate::event::event::event_seal::Seal for $tpe<T>
+        where
+            T: $crate::event::EventTarget,
+        {
+            fn as_web_sys_event(&self) -> &web_sys::Event {
+                self.as_ref()
+            }
+
+            fn from_web_sys_event_unchecked(event: web_sys::Event) -> Self {
+                $tpe {
+                    inner: event.unchecked_into(),
+                    _marker: marker::PhantomData,
+                }
+            }
+        }
+
+        impl<T> $crate::event::Event for $tpe<T>
+        where
+            T: $crate::event::EventTarget,
+        {
+            type CurrentTarget = T;
+        }
+
+        impl<T> $crate::event::TypedEvent for $tpe<T>
+        where
+            T: $crate::event::EventTarget,
+        {
+            const TYPE_NAME: &'static str = $tpe_name;
+        }
+
+        impl<T> TryFrom<$crate::event::DynamicEvent<T>> for $tpe<T> {
+            type Error = $crate::InvalidCast<$tpe<T>>;
+
+            fn try_from(value: DynamicEvent) -> Result<Self, Self::Error> {
+                let value: web_sys::Event = value.into();
+
+                if &value.type_() != $tpe_name {
+                    return Err($crate::InvalidCast(value.into()));
+                }
+
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .map(|e| e.into())
+                    .map_err(|e| $crate::InvalidCast(e.into()))
+            }
+        }
+
+        $crate::impl_common_wrapper_traits!($tpe);
+    };
+}
+
+pub(crate) use impl_typed_event_traits;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum EventPhase {
@@ -74,153 +153,54 @@ pub enum EventPhase {
     BubblingPhase,
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub struct GenericEventTarget {
-    inner: web_sys::EventTarget,
-}
+unchecked_cast_array_wrapper!(
+    DynamicEventTarget,
+    web_sys::EventTarget,
+    ComposedPath,
+    ComposedPathIter
+);
 
-impl From<web_sys::EventTarget> for GenericEventTarget {
-    fn from(inner: web_sys::EventTarget) -> Self {
-        GenericEventTarget { inner }
-    }
-}
-
-impl From<GenericEventTarget> for web_sys::EventTarget {
-    fn from(event_target: GenericEventTarget) -> Self {
-        event_target.inner
-    }
-}
-
-impl AsRef<web_sys::EventTarget> for GenericEventTarget {
-    fn as_ref(&self) -> &web_sys::EventTarget {
-        &self.inner
-    }
-}
-
-impl Write for GenericEventTarget {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-#[derive(Debug)]
-pub struct ComposedPath {
-    inner: js_sys::Array,
-}
-
-impl ComposedPath {
-    pub fn get(&self, index: usize) -> Option<GenericEventTarget> {
-        u32::try_from(index).ok().map(|index| GenericEventTarget {
-            inner: self.inner.get(index).unchecked_into(),
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<GenericEventTarget> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<GenericEventTarget> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-}
-
-impl Write for ComposedPath {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-impl IntoIterator for ComposedPath {
-    type Item = GenericEventTarget;
-    type IntoIter = ComposedPathIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        ComposedPathIntoIter {
-            composed_path: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct ComposedPathIter<'a> {
-    composed_path: &'a ComposedPath,
-    current: usize,
-}
-
-impl<'a> Iterator for ComposedPathIter<'a> {
-    type Item = GenericEventTarget;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.composed_path.get(current)
-    }
-}
-
-pub struct ComposedPathIntoIter {
-    composed_path: ComposedPath,
-    current: usize,
-}
-
-impl Iterator for ComposedPathIntoIter {
-    type Item = GenericEventTarget;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.composed_path.get(current)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct GenericEvent {
+pub struct DynamicEvent<T> {
     inner: web_sys::Event,
+    _marker: marker::PhantomData<T>,
 }
 
-impl From<web_sys::Event> for GenericEvent {
+impl<T> Clone for DynamicEvent<T> {
+    fn clone(&self) -> Self {
+        DynamicEvent {
+            inner: self.inner.clone(),
+            _marker: marker::PhantomData,
+        }
+    }
+}
+
+impl<T> From<web_sys::Event> for DynamicEvent<T> {
     fn from(inner: web_sys::Event) -> Self {
-        GenericEvent { inner }
+        DynamicEvent {
+            inner,
+            _marker: marker::PhantomData,
+        }
     }
 }
 
-impl FromEvent for GenericEvent {
-    fn from_event(inner: web_sys::Event) -> Self {
-        GenericEvent { inner }
-    }
-}
-
-impl AsRef<web_sys::Event> for GenericEvent {
+impl<T> AsRef<web_sys::Event> for DynamicEvent<T> {
     fn as_ref(&self) -> &web_sys::Event {
         &self.inner
     }
 }
 
-impl Write for GenericEvent {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
+impl<T> event_seal::Seal for DynamicEvent<T> {
+    fn from_web_sys_event_unchecked(event: web_sys::Event) -> Self {
+        event.into()
+    }
+
+    fn as_web_sys_event(&self) -> &web_sys::Event {
+        self.as_ref()
     }
 }
 
-impl Event for GenericEvent {}
+impl<T> Event for DynamicEvent<T> {
+    type CurrentTarget = T;
+}
+
+impl_common_wrapper_traits!(DynamicEvent);

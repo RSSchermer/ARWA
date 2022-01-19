@@ -2,6 +2,7 @@ use delegate::delegate;
 use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
+use crate::event::GenericEventTarget;
 use crate::html::{
     GenericHtmlElement, HtmlAnchorElement, HtmlAreaElement, HtmlAudioElement, HtmlBaseElement,
     HtmlBodyElement, HtmlBrElement, HtmlButtonElement, HtmlCanvasElement, HtmlDListElement,
@@ -18,8 +19,7 @@ use crate::html::{
     HtmlTextAreaElement, HtmlTimeElement, HtmlTitleElement, HtmlTrackElement, HtmlUListElement,
     HtmlVideoElement,
 };
-use crate::{Document, GlobalEventHandlers, Node, InvalidCast, GenericNode, GenericDocument};
-use crate::event::GenericEventTarget;
+use crate::{Document, DynamicNode, GenericDocument, GlobalEventHandlers, InvalidCast, Node};
 use std::convert::TryFrom;
 
 pub struct HtmlDocument {
@@ -49,6 +49,27 @@ impl HtmlDocument {
 
         self.inner.set_design_mode(design_mode);
     }
+
+    fn head(&self) -> Option<HtmlHeadElement> {
+        self.as_ref().head().map(|h| h.into())
+    }
+
+    fn body(&self) -> Option<HtmlBodyElement> {
+        // Disregard deprecated frameset element
+        self.as_ref()
+            .body()
+            .and_then(|e| e.dyn_into::<web_sys::HtmlBodyElement>().ok())
+            .map(|body| body.into())
+    }
+
+    fn set_body(&self, body: Option<&HtmlBodyElement>) {
+        self.as_ref().set_body(body.map(|b| b.as_ref()));
+    }
+
+    // Note: not including `forms` and `images` for now. Both return live `HtmlCollection`s, which
+    // introduces headaches re. iterability. `query_selector_all` covers the almost the
+    // functionality, except in that it returns snapshot collections, which I feel is much less
+    // surprising.
 
     pub fn create_a_element(&self) -> HtmlAnchorElement {
         let element: web_sys::HtmlAnchorElement =
@@ -973,10 +994,10 @@ impl TryFrom<GenericEventTarget> for HtmlDocument {
     }
 }
 
-impl TryFrom<GenericNode> for HtmlDocument {
-    type Error = InvalidCast<GenericNode>;
+impl TryFrom<DynamicNode> for HtmlDocument {
+    type Error = InvalidCast<DynamicNode>;
 
-    fn try_from(value: GenericNode) -> Result<Self, Self::Error> {
+    fn try_from(value: DynamicNode) -> Result<Self, Self::Error> {
         let value: web_sys::Node = value.into();
 
         value

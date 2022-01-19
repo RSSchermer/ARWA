@@ -9,7 +9,7 @@ use crate::event::{
     OnUnhandledRejection, OnUnload,
 };
 use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone)]
 pub struct HtmlBodyElement {

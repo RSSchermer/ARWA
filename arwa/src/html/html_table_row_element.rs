@@ -6,7 +6,7 @@ use crate::console::{Write, Writer};
 use crate::error::RangeError;
 use crate::event::GenericEventTarget;
 use crate::html::{GenericHtmlElement, HtmlElement, HtmlTableCellElement};
-use crate::{Element, GenericElement, GenericNode, GlobalEventHandlers, InvalidCast, Node};
+use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
 
 #[derive(Clone)]
 pub struct HtmlTableRowElement {
@@ -65,10 +65,6 @@ impl<'a> TableRowCells<'a> {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
     }
 
     pub fn first(&self) -> Option<HtmlTableCellElement> {

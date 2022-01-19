@@ -21,6 +21,7 @@ impl Default for PerformanceMarkRange<'_, '_> {
     }
 }
 
+#[derive(Clone)]
 pub struct Performance {
     inner: web_sys::Performance,
 }
@@ -142,12 +143,9 @@ impl AsRef<web_sys::Performance> for Performance {
     }
 }
 
-impl Write for Performance {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(Performance);
 
+#[derive(Clone)]
 pub struct PerformanceEntry {
     inner: web_sys::PerformanceEntry,
 }
@@ -170,117 +168,15 @@ impl AsRef<web_sys::PerformanceEntry> for PerformanceEntry {
     }
 }
 
-impl Write for PerformanceEntry {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(PerformanceEntry);
 
-pub struct PerformanceEntries {
-    inner: js_sys::Array,
-}
+unchecked_cast_array!(
+    PerformanceEntry,
+    web_sys::PerformanceEntry,
+    PerformanceEntries
+);
 
-impl PerformanceEntries {
-    pub fn get(&self, index: usize) -> Option<PerformanceEntry> {
-        u32::try_from(index).ok().and_then(|index| {
-            let e = self.inner.get(index);
-
-            if e.is_undefined() {
-                None
-            } else {
-                let e: web_sys::PerformanceEntry = e.unchecked_into();
-
-                Some(e.into())
-            }
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<PerformanceEntry> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<PerformanceEntry> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn iter(&self) -> PerformanceEntriesIter {
-        PerformanceEntriesIter {
-            performance_entries: self,
-            current: 0,
-        }
-    }
-}
-
-impl Write for PerformanceEntries {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-impl IntoIterator for PerformanceEntries {
-    type Item = PerformanceEntry;
-    type IntoIter = PerformanceEntriesIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        PerformanceEntriesIntoIter {
-            performance_entries: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct PerformanceEntriesIter<'a> {
-    performance_entries: &'a PerformanceEntries,
-    current: usize,
-}
-
-impl<'a> Iterator for PerformanceEntriesIter<'a> {
-    type Item = PerformanceEntry;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_entries.get(current)
-    }
-}
-
-pub struct PerformanceEntriesIntoIter {
-    performance_entries: PerformanceEntries,
-    current: usize,
-}
-
-impl Iterator for PerformanceEntriesIntoIter {
-    type Item = PerformanceEntry;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_entries.get(current)
-    }
-}
-
+#[derive(Clone)]
 pub struct PerformanceMark {
     inner: web_sys::PerformanceMark,
 }
@@ -327,117 +223,11 @@ impl AsRef<web_sys::PerformanceEntry> for PerformanceMark {
     }
 }
 
-impl Write for PerformanceMark {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(PerformanceMark);
 
-pub struct PerformanceMarks {
-    inner: js_sys::Array,
-}
+unchecked_cast_array!(PerformanceMark, web_sys::PerformanceMark, PerformanceMarks);
 
-impl PerformanceMarks {
-    pub fn get(&self, index: usize) -> Option<PerformanceMark> {
-        u32::try_from(index).ok().and_then(|index| {
-            let e = self.inner.get(index);
-
-            if e.is_undefined() {
-                None
-            } else {
-                let e: web_sys::PerformanceMark = e.unchecked_into();
-
-                Some(e.into())
-            }
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<PerformanceMark> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<PerformanceMark> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn iter(&self) -> PerformanceMarksIter {
-        PerformanceMarksIter {
-            performance_marks: self,
-            current: 0,
-        }
-    }
-}
-
-impl Write for PerformanceMarks {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-impl IntoIterator for PerformanceMarks {
-    type Item = PerformanceMark;
-    type IntoIter = PerformanceMarksIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        PerformanceMarksIntoIter {
-            performance_marks: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct PerformanceMarksIter<'a> {
-    performance_marks: &'a PerformanceMarks,
-    current: usize,
-}
-
-impl<'a> Iterator for PerformanceMarksIter<'a> {
-    type Item = PerformanceMark;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_marks.get(current)
-    }
-}
-
-pub struct PerformanceMarksIntoIter {
-    performance_marks: PerformanceMarks,
-    current: usize,
-}
-
-impl Iterator for PerformanceMarksIntoIter {
-    type Item = PerformanceMark;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_marks.get(current)
-    }
-}
-
+#[derive(Clone)]
 pub struct PerformanceMeasure {
     inner: web_sys::PerformanceMeasure,
 }
@@ -484,117 +274,15 @@ impl AsRef<web_sys::PerformanceEntry> for PerformanceMeasure {
     }
 }
 
-impl Write for PerformanceMeasure {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(PerformanceMeasure);
 
-pub struct PerformanceMeasures {
-    inner: js_sys::Array,
-}
+unchecked_cast_array!(
+    PerformanceMeasure,
+    web_sys::PerformanceMeasure,
+    PerformanceMeasures
+);
 
-impl PerformanceMeasures {
-    pub fn get(&self, index: usize) -> Option<PerformanceMeasure> {
-        u32::try_from(index).ok().and_then(|index| {
-            let e = self.inner.get(index);
-
-            if e.is_undefined() {
-                None
-            } else {
-                let e: web_sys::PerformanceMeasure = e.unchecked_into();
-
-                Some(e.into())
-            }
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<PerformanceMeasure> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<PerformanceMeasure> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn iter(&self) -> PerformanceMeasuresIter {
-        PerformanceMeasuresIter {
-            performance_measures: self,
-            current: 0,
-        }
-    }
-}
-
-impl Write for PerformanceMeasures {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-impl IntoIterator for PerformanceMeasures {
-    type Item = PerformanceMeasure;
-    type IntoIter = PerformanceMeasuresIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        PerformanceMeasuresIntoIter {
-            performance_measures: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct PerformanceMeasuresIter<'a> {
-    performance_measures: &'a PerformanceMeasures,
-    current: usize,
-}
-
-impl<'a> Iterator for PerformanceMeasuresIter<'a> {
-    type Item = PerformanceMeasure;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_measures.get(current)
-    }
-}
-
-pub struct PerformanceMeasuresIntoIter {
-    performance_measures: PerformanceMeasures,
-    current: usize,
-}
-
-impl Iterator for PerformanceMeasuresIntoIter {
-    type Item = PerformanceMeasure;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_measures.get(current)
-    }
-}
-
+#[derive(Clone)]
 pub struct PerformanceResourceTiming {
     inner: web_sys::PerformanceResourceTiming,
 }
@@ -687,117 +375,15 @@ impl AsRef<web_sys::PerformanceEntry> for PerformanceResourceTiming {
     }
 }
 
-impl Write for PerformanceResourceTiming {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(PerformanceResourceTiming);
 
-pub struct PerformanceResourceTimings {
-    inner: js_sys::Array,
-}
+unchecked_cast_array!(
+    PerformanceResourceTiming,
+    web_sys::PerformanceResourceTiming,
+    PerformanceResourceTimings
+);
 
-impl PerformanceResourceTimings {
-    pub fn get(&self, index: usize) -> Option<PerformanceResourceTiming> {
-        u32::try_from(index).ok().and_then(|index| {
-            let e = self.inner.get(index);
-
-            if e.is_undefined() {
-                None
-            } else {
-                let e: web_sys::PerformanceResourceTiming = e.unchecked_into();
-
-                Some(e.into())
-            }
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<PerformanceResourceTiming> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<PerformanceResourceTiming> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn iter(&self) -> PerformanceResourceTimingsIter {
-        PerformanceResourceTimingsIter {
-            performance_resource_timings: self,
-            current: 0,
-        }
-    }
-}
-
-impl Write for PerformanceResourceTimings {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-impl IntoIterator for PerformanceResourceTimings {
-    type Item = PerformanceResourceTiming;
-    type IntoIter = PerformanceResourceTimingsIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        PerformanceResourceTimingsIntoIter {
-            performance_resource_timings: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct PerformanceResourceTimingsIter<'a> {
-    performance_resource_timings: &'a PerformanceResourceTimings,
-    current: usize,
-}
-
-impl<'a> Iterator for PerformanceResourceTimingsIter<'a> {
-    type Item = PerformanceResourceTiming;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_resource_timings.get(current)
-    }
-}
-
-pub struct PerformanceResourceTimingsIntoIter {
-    performance_resource_timings: PerformanceResourceTimings,
-    current: usize,
-}
-
-impl Iterator for PerformanceResourceTimingsIntoIter {
-    type Item = PerformanceResourceTiming;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_resource_timings.get(current)
-    }
-}
-
+#[derive(Clone)]
 pub struct PerformanceServerTiming {
     inner: web_sys::PerformanceServerTiming,
 }
@@ -826,113 +412,10 @@ impl AsRef<web_sys::PerformanceServerTiming> for PerformanceServerTiming {
     }
 }
 
-impl Write for PerformanceServerTiming {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(PerformanceServerTiming);
 
-pub struct PerformanceServerTimings {
-    inner: js_sys::Array,
-}
-
-impl PerformanceServerTimings {
-    pub fn get(&self, index: usize) -> Option<PerformanceServerTiming> {
-        u32::try_from(index).ok().and_then(|index| {
-            let e = self.inner.get(index);
-
-            if e.is_undefined() {
-                None
-            } else {
-                let e: web_sys::PerformanceServerTiming = e.unchecked_into();
-
-                Some(e.into())
-            }
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn is_not_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    pub fn first(&self) -> Option<PerformanceServerTiming> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<PerformanceServerTiming> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn iter(&self) -> PerformanceServerTimingsIter {
-        PerformanceServerTimingsIter {
-            performance_server_timings: self,
-            current: 0,
-        }
-    }
-}
-
-impl Write for PerformanceServerTimings {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-impl IntoIterator for PerformanceServerTimings {
-    type Item = PerformanceServerTiming;
-    type IntoIter = PerformanceServerTimingsIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        PerformanceServerTimingsIntoIter {
-            performance_server_timings: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct PerformanceServerTimingsIter<'a> {
-    performance_server_timings: &'a PerformanceServerTimings,
-    current: usize,
-}
-
-impl<'a> Iterator for PerformanceServerTimingsIter<'a> {
-    type Item = PerformanceServerTiming;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_server_timings.get(current)
-    }
-}
-
-pub struct PerformanceServerTimingsIntoIter {
-    performance_server_timings: PerformanceServerTimings,
-    current: usize,
-}
-
-impl Iterator for PerformanceServerTimingsIntoIter {
-    type Item = PerformanceServerTiming;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.performance_server_timings.get(current)
-    }
-}
+unchecked_cast_array!(
+    PerformanceServerTiming,
+    web_sys::PerformanceServerTiming,
+    PerformanceServerTimings
+);
