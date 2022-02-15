@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlBodyElement> for HtmlBodyElement {
 impl_html_element_traits!(HtmlBodyElement);
 impl_try_from_element!(HtmlBodyElement);
 impl_known_element!(HtmlBodyElement, "BODY");
+impl_shadow_host_for_element!(HtmlBodyElement);

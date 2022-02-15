@@ -18,3 +18,4 @@ impl AsRef<web_sys::HtmlSpanElement> for HtmlSpanElement {
 impl_html_element_traits!(HtmlSpanElement);
 impl_try_from_element!(HtmlSpanElement);
 impl_known_element!(HtmlSpanElement, "SPAN");
+impl_shadow_host_for_element!(HtmlSpanElement);

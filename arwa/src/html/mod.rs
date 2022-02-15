@@ -130,8 +130,8 @@ pub use self::html_option_element::*;
 mod html_output_element;
 pub use self::html_output_element::*;
 
-mod html_paragraph_element;
-pub use self::html_paragraph_element::*;
+mod html_p_element;
+pub use self::html_p_element::*;
 
 mod html_param_element;
 pub use self::html_param_element::*;

@@ -141,3 +141,17 @@ impl AsRef<web_sys::ShadowRoot> for ShadowRoot {
 }
 
 impl_document_fragment_traits!(ShadowRoot);
+
+macro_rules! impl_shadow_host_for_element {
+    ($tpe:ident) => {
+        impl shadow_host_seal::Seal for HtmlArticleElement {
+            fn as_web_sys_element(&self) -> &web_sys::Element {
+                self.inner.as_ref()
+            }
+        }
+
+        impl ShadowHost for HtmlArticleElement {}
+    }
+}
+
+pub(crate) use impl_shadow_host_for_element;

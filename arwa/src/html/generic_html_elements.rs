@@ -1,3 +1,5 @@
+use crate::dom::{shadow_host_seal, ShadowHost};
+
 macro_rules! generic_html_element {
     ($tpe:ident, $tag_name:literal) => {
         #[derive(Clone)]
@@ -49,3 +51,12 @@ generic_html_element!(HtmlVarElement, "VAR");
 generic_html_element!(HtmlWbrElement, "WBR");
 generic_html_element!(HtmlNoscriptElement, "NOSCRIPT");
 generic_html_element!(HtmlSummaryElement, "SUMMARY");
+
+impl_shadow_host_for_element!(HtmlArticleElement);
+impl_shadow_host_for_element!(HtmlAsideElement);
+impl_shadow_host_for_element!(HtmlBlockquoteElement);
+impl_shadow_host_for_element!(HtmlHeaderElement);
+impl_shadow_host_for_element!(HtmlFooterElement);
+impl_shadow_host_for_element!(HtmlMainElement);
+impl_shadow_host_for_element!(HtmlNavElement);
+impl_shadow_host_for_element!(HtmlSectionElement);

@@ -18,3 +18,4 @@ impl AsRef<web_sys::HtmlDivElement> for HtmlDivElement {
 impl_html_element_traits!(HtmlDivElement);
 impl_try_from_element!(HtmlDivElement);
 impl_known_element!(HtmlDivElement, "DIV");
+impl_shadow_host_for_element!(HtmlDivElement);
