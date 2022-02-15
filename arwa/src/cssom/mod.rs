@@ -46,17 +46,23 @@ pub use self::css_style_rule::*;
 mod css_supports_rule;
 pub use self::css_supports_rule::*;
 
-mod element_css_inline_style;
-pub use self::element_css_inline_style::*;
+mod inline_style_context;
+pub use self::inline_style_context::*;
 
 mod insert_rule_error;
 pub use self::insert_rule_error::*;
+
+mod link_style;
+pub use self::link_style::*;
 
 mod media;
 pub use self::media::*;
 
 mod screen;
 pub use self::screen::*;
+
+mod style_context;
+pub use self::style_context::*;
 
 mod style_sheet;
 pub use self::style_sheet::*;

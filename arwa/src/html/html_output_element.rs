@@ -1,13 +1,10 @@
+use crate::html::{
+    constraint_validation_target_seal, form_listed_element_seal, labelable_element_seal,
+    ConstraintValidationTarget, DynamicFormListedElement, FormListedElement, HtmlFormElement,
+    LabelableElement, Labels, ValidityState,
+};
+use crate::InvalidCast;
 use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement, Labels};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
-pub use web_sys::ValidityState;
 
 #[derive(Clone)]
 pub struct HtmlOutputElement {
@@ -17,10 +14,6 @@ pub struct HtmlOutputElement {
 impl HtmlOutputElement {
     delegate! {
         target self.inner {
-            pub fn name(&self) -> String;
-
-            pub fn set_name(&self, name: &str);
-
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -28,34 +21,86 @@ impl HtmlOutputElement {
             pub fn default_value(&self) -> String;
 
             pub fn set_default_value(&self, default_value: &str);
-
-            pub fn check_validity(&self) -> bool;
-
-            pub fn report_validity(&self) -> bool;
-
-            pub fn will_validate(&self) -> bool;
-
-            pub fn validity(&self) -> ValidityState;
-
-            pub fn set_custom_validity(&self, error: &str);
         }
     }
 
     // TODO: decide what to do about `type`, which is a readonly attribute that can only be
     // "output". This may make sense in a dynamic language, but may not in Rust.
+}
 
-    pub fn form(&self) -> Option<HtmlFormElement> {
+impl form_listed_element_seal::Seal for HtmlOutputElement {}
+
+impl FormListedElement for HtmlOutputElement {
+    delegate! {
+        to self.inner {
+            fn name(&self) -> String;
+
+            fn set_name(&self, name: &str);
+        }
+    }
+
+    fn form(&self) -> Option<HtmlFormElement> {
         self.inner.form().map(|form| form.into())
     }
+}
 
-    pub fn validation_message(&self) -> String {
-        // There's no indication in the spec that this can actually fail, unwrap for now.
-        self.inner.validation_message().unwrap()
+impl TryFrom<DynamicFormListedElement> for HtmlOutputElement {
+    type Error = InvalidCast<DynamicFormListedElement>;
+
+    fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
+        let value: web_sys::HtmlElement = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlOutputElement>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
+    }
+}
+
+impl constraint_validation_target_seal::Seal for HtmlOutputElement {}
+
+impl ConstraintValidationTarget for HtmlOutputElement {
+    delegate! {
+        to self.inner {
+            fn will_validate(&self) -> bool;
+
+            fn check_validity(&self) -> bool;
+
+            fn report_validity(&self) -> bool;
+
+            fn set_custom_validity(&self, error: &str);
+        }
     }
 
-    pub fn labels(&self) -> Labels {
+    fn validity(&self) -> ValidityState {
+        self.inner.validity().into()
+    }
+
+    fn validation_message(&self) -> String {
+        self.inner.validation_message().unwrap_or(String::new())
+    }
+}
+
+impl labelable_element_seal::Seal for HtmlOutputElement {}
+
+impl LabelableElement for HtmlOutputElement {
+    fn labels(&self) -> Labels {
         Labels::new(self.inner.labels())
     }
 }
 
-impl_html_common_traits!(HtmlOutputElement);
+impl From<web_sys::HtmlOutputElement> for HtmlOutputElement {
+    fn from(inner: web_sys::HtmlOutputElement) -> Self {
+        HtmlOutputElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlOutputElement> for HtmlOutputElement {
+    fn as_ref(&self) -> &web_sys::HtmlOutputElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlOutputElement);
+impl_try_from_element!(HtmlOutputElement);
+impl_known_element!(HtmlOutputElement, "OUTPUT");

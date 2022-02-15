@@ -1,13 +1,12 @@
+use crate::html::{
+    constraint_validation_target_seal, form_listed_element_seal, form_submitter_element_seal,
+    labelable_element_seal, ConstraintValidationTarget, DynamicFormListedElement, FormEncoding,
+    FormListedElement, FormMethod, FormSubmitterElement, HtmlFormElement, LabelableElement, Labels,
+    ValidityState,
+};
+use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::InvalidCast;
 use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{FormMethod, GenericHtmlElement, HtmlElement, HtmlFormElement, Labels};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
-pub use web_sys::ValidityState;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ButtonType {
@@ -29,11 +28,7 @@ pub struct HtmlButtonElement {
 
 impl HtmlButtonElement {
     delegate! {
-        target self.inner {
-            pub fn name(&self) -> String;
-
-            pub fn set_name(&self, name: &str);
-
+        to self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -45,26 +40,6 @@ impl HtmlButtonElement {
             pub fn disabled(&self) -> bool;
 
             pub fn set_disabled(&self, disabled: bool);
-
-            pub fn form_action(&self) -> String;
-
-            pub fn set_form_action(&self, form_action: &str);
-
-            pub fn form_no_validate(&self) -> bool;
-
-            pub fn set_form_no_validate(&self, form_no_validate: bool);
-
-            pub fn form_target(&self) -> String;
-
-            pub fn set_form_target(&self, form_target: &str);
-
-            pub fn check_validity(&self) -> bool;
-
-            pub fn report_validity(&self) -> bool;
-
-            pub fn set_custom_validity(&self, error: &str);
-
-            pub fn validity(&self) -> ValidityState;
         }
     }
 
@@ -85,20 +60,78 @@ impl HtmlButtonElement {
 
         self.inner.set_type(button_type);
     }
+}
 
-    pub fn form(&self) -> Option<HtmlFormElement> {
+impl form_listed_element_seal::Seal for HtmlButtonElement {}
+
+impl FormListedElement for HtmlButtonElement {
+    delegate! {
+        to self.inner {
+            fn name(&self) -> String;
+
+            fn set_name(&self, name: &str);
+        }
+    }
+
+    fn form(&self) -> Option<HtmlFormElement> {
         self.inner.form().map(|form| form.into())
     }
+}
 
-    pub fn form_encoding(&self) -> String {
-        self.inner.form_enctype()
+impl TryFrom<DynamicFormListedElement> for HtmlButtonElement {
+    type Error = InvalidCast<DynamicFormListedElement>;
+
+    fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
+        let value: web_sys::HtmlElement = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlButtonElement>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
+    }
+}
+
+impl form_submitter_element_seal::Seal for HtmlButtonElement {}
+
+impl FormSubmitterElement for HtmlButtonElement {
+    delegate! {
+        to self.inner {
+            fn form_no_validate(&self) -> bool;
+
+            fn set_form_no_validate(&self, form_no_validate: bool);
+
+            fn form_target(&self) -> String;
+
+            fn set_form_target(&self, form_target: &str);
+        }
     }
 
-    pub fn set_form_encoding(&self, encoding: &str) {
-        self.inner.set_form_enctype(encoding);
+    fn form_action(&self) -> Option<Url> {
+        Url::parse(self.inner.form_action()).ok()
     }
 
-    pub fn form_method(&self) -> FormMethod {
+    fn set_form_action<T>(&self, form_action: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.set_form_action(form_action.as_str());
+    }
+
+    fn form_encoding(&self) -> Option<FormEncoding> {
+        match self.inner.form_enctype().as_ref() {
+            "multipart/form-data" => Some(FormEncoding::FormData),
+            "text/plain" => Some(FormEncoding::Plain),
+            "application/x-www-form-urlencoded" => Some(FormEncoding::UrlEncoded),
+            _ => None,
+        }
+    }
+
+    fn set_form_encoding(&self, encoding: Option<FormEncoding>) {
+        self.inner
+            .set_form_enctype(encoding.map(|e| e.as_ref()).unwrap_or(""));
+    }
+
+    fn form_method(&self) -> FormMethod {
         match &*self.inner.form_method() {
             "post" => FormMethod::Post,
             "dialog" => FormMethod::Dialog,
@@ -106,7 +139,7 @@ impl HtmlButtonElement {
         }
     }
 
-    pub fn set_form_method(&self, method: FormMethod) {
+    fn set_form_method(&self, method: FormMethod) {
         let method = match method {
             FormMethod::Get => "get",
             FormMethod::Post => "post",
@@ -115,15 +148,52 @@ impl HtmlButtonElement {
 
         self.inner.set_form_method(method);
     }
+}
 
-    pub fn validation_message(&self) -> String {
-        // There's no indication in the spec that this can actually fail, unwrap for now.
-        self.inner.validation_message().unwrap()
-    }
+impl labelable_element_seal::Seal for HtmlButtonElement {}
 
-    pub fn labels(&self) -> Labels {
+impl LabelableElement for HtmlButtonElement {
+    fn labels(&self) -> Labels {
         Labels::new(self.inner.labels())
     }
 }
 
-impl_html_common_traits!(HtmlButtonElement);
+impl constraint_validation_target_seal::Seal for HtmlButtonElement {}
+
+impl ConstraintValidationTarget for HtmlButtonElement {
+    delegate! {
+        to self.inner {
+            fn will_validate(&self) -> bool;
+
+            fn check_validity(&self) -> bool;
+
+            fn report_validity(&self) -> bool;
+
+            fn set_custom_validity(&self, error: &str);
+        }
+    }
+
+    fn validity(&self) -> ValidityState {
+        self.inner.validity().into()
+    }
+
+    fn validation_message(&self) -> String {
+        self.inner.validation_message().unwrap_or(String::new())
+    }
+}
+
+impl From<web_sys::HtmlButtonElement> for HtmlButtonElement {
+    fn from(inner: web_sys::HtmlButtonElement) -> Self {
+        HtmlButtonElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlButtonElement> for HtmlButtonElement {
+    fn as_ref(&self) -> &web_sys::HtmlButtonElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlButtonElement);
+impl_try_from_element!(HtmlButtonElement);
+impl_known_element!(HtmlButtonElement, "BUTTON");

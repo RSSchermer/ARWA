@@ -1,7 +1,8 @@
+use crate::fetch::{cache_context_seal, CacheContext};
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
-use crate::url::ContextualUrl;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
 use crate::InvalidCast;
 use std::convert::TryFrom;
 use std::future::Future;
@@ -11,7 +12,6 @@ use url::Url;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::ServiceWorkerRegistration;
-use crate::fetch::{CacheContext, cache_context_seal};
 
 #[derive(Clone)]
 pub struct ServiceWorkerGlobalScope {
@@ -98,14 +98,20 @@ impl Clients {
     pub fn claim(&self) -> ClaimClients {
         ClaimClients {
             clients: Some(self.inner.clone()),
-            inner: None
+            inner: None,
         }
     }
 
-    pub fn open_window(&self, url: ContextualUrl) -> OpenWindowClient {
+    pub fn open_window<T>(&self, url: T) -> OpenWindowClient
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
         OpenWindowClient {
-            init: Some(OpenWindowClientInit { clients: self.inner.clone(), url: url.to_string() }),
-            inner: None
+            init: Some(OpenWindowClientInit {
+                clients: self.inner.clone(),
+                url: url.as_str().to_string(),
+            }),
+            inner: None,
         }
     }
 }
@@ -206,21 +212,22 @@ impl Future for OpenWindowClient {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
-            let OpenWindowClientInit {
-                clients,
-                url,
-            } = init;
+            let OpenWindowClientInit { clients, url } = init;
 
             self.inner = Some(clients.open_window(&url).into());
         }
 
-        self.inner.as_mut().unwrap().poll(cx).map_ok(|v| {
-            if v.is_null() {
-                None
-            } else {
-                Some(WindowClient::from(v.unchecked_into()))
-            }
-        })
+        self.inner
+            .as_mut()
+            .unwrap()
+            .poll(cx)
+            .map_ok(|v| {
+                if v.is_null() {
+                    None
+                } else {
+                    Some(WindowClient::from(v.unchecked_into()))
+                }
+            })
             .map_err(|err| OpenWindowClientError::new(err.unchecked_into()))
     }
 }
@@ -238,21 +245,23 @@ impl Future for ClaimClients {
             self.inner = Some(clients.claim().into());
         }
 
-        self.inner.as_mut().unwrap().poll(cx).map_ok(|_| ())
+        self.inner
+            .as_mut()
+            .unwrap()
+            .poll(cx)
+            .map_ok(|_| ())
             .map_err(|err| ClaimClientsError::new(err.unchecked_into()))
     }
 }
 
 #[derive(Clone)]
 pub struct ClaimClientsError {
-    inner: web_sys::DomException
+    inner: web_sys::DomException,
 }
 
 impl ClaimClientsError {
     fn new(inner: web_sys::DomException) -> Self {
-        ClaimClientsError {
-            inner
-        }
+        ClaimClientsError { inner }
     }
 }
 
@@ -368,11 +377,14 @@ impl WindowClient {
         }
     }
 
-    pub fn navigate(&self, url: ContextualUrl) -> NavigateWindowClient {
+    pub fn navigate<T>(&self, url: T) -> NavigateWindowClient
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
         NavigateWindowClient {
             init: Some(NavigateWindowClientInit {
                 window_client: self.inner.clone(),
-                url: url.to_string(),
+                url: url.as_str().to_string(),
             }),
             inner: None,
         }

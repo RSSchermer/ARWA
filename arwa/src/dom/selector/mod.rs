@@ -59,7 +59,10 @@ impl Selector for CompiledSelector {
     }
 }
 
-impl<T> Selector for T where T: CompilableSelector {
+impl<T> Selector for T
+where
+    T: CompilableSelector,
+{
     type Compiled<'static> = CompiledSelector;
 
     fn compiled(&self) -> Self::Compiled {
@@ -114,271 +117,204 @@ mod compound_selector_seal {
 }
 
 pub trait CompoundSelector: CompilableSelector + Sized + compound_selector_seal::Seal {
-    fn is<T>(self, is: T) -> Is<Self, T> where T: CompilableSelector {
-        Is {
-            base: self,
-            is
-        }
+    fn is<T>(self, is: T) -> Is<Self, T>
+    where
+        T: CompilableSelector,
+    {
+        Is { base: self, is }
     }
 
-    fn not<T>(self, not: T) -> Not<Self, T> where T: CompilableSelector {
-        Not {
-            base: self,
-            not
-        }
+    fn not<T>(self, not: T) -> Not<Self, T>
+    where
+        T: CompilableSelector,
+    {
+        Not { base: self, not }
     }
 
-    fn where_<T>(self, where_: T) -> Where<Self, T> where T: CompilableSelector {
-        Where {
-            base: self,
-            where_
-        }
+    fn where_<T>(self, where_: T) -> Where<Self, T>
+    where
+        T: CompilableSelector,
+    {
+        Where { base: self, where_ }
     }
 
-    fn has<T>(self, has: T) -> Has<Self, T> where T: RelativeSelector {
-        Has {
-            base: self,
-            has
-        }
+    fn has<T>(self, has: T) -> Has<Self, T>
+    where
+        T: RelativeSelector,
+    {
+        Has { base: self, has }
     }
-    
+
     fn dir(self, text_directionality: TextDirectionality) -> Dir<Self> {
         Dir {
             selector: self,
-            text_directionality
+            text_directionality,
         }
     }
 
     fn lang(self, language: &str) -> Lang<Self> {
         Lang {
             selector: self,
-            language
+            language,
         }
     }
 
     fn any_link(self) -> AnyLink<Self> {
-        AnyLink {
-            selector: self
-        }
+        AnyLink { selector: self }
     }
 
     fn link(self) -> Link<Self> {
-        Link {
-            selector: self
-        }
+        Link { selector: self }
     }
 
     fn visited(self) -> Visited<Self> {
-        Visited {
-            selector: self
-        }
+        Visited { selector: self }
     }
 
     fn local_link(self) -> LocalLink<Self> {
-        LocalLink {
-            selector: self
-        }
+        LocalLink { selector: self }
     }
 
     fn target(self) -> Target<Self> {
-        Target {
-            selector: self
-        }
+        Target { selector: self }
     }
 
     fn target_within(self) -> TargetWithin<Self> {
-        TargetWithin {
-            selector: self
-        }
+        TargetWithin { selector: self }
     }
 
     fn scope(self) -> Scope<Self> {
-        Scope {
-            selector: self
-        }
+        Scope { selector: self }
     }
 
     fn hover(self) -> Hover<Self> {
-        Hover {
-            selector: self
-        }
+        Hover { selector: self }
     }
 
     fn active(self) -> Active<Self> {
-        Active {
-            selector: self
-        }
+        Active { selector: self }
     }
 
     fn focus(self) -> Focus<Self> {
-        Focus {
-            selector: self
-        }
+        Focus { selector: self }
     }
 
     fn focus_visible(self) -> FocusVisible<Self> {
-        FocusVisible {
-            selector: self
-        }
+        FocusVisible { selector: self }
     }
 
     fn focus_within(self) -> FocusWithin<Self> {
-        FocusWithin {
-            selector: self
-        }
+        FocusWithin { selector: self }
     }
 
     fn current(self) -> Current<Self> {
-        Current {
-            selector: self
-        }
+        Current { selector: self }
     }
 
     fn past(self) -> Past<Self> {
-        Past {
-            selector: self
-        }
+        Past { selector: self }
     }
 
     fn future(self) -> Future<Self> {
-        Future {
-            selector: self
-        }
+        Future { selector: self }
     }
 
     fn playing(self) -> Playing<Self> {
-        Playing {
-            selector: self
-        }
+        Playing { selector: self }
     }
 
     fn paused(self) -> Paused<Self> {
-        Paused {
-            selector: self
-        }
+        Paused { selector: self }
     }
 
     fn enabled(self) -> Enabled<Self> {
-        Enabled {
-            selector: self
-        }
+        Enabled { selector: self }
     }
 
     fn disabled(self) -> Disabled<Self> {
-        Disabled {
-            selector: self
-        }
+        Disabled { selector: self }
     }
 
     fn read_only(self) -> ReadOnly<Self> {
-        ReadOnly {
-            selector: self
-        }
+        ReadOnly { selector: self }
     }
 
     fn read_write(self) -> ReadWrite<Self> {
-        ReadWrite {
-            selector: self
-        }
+        ReadWrite { selector: self }
     }
 
     fn placeholder_shown(self) -> PlaceholderShown<Self> {
-        PlaceholderShown {
-            selector: self
-        }
+        PlaceholderShown { selector: self }
     }
 
     fn default(self) -> Default<Self> {
-        Default {
-            selector: self
-        }
+        Default { selector: self }
     }
 
     fn checked(self) -> Checked<Self> {
-        Checked {
-            selector: self
-        }
+        Checked { selector: self }
     }
 
     fn indeterminate(self) -> Indeterminate<Self> {
-        Indeterminate {
-            selector: self
-        }
+        Indeterminate { selector: self }
     }
 
     fn blank(self) -> Blank<Self> {
-        Blank {
-            selector: self
-        }
+        Blank { selector: self }
     }
 
     fn valid(self) -> Valid<Self> {
-        Valid {
-            selector: self
-        }
+        Valid { selector: self }
     }
 
     fn invalid(self) -> Invalid<Self> {
-        Invalid {
-            selector: self
-        }
+        Invalid { selector: self }
     }
 
     fn in_range(self) -> InRange<Self> {
-        InRange {
-            selector: self
-        }
+        InRange { selector: self }
     }
 
     fn out_of_range(self) -> OutOfRange<Self> {
-        OutOfRange {
-            selector: self
-        }
+        OutOfRange { selector: self }
     }
 
     fn required(self) -> Required<Self> {
-        Required {
-            selector: self
-        }
+        Required { selector: self }
     }
 
     fn optional(self) -> Optional<Self> {
-        Optional {
-            selector: self
-        }
+        Optional { selector: self }
     }
 
     fn user_invalid(self) -> UserInvalid<Self> {
-        UserInvalid {
-            selector: self
-        }
+        UserInvalid { selector: self }
     }
 
     fn root(self) -> Root<Self> {
-        Root {
-            selector: self
-        }
+        Root { selector: self }
     }
 
     fn empty(self) -> Empty<Self> {
-        Empty {
-            selector: self
-        }
+        Empty { selector: self }
     }
 
     fn nth_child(self, a_n_plus_b: ANPlusB) -> NthChild<Self, ()> {
         NthChild {
             selector: self,
             a_n_plus_b,
-            of: ()
+            of: (),
         }
     }
 
-    fn nth_child_of<S>(self, a_n_plus_b: ANPlusB, of: S) -> NthChild<Self, S> where S: CompilableSelector {
+    fn nth_child_of<S>(self, a_n_plus_b: ANPlusB, of: S) -> NthChild<Self, S>
+    where
+        S: CompilableSelector,
+    {
         NthChild {
             selector: self,
             a_n_plus_b,
-            of
+            of,
         }
     }
 
@@ -386,34 +322,31 @@ pub trait CompoundSelector: CompilableSelector + Sized + compound_selector_seal:
         NthLastChild {
             selector: self,
             a_n_plus_b,
-            of: ()
+            of: (),
         }
     }
 
-    fn nth_last_child_of<S>(self, a_n_plus_b: ANPlusB, of: S) -> NthLastChild<Self, S> where S: CompilableSelector {
+    fn nth_last_child_of<S>(self, a_n_plus_b: ANPlusB, of: S) -> NthLastChild<Self, S>
+    where
+        S: CompilableSelector,
+    {
         NthLastChild {
             selector: self,
             a_n_plus_b,
-            of
+            of,
         }
     }
 
     fn first_child(self) -> FirstChild<Self> {
-        FirstChild {
-            selector: self
-        }
+        FirstChild { selector: self }
     }
 
     fn last_child(self) -> LastChild<Self> {
-        LastChild {
-            selector: self
-        }
+        LastChild { selector: self }
     }
 
     fn only_child(self) -> OnlyChild<Self> {
-        OnlyChild {
-            selector: self
-        }
+        OnlyChild { selector: self }
     }
 
     fn nth_of_type(self, a_n_plus_b: ANPlusB) -> NthOfType<Self> {
@@ -431,21 +364,15 @@ pub trait CompoundSelector: CompilableSelector + Sized + compound_selector_seal:
     }
 
     fn first_of_type(self) -> FirstOfType<Self> {
-        FirstOfType {
-            selector: self
-        }
+        FirstOfType { selector: self }
     }
 
     fn last_of_type(self) -> LastOfType<Self> {
-        LastOfType {
-            selector: self
-        }
+        LastOfType { selector: self }
     }
 
     fn only_of_type(self) -> OnlyOfType<Self> {
-        OnlyOfType {
-            selector: self
-        }
+        OnlyOfType { selector: self }
     }
 
     fn nth_col(self, a_n_plus_b: ANPlusB) -> NthCol<Self> {
@@ -549,7 +476,7 @@ const fn is_valid_identifier_first_char(c: &char) -> bool {
 }
 
 const fn is_valid_identifier_char(c: &char) -> bool {
-    is_valid_identifier_first_char(c) || c.is_ascii_digit() || c  == &'-'
+    is_valid_identifier_first_char(c) || c.is_ascii_digit() || c == &'-'
 }
 
 const fn is_valid_identifier(raw: &str) -> bool {
@@ -602,10 +529,14 @@ pub enum AttributeSelectorKind<'a> {
 
 pub struct Or<S0, S1> {
     s0: S0,
-    s1: S1
+    s1: S1,
 }
 
-impl<S0, S1> CompilableSelector for Or<S0, S1> where S0: CompilableSelector, S1: CompilableSelector {
+impl<S0, S1> CompilableSelector for Or<S0, S1>
+where
+    S0: CompilableSelector,
+    S1: CompilableSelector,
+{
     fn required_capacity(&self) -> usize {
         self.s0.required_capacity() + self.s1.required_capacity() + 2
     }
@@ -624,59 +555,71 @@ mod complex_selector_seal {
 }
 
 pub trait ComplexSelector: CompilableSelector + Sized + complex_selector_seal::Seal {
-    fn descendant_of<T>(self, base_selector: T) -> DescendantOf<T, Self> where T: ComplexSelector {
+    fn descendant_of<T>(self, base_selector: T) -> DescendantOf<T, Self>
+    where
+        T: ComplexSelector,
+    {
         DescendantOf {
             base_selector,
-            descendant_selector: Self
+            descendant_selector: Self,
         }
     }
 
     fn descendant(self) -> DescendantOf<(), Self> {
         DescendantOf {
             base_selector: (),
-            descendant_selector: Self
+            descendant_selector: Self,
         }
     }
 
-    fn child_of<T>(self, base_selector: T) -> ChildOf<T, Self> where T: ComplexSelector {
+    fn child_of<T>(self, base_selector: T) -> ChildOf<T, Self>
+    where
+        T: ComplexSelector,
+    {
         ChildOf {
             base_selector,
-            child_selector: Self
+            child_selector: Self,
         }
     }
 
     fn child(self) -> ChildOf<(), Self> {
         ChildOf {
             base_selector: (),
-            child_selector: Self
+            child_selector: Self,
         }
     }
 
-    fn next_sibling_of<T>(self, base_selector: T) -> NextSiblingOf<T, Self> where T: ComplexSelector {
+    fn next_sibling_of<T>(self, base_selector: T) -> NextSiblingOf<T, Self>
+    where
+        T: ComplexSelector,
+    {
         NextSiblingOf {
             base_selector,
-            next_sibling_selector: self
+            next_sibling_selector: self,
         }
     }
 
     fn next_sibling(self) -> NextSiblingOf<(), Self> {
         NextSiblingOf {
             base_selector: (),
-            next_sibling_selector: Self
+            next_sibling_selector: Self,
         }
     }
 
-    fn subsequent_sibling_of<T>(self, base_selector: T) -> SubsequentSiblingOf<T, Self> where T: ComplexSelector {
+    fn subsequent_sibling_of<T>(self, base_selector: T) -> SubsequentSiblingOf<T, Self>
+    where
+        T: ComplexSelector,
+    {
         SubsequentSiblingOf {
             base_selector,
-            subsequent_sibling_selector: self
+            subsequent_sibling_selector: self,
         }
     }
 
     fn subsequent_sibling(self) -> SubsequentSiblingOf<(), Self> {
         SubsequentSiblingOf {
             base_selector: (),
-            subsequent_sibling_selector: Self
+            subsequent_sibling_selector: Self,
         }
     }
 }
@@ -689,7 +632,11 @@ pub struct DescendantOf<S0, S1> {
     descendant_selector: S1,
 }
 
-impl<S0, S1> CompilableSelector for DescendantOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {
+impl<S0, S1> CompilableSelector for DescendantOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         self.base_selector.required_capacity() + self.descendant_selector.required_capacity() + 1
     }
@@ -703,15 +650,29 @@ impl<S0, S1> CompilableSelector for DescendantOf<S0, S1> where S0: ComplexSelect
     }
 }
 
-impl<S0, S1> complex_selector_seal::Seal for DescendantOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
-impl<S0, S1> ComplexSelector for DescendantOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
+impl<S0, S1> complex_selector_seal::Seal for DescendantOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
+impl<S0, S1> ComplexSelector for DescendantOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
 
 pub struct ChildOf<S0, S1> {
     base_selector: S0,
     child_selector: S1,
 }
 
-impl<S0, S1> CompilableSelector for ChildOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {
+impl<S0, S1> CompilableSelector for ChildOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         self.base_selector.required_capacity() + self.child_selector.required_capacity() + 3
     }
@@ -725,15 +686,29 @@ impl<S0, S1> CompilableSelector for ChildOf<S0, S1> where S0: ComplexSelector, S
     }
 }
 
-impl<S0, S1> complex_selector_seal::Seal for ChildOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
-impl<S0, S1> ComplexSelector for ChildOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
+impl<S0, S1> complex_selector_seal::Seal for ChildOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
+impl<S0, S1> ComplexSelector for ChildOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
 
 pub struct NextSiblingOf<S0, S1> {
     base_selector: S0,
     next_sibling_selector: S1,
 }
 
-impl<S0, S1> CompilableSelector for NextSiblingOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {
+impl<S0, S1> CompilableSelector for NextSiblingOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         self.base_selector.required_capacity() + self.next_sibling_selector.required_capacity() + 3
     }
@@ -747,17 +722,33 @@ impl<S0, S1> CompilableSelector for NextSiblingOf<S0, S1> where S0: ComplexSelec
     }
 }
 
-impl<S0, S1> complex_selector_seal::Seal for NextSiblingOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
-impl<S0, S1> ComplexSelector for NextSiblingOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
+impl<S0, S1> complex_selector_seal::Seal for NextSiblingOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
+impl<S0, S1> ComplexSelector for NextSiblingOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
 
 pub struct SubsequentSiblingOf<S0, S1> {
     base_selector: S0,
     subsequent_sibling_selector: S1,
 }
 
-impl<S0, S1> CompilableSelector for SubsequentSiblingOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {
+impl<S0, S1> CompilableSelector for SubsequentSiblingOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
-        self.base_selector.required_capacity() + self.subsequent_sibling_selector.required_capacity() + 3
+        self.base_selector.required_capacity()
+            + self.subsequent_sibling_selector.required_capacity()
+            + 3
     }
 
     fn compile(&self, compiler: &mut SelectorCompiler) {
@@ -769,15 +760,29 @@ impl<S0, S1> CompilableSelector for SubsequentSiblingOf<S0, S1> where S0: Comple
     }
 }
 
-impl<S0, S1> complex_selector_seal::Seal for SubsequentSiblingOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
-impl<S0, S1> ComplexSelector for SubsequentSiblingOf<S0, S1> where S0: ComplexSelector, S1: ComplexSelector {}
+impl<S0, S1> complex_selector_seal::Seal for SubsequentSiblingOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
+impl<S0, S1> ComplexSelector for SubsequentSiblingOf<S0, S1>
+where
+    S0: ComplexSelector,
+    S1: ComplexSelector,
+{
+}
 
 pub struct Is<S, I> {
     base: S,
-    is: I
+    is: I,
 }
 
-impl<S, I> CompilableSelector for Is<S, I> where S: CompoundSelector, I: CompilableSelector {
+impl<S, I> CompilableSelector for Is<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
     fn required_capacity(&self) -> usize {
         self.base.required_capacity() + self.is.required_capacity() + 5
     }
@@ -793,15 +798,29 @@ impl<S, I> CompilableSelector for Is<S, I> where S: CompoundSelector, I: Compila
     }
 }
 
-impl<S, I> compound_selector_seal::Seal for Is<S, I> where S: CompoundSelector, I: CompilableSelector {}
-impl<S, I> CompoundSelector for Is<S, I> where S: CompoundSelector, I: CompilableSelector {}
+impl<S, I> compound_selector_seal::Seal for Is<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
+}
+impl<S, I> CompoundSelector for Is<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
+}
 
 pub struct Not<S, I> {
     base: S,
-    not: I
+    not: I,
 }
 
-impl<S, I> CompilableSelector for Not<S, I> where S: CompoundSelector, I: CompilableSelector {
+impl<S, I> CompilableSelector for Not<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
     fn required_capacity(&self) -> usize {
         self.base.required_capacity() + self.not.required_capacity() + 6
     }
@@ -817,15 +836,29 @@ impl<S, I> CompilableSelector for Not<S, I> where S: CompoundSelector, I: Compil
     }
 }
 
-impl<S, I> compound_selector_seal::Seal for Not<S, I> where S: CompoundSelector, I: CompilableSelector {}
-impl<S, I> CompoundSelector for Not<S, I> where S: CompoundSelector, I: CompilableSelector {}
+impl<S, I> compound_selector_seal::Seal for Not<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
+}
+impl<S, I> CompoundSelector for Not<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
+}
 
 pub struct Where<S, I> {
     base: S,
-    where_: I
+    where_: I,
 }
 
-impl<S, I> CompilableSelector for Where<S, I> where S: CompoundSelector, I: CompilableSelector {
+impl<S, I> CompilableSelector for Where<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
     fn required_capacity(&self) -> usize {
         self.base.required_capacity() + self.where_.required_capacity() + 8
     }
@@ -841,8 +874,18 @@ impl<S, I> CompilableSelector for Where<S, I> where S: CompoundSelector, I: Comp
     }
 }
 
-impl<S, I> compound_selector_seal::Seal for Where<S, I> where S: CompoundSelector, I: CompilableSelector {}
-impl<S, I> CompoundSelector for Where<S, I> where S: CompoundSelector, I: CompilableSelector {}
+impl<S, I> compound_selector_seal::Seal for Where<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
+}
+impl<S, I> CompoundSelector for Where<S, I>
+where
+    S: CompoundSelector,
+    I: CompilableSelector,
+{
+}
 
 mod relative_selector_seal {
     pub trait Seal {}
@@ -855,7 +898,10 @@ pub trait RelativeSelector: relative_selector_seal::Seal {
 }
 
 impl<T> relative_selector_seal::Seal for T where T: ComplexSelector {}
-impl<T> RelativeSelector for T where T: ComplexSelector {
+impl<T> RelativeSelector for T
+where
+    T: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         ComplexSelector::required_capacity(self)
     }
@@ -866,7 +912,10 @@ impl<T> RelativeSelector for T where T: ComplexSelector {
 }
 
 impl<S> relative_selector_seal::Seal for DescendantOf<(), S> where S: ComplexSelector {}
-impl<S> RelativeSelector for DescendantOf<(), S> where S: ComplexSelector {
+impl<S> RelativeSelector for DescendantOf<(), S>
+where
+    S: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         self.descendant_selector.required_capacity()
     }
@@ -877,7 +926,10 @@ impl<S> RelativeSelector for DescendantOf<(), S> where S: ComplexSelector {
 }
 
 impl<S> relative_selector_seal::Seal for ChildOf<(), S> where S: ComplexSelector {}
-impl<S> RelativeSelector for ChildOf<(), S> where S: ComplexSelector {
+impl<S> RelativeSelector for ChildOf<(), S>
+where
+    S: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         self.child_selector.required_capacity() + 2
     }
@@ -890,7 +942,10 @@ impl<S> RelativeSelector for ChildOf<(), S> where S: ComplexSelector {
 }
 
 impl<S> relative_selector_seal::Seal for NextSiblingOf<(), S> where S: ComplexSelector {}
-impl<S> RelativeSelector for NextSiblingOf<(), S> where S: ComplexSelector {
+impl<S> RelativeSelector for NextSiblingOf<(), S>
+where
+    S: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         self.next_sibling_selector.required_capacity() + 2
     }
@@ -903,7 +958,10 @@ impl<S> RelativeSelector for NextSiblingOf<(), S> where S: ComplexSelector {
 }
 
 impl<S> relative_selector_seal::Seal for SubsequentSiblingOf<(), S> where S: ComplexSelector {}
-impl<S> RelativeSelector for SubsequentSiblingOf<(), S> where S: ComplexSelector {
+impl<S> RelativeSelector for SubsequentSiblingOf<(), S>
+where
+    S: ComplexSelector,
+{
     fn required_capacity(&self) -> usize {
         self.subsequent_sibling_selector.required_capacity() + 2
     }
@@ -915,8 +973,17 @@ impl<S> RelativeSelector for SubsequentSiblingOf<(), S> where S: ComplexSelector
     }
 }
 
-impl<S0, S1> relative_selector_seal::Seal for Or<S0, S1> where S0: RelativeSelector, S1: RelativeSelector {}
-impl<S0, S1> RelativeSelector for Or<S0, S1> where S0: RelativeSelector, S1: RelativeSelector {
+impl<S0, S1> relative_selector_seal::Seal for Or<S0, S1>
+where
+    S0: RelativeSelector,
+    S1: RelativeSelector,
+{
+}
+impl<S0, S1> RelativeSelector for Or<S0, S1>
+where
+    S0: RelativeSelector,
+    S1: RelativeSelector,
+{
     fn required_capacity(&self) -> usize {
         self.s0.required_capacity() + self.s1.required_capacity() + 2
     }
@@ -932,10 +999,14 @@ impl<S0, S1> RelativeSelector for Or<S0, S1> where S0: RelativeSelector, S1: Rel
 
 pub struct Has<S, I> {
     base: S,
-    has: I
+    has: I,
 }
 
-impl<S, I> CompilableSelector for Has<S, I> where S: CompoundSelector, I: RelativeSelector {
+impl<S, I> CompilableSelector for Has<S, I>
+where
+    S: CompoundSelector,
+    I: RelativeSelector,
+{
     fn required_capacity(&self) -> usize {
         self.base.required_capacity() + self.has.required_capacity() + 6
     }
@@ -951,8 +1022,18 @@ impl<S, I> CompilableSelector for Has<S, I> where S: CompoundSelector, I: Relati
     }
 }
 
-impl<S, I> compound_selector_seal::Seal for Has<S, I> where S: CompoundSelector, I: RelativeSelector {}
-impl<S, I> CompoundSelector for Has<S, I> where S: CompoundSelector, I: RelativeSelector {}
+impl<S, I> compound_selector_seal::Seal for Has<S, I>
+where
+    S: CompoundSelector,
+    I: RelativeSelector,
+{
+}
+impl<S, I> CompoundSelector for Has<S, I>
+where
+    S: CompoundSelector,
+    I: RelativeSelector,
+{
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TextDirectionality {
@@ -962,10 +1043,13 @@ pub enum TextDirectionality {
 
 pub struct Dir<S> {
     selector: S,
-    text_directionality: TextDirectionality
+    text_directionality: TextDirectionality,
 }
 
-impl<S> CompilableSelector for Dir<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Dir<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -975,7 +1059,7 @@ impl<S> CompilableSelector for Dir<S> where S: CompoundSelector {
 
         match self.text_directionality {
             TextDirectionality::LeftToRight => compiler.compiled.push_str(":dir(ltr)"),
-            TextDirectionality::RightToLeft => compiler.compiled.push_str(":dir(rtl)")
+            TextDirectionality::RightToLeft => compiler.compiled.push_str(":dir(rtl)"),
         }
     }
 }
@@ -985,10 +1069,13 @@ impl<S> CompoundSelector for Dir<S> where S: CompoundSelector {}
 
 pub struct Lang<'a, S> {
     selector: S,
-    language: &'a str
+    language: &'a str,
 }
 
-impl<'a, S> CompilableSelector for Lang<'a, S> where S: CompoundSelector {
+impl<'a, S> CompilableSelector for Lang<'a, S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + self.language.len() + 9
     }
@@ -1008,10 +1095,13 @@ impl<S> compound_selector_seal::Seal for Lang<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Lang<S> where S: CompoundSelector {}
 
 pub struct AnyLink<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for AnyLink<S> where S: CompoundSelector {
+impl<S> CompilableSelector for AnyLink<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 9
     }
@@ -1027,10 +1117,13 @@ impl<S> compound_selector_seal::Seal for AnyLink<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for AnyLink<S> where S: CompoundSelector {}
 
 pub struct Link<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Link<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Link<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 5
     }
@@ -1046,10 +1139,13 @@ impl<S> compound_selector_seal::Seal for Link<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Link<S> where S: CompoundSelector {}
 
 pub struct Visited<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Visited<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Visited<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -1065,10 +1161,13 @@ impl<S> compound_selector_seal::Seal for Visited<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Visited<S> where S: CompoundSelector {}
 
 pub struct LocalLink<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for LocalLink<S> where S: CompoundSelector {
+impl<S> CompilableSelector for LocalLink<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 11
     }
@@ -1084,10 +1183,13 @@ impl<S> compound_selector_seal::Seal for LocalLink<S> where S: CompoundSelector 
 impl<S> CompoundSelector for LocalLink<S> where S: CompoundSelector {}
 
 pub struct Target<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Target<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Target<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 7
     }
@@ -1103,10 +1205,13 @@ impl<S> compound_selector_seal::Seal for Target<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Target<S> where S: CompoundSelector {}
 
 pub struct TargetWithin<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for TargetWithin<S> where S: CompoundSelector {
+impl<S> CompilableSelector for TargetWithin<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 14
     }
@@ -1122,10 +1227,13 @@ impl<S> compound_selector_seal::Seal for TargetWithin<S> where S: CompoundSelect
 impl<S> CompoundSelector for TargetWithin<S> where S: CompoundSelector {}
 
 pub struct Scope<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Scope<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Scope<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 6
     }
@@ -1141,10 +1249,13 @@ impl<S> compound_selector_seal::Seal for Scope<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Scope<S> where S: CompoundSelector {}
 
 pub struct Hover<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Hover<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Hover<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 6
     }
@@ -1160,10 +1271,13 @@ impl<S> compound_selector_seal::Seal for Hover<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Hover<S> where S: CompoundSelector {}
 
 pub struct Active<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Active<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Active<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 7
     }
@@ -1179,10 +1293,13 @@ impl<S> compound_selector_seal::Seal for Active<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Active<S> where S: CompoundSelector {}
 
 pub struct Focus<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Focus<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Focus<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 6
     }
@@ -1198,10 +1315,13 @@ impl<S> compound_selector_seal::Seal for Focus<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Focus<S> where S: CompoundSelector {}
 
 pub struct FocusVisible<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for FocusVisible<S> where S: CompoundSelector {
+impl<S> CompilableSelector for FocusVisible<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 14
     }
@@ -1217,10 +1337,13 @@ impl<S> compound_selector_seal::Seal for FocusVisible<S> where S: CompoundSelect
 impl<S> CompoundSelector for FocusVisible<S> where S: CompoundSelector {}
 
 pub struct FocusWithin<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for FocusWithin<S> where S: CompoundSelector {
+impl<S> CompilableSelector for FocusWithin<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 13
     }
@@ -1236,10 +1359,13 @@ impl<S> compound_selector_seal::Seal for FocusWithin<S> where S: CompoundSelecto
 impl<S> CompoundSelector for FocusWithin<S> where S: CompoundSelector {}
 
 pub struct Current<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Current<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Current<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -1255,10 +1381,13 @@ impl<S> compound_selector_seal::Seal for Current<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Current<S> where S: CompoundSelector {}
 
 pub struct Past<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Past<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Past<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 5
     }
@@ -1274,10 +1403,13 @@ impl<S> compound_selector_seal::Seal for Past<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Past<S> where S: CompoundSelector {}
 
 pub struct Future<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Future<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Future<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 7
     }
@@ -1293,10 +1425,13 @@ impl<S> compound_selector_seal::Seal for Future<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Future<S> where S: CompoundSelector {}
 
 pub struct Playing<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Playing<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Playing<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -1312,10 +1447,13 @@ impl<S> compound_selector_seal::Seal for Playing<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Playing<S> where S: CompoundSelector {}
 
 pub struct Paused<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Paused<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Paused<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 7
     }
@@ -1331,10 +1469,13 @@ impl<S> compound_selector_seal::Seal for Paused<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Paused<S> where S: CompoundSelector {}
 
 pub struct Enabled<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Enabled<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Enabled<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -1350,10 +1491,13 @@ impl<S> compound_selector_seal::Seal for Enabled<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Enabled<S> where S: CompoundSelector {}
 
 pub struct Disabled<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Disabled<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Disabled<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 9
     }
@@ -1369,10 +1513,13 @@ impl<S> compound_selector_seal::Seal for Disabled<S> where S: CompoundSelector {
 impl<S> CompoundSelector for Disabled<S> where S: CompoundSelector {}
 
 pub struct ReadOnly<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for ReadOnly<S> where S: CompoundSelector {
+impl<S> CompilableSelector for ReadOnly<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 10
     }
@@ -1388,10 +1535,13 @@ impl<S> compound_selector_seal::Seal for ReadOnly<S> where S: CompoundSelector {
 impl<S> CompoundSelector for ReadOnly<S> where S: CompoundSelector {}
 
 pub struct ReadWrite<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for ReadWrite<S> where S: CompoundSelector {
+impl<S> CompilableSelector for ReadWrite<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 11
     }
@@ -1407,10 +1557,13 @@ impl<S> compound_selector_seal::Seal for ReadWrite<S> where S: CompoundSelector 
 impl<S> CompoundSelector for ReadWrite<S> where S: CompoundSelector {}
 
 pub struct PlaceholderShown<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for PlaceholderShown<S> where S: CompoundSelector {
+impl<S> CompilableSelector for PlaceholderShown<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 18
     }
@@ -1426,10 +1579,13 @@ impl<S> compound_selector_seal::Seal for PlaceholderShown<S> where S: CompoundSe
 impl<S> CompoundSelector for PlaceholderShown<S> where S: CompoundSelector {}
 
 pub struct Default<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Default<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Default<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -1445,10 +1601,13 @@ impl<S> compound_selector_seal::Seal for Default<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Default<S> where S: CompoundSelector {}
 
 pub struct Checked<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Checked<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Checked<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -1464,10 +1623,13 @@ impl<S> compound_selector_seal::Seal for Checked<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Checked<S> where S: CompoundSelector {}
 
 pub struct Indeterminate<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Indeterminate<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Indeterminate<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 14
     }
@@ -1483,10 +1645,13 @@ impl<S> compound_selector_seal::Seal for Indeterminate<S> where S: CompoundSelec
 impl<S> CompoundSelector for Indeterminate<S> where S: CompoundSelector {}
 
 pub struct Blank<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Blank<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Blank<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 6
     }
@@ -1502,10 +1667,13 @@ impl<S> compound_selector_seal::Seal for Blank<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Blank<S> where S: CompoundSelector {}
 
 pub struct Valid<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Valid<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Valid<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 6
     }
@@ -1521,10 +1689,13 @@ impl<S> compound_selector_seal::Seal for Valid<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Valid<S> where S: CompoundSelector {}
 
 pub struct Invalid<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Invalid<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Invalid<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 8
     }
@@ -1540,10 +1711,13 @@ impl<S> compound_selector_seal::Seal for Invalid<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Invalid<S> where S: CompoundSelector {}
 
 pub struct InRange<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for InRange<S> where S: CompoundSelector {
+impl<S> CompilableSelector for InRange<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 9
     }
@@ -1559,10 +1733,13 @@ impl<S> compound_selector_seal::Seal for InRange<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for InRange<S> where S: CompoundSelector {}
 
 pub struct OutOfRange<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for OutOfRange<S> where S: CompoundSelector {
+impl<S> CompilableSelector for OutOfRange<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 13
     }
@@ -1578,10 +1755,13 @@ impl<S> compound_selector_seal::Seal for OutOfRange<S> where S: CompoundSelector
 impl<S> CompoundSelector for OutOfRange<S> where S: CompoundSelector {}
 
 pub struct Required<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Required<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Required<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 9
     }
@@ -1597,10 +1777,13 @@ impl<S> compound_selector_seal::Seal for Required<S> where S: CompoundSelector {
 impl<S> CompoundSelector for Required<S> where S: CompoundSelector {}
 
 pub struct Optional<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Optional<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Optional<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 9
     }
@@ -1616,10 +1799,13 @@ impl<S> compound_selector_seal::Seal for Optional<S> where S: CompoundSelector {
 impl<S> CompoundSelector for Optional<S> where S: CompoundSelector {}
 
 pub struct UserInvalid<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for UserInvalid<S> where S: CompoundSelector {
+impl<S> CompilableSelector for UserInvalid<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 13
     }
@@ -1635,10 +1821,13 @@ impl<S> compound_selector_seal::Seal for UserInvalid<S> where S: CompoundSelecto
 impl<S> CompoundSelector for UserInvalid<S> where S: CompoundSelector {}
 
 pub struct Root<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Root<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Root<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 5
     }
@@ -1654,10 +1843,13 @@ impl<S> compound_selector_seal::Seal for Root<S> where S: CompoundSelector {}
 impl<S> CompoundSelector for Root<S> where S: CompoundSelector {}
 
 pub struct Empty<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for Empty<S> where S: CompoundSelector {
+impl<S> CompilableSelector for Empty<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 6
     }
@@ -1675,7 +1867,7 @@ impl<S> CompoundSelector for Empty<S> where S: CompoundSelector {}
 pub enum ANPlusB {
     Even,
     Odd,
-    ANPlusB(i32, i32)
+    ANPlusB(i32, i32),
 }
 
 impl ANPlusB {
@@ -1686,7 +1878,7 @@ impl ANPlusB {
             ANPlusB::Even => 4,
             ANPlusB::Odd => 3,
             ANPlusB::ANPlusB(a, b) => {
-                let an_size =  if a == 0 {
+                let an_size = if a == 0 {
                     // No `An` part.
                     0
                 } else if a == 1 {
@@ -1758,10 +1950,13 @@ impl ANPlusB {
 pub struct NthChild<S, Of> {
     selector: S,
     a_n_plus_b: ANPlusB,
-    of: Of
+    of: Of,
 }
 
-impl<S> CompilableSelector for NthChild<S, ()> where S: CompoundSelector {
+impl<S> CompilableSelector for NthChild<S, ()>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + 12
     }
@@ -1780,9 +1975,16 @@ impl<S> CompilableSelector for NthChild<S, ()> where S: CompoundSelector {
 impl<S> compound_selector_seal::Seal for NthChild<S, ()> where S: CompoundSelector {}
 impl<S> CompoundSelector for NthChild<S, ()> where S: CompoundSelector {}
 
-impl<S, Of> CompilableSelector for NthChild<S, Of> where S: CompoundSelector, Of: CompilableSelector {
+impl<S, Of> CompilableSelector for NthChild<S, Of>
+where
+    S: CompoundSelector,
+    Of: CompilableSelector,
+{
     fn required_capacity(&self) -> usize {
-        self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + self.of.required_capacity() + 16
+        self.selector.required_capacity()
+            + self.a_n_plus_b.required_capacity()
+            + self.of.required_capacity()
+            + 16
     }
 
     fn compile(&self, compiler: &mut SelectorCompiler) {
@@ -1800,16 +2002,29 @@ impl<S, Of> CompilableSelector for NthChild<S, Of> where S: CompoundSelector, Of
     }
 }
 
-impl<S, Of> compound_selector_seal::Seal for NthChild<S, Of> where S: CompoundSelector, Of: CompilableSelector {}
-impl<S, Of> CompoundSelector for NthChild<S, Of> where S: CompoundSelector, Of: CompilableSelector {}
+impl<S, Of> compound_selector_seal::Seal for NthChild<S, Of>
+where
+    S: CompoundSelector,
+    Of: CompilableSelector,
+{
+}
+impl<S, Of> CompoundSelector for NthChild<S, Of>
+where
+    S: CompoundSelector,
+    Of: CompilableSelector,
+{
+}
 
 pub struct NthLastChild<S, Of> {
     selector: S,
     a_n_plus_b: ANPlusB,
-    of: Of
+    of: Of,
 }
 
-impl<S> CompilableSelector for NthLastChild<S, ()> where S: CompoundSelector {
+impl<S> CompilableSelector for NthLastChild<S, ()>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + 17
     }
@@ -1828,9 +2043,16 @@ impl<S> CompilableSelector for NthLastChild<S, ()> where S: CompoundSelector {
 impl<S> compound_selector_seal::Seal for NthLastChild<S, ()> where S: CompoundSelector {}
 impl<S> CompoundSelector for NthLastChild<S, ()> where S: CompoundSelector {}
 
-impl<S, Of> CompilableSelector for NthLastChild<S, Of> where S: CompoundSelector, Of: CompilableSelector {
+impl<S, Of> CompilableSelector for NthLastChild<S, Of>
+where
+    S: CompoundSelector,
+    Of: CompilableSelector,
+{
     fn required_capacity(&self) -> usize {
-        self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + self.of.required_capacity() + 21
+        self.selector.required_capacity()
+            + self.a_n_plus_b.required_capacity()
+            + self.of.required_capacity()
+            + 21
     }
 
     fn compile(&self, compiler: &mut SelectorCompiler) {
@@ -1848,14 +2070,27 @@ impl<S, Of> CompilableSelector for NthLastChild<S, Of> where S: CompoundSelector
     }
 }
 
-impl<S, Of> compound_selector_seal::Seal for NthLastChild<S, Of> where S: CompoundSelector, Of: CompilableSelector {}
-impl<S, Of> CompoundSelector for NthLastChild<S, Of> where S: CompoundSelector, Of: CompilableSelector {}
-
-pub struct FirstChild<S> {
-    selector: S
+impl<S, Of> compound_selector_seal::Seal for NthLastChild<S, Of>
+where
+    S: CompoundSelector,
+    Of: CompilableSelector,
+{
+}
+impl<S, Of> CompoundSelector for NthLastChild<S, Of>
+where
+    S: CompoundSelector,
+    Of: CompilableSelector,
+{
 }
 
-impl<S> CompilableSelector for FirstChild<S> where S: CompoundSelector {
+pub struct FirstChild<S> {
+    selector: S,
+}
+
+impl<S> CompilableSelector for FirstChild<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 12
     }
@@ -1871,10 +2106,13 @@ impl<S> compound_selector_seal::Seal for FirstChild<S> where S: CompoundSelector
 impl<S> CompoundSelector for FirstChild<S> where S: CompoundSelector {}
 
 pub struct LastChild<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for LastChild<S> where S: CompoundSelector {
+impl<S> CompilableSelector for LastChild<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 11
     }
@@ -1890,10 +2128,13 @@ impl<S> compound_selector_seal::Seal for LastChild<S> where S: CompoundSelector 
 impl<S> CompoundSelector for LastChild<S> where S: CompoundSelector {}
 
 pub struct OnlyChild<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for OnlyChild<S> where S: CompoundSelector {
+impl<S> CompilableSelector for OnlyChild<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 11
     }
@@ -1913,7 +2154,10 @@ pub struct NthOfType<S> {
     a_n_plus_b: ANPlusB,
 }
 
-impl<S> CompilableSelector for NthOfType<S> where S: CompoundSelector {
+impl<S> CompilableSelector for NthOfType<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + 14
     }
@@ -1937,7 +2181,10 @@ pub struct NthLastOfType<S> {
     a_n_plus_b: ANPlusB,
 }
 
-impl<S> CompilableSelector for NthLastOfType<S> where S: CompoundSelector {
+impl<S> CompilableSelector for NthLastOfType<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + 19
     }
@@ -1957,10 +2204,13 @@ impl<S> compound_selector_seal::Seal for NthLastOfType<S> where S: CompoundSelec
 impl<S> CompoundSelector for NthLastOfType<S> where S: CompoundSelector {}
 
 pub struct FirstOfType<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for FirstOfType<S> where S: CompoundSelector {
+impl<S> CompilableSelector for FirstOfType<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 14
     }
@@ -1976,10 +2226,13 @@ impl<S> compound_selector_seal::Seal for FirstOfType<S> where S: CompoundSelecto
 impl<S> CompoundSelector for FirstOfType<S> where S: CompoundSelector {}
 
 pub struct LastOfType<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for LastOfType<S> where S: CompoundSelector {
+impl<S> CompilableSelector for LastOfType<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 13
     }
@@ -1995,10 +2248,13 @@ impl<S> compound_selector_seal::Seal for LastOfType<S> where S: CompoundSelector
 impl<S> CompoundSelector for LastOfType<S> where S: CompoundSelector {}
 
 pub struct OnlyOfType<S> {
-    selector: S
+    selector: S,
 }
 
-impl<S> CompilableSelector for OnlyOfType<S> where S: CompoundSelector {
+impl<S> CompilableSelector for OnlyOfType<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + 13
     }
@@ -2018,7 +2274,10 @@ pub struct NthCol<S> {
     a_n_plus_b: ANPlusB,
 }
 
-impl<S> CompilableSelector for NthCol<S> where S: CompoundSelector {
+impl<S> CompilableSelector for NthCol<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + 10
     }
@@ -2042,7 +2301,10 @@ pub struct NthLastCol<S> {
     a_n_plus_b: ANPlusB,
 }
 
-impl<S> CompilableSelector for NthLastCol<S> where S: CompoundSelector {
+impl<S> CompilableSelector for NthLastCol<S>
+where
+    S: CompoundSelector,
+{
     fn required_capacity(&self) -> usize {
         self.selector.required_capacity() + self.a_n_plus_b.required_capacity() + 15
     }

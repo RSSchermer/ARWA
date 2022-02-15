@@ -1,12 +1,3 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlParamElement {
     inner: web_sys::HtmlParamElement,
@@ -26,4 +17,18 @@ impl HtmlParamElement {
     }
 }
 
-impl_html_common_traits!(HtmlParamElement);
+impl From<web_sys::HtmlParamElement> for HtmlParamElement {
+    fn from(inner: web_sys::HtmlParagraphElement) -> Self {
+        HtmlParamElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlParamElement> for HtmlParamElement {
+    fn as_ref(&self) -> &web_sys::HtmlParamElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlParamElement);
+impl_try_from_element!(HtmlParamElement);
+impl_known_element!(HtmlParamElement, "PARAM");

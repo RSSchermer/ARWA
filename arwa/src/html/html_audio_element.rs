@@ -1,22 +1,19 @@
-use std::convert::TryFrom;
-
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, HtmlMediaElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlAudioElement {
     inner: web_sys::HtmlAudioElement,
 }
 
-impl AsRef<web_sys::HtmlMediaElement> for HtmlAudioElement {
-    fn as_ref(&self) -> &web_sys::HtmlMediaElement {
-        self.inner.as_ref()
+impl From<web_sys::HtmlAudioElement> for HtmlAudioElement {
+    fn from(inner: web_sys::HtmlAudioElement) -> Self {
+        HtmlAudioElement { inner }
     }
 }
 
-impl HtmlMediaElement for HtmlAudioElement {}
+impl AsRef<web_sys::HtmlAudioElement> for HtmlAudioElement {
+    fn as_ref(&self) -> &web_sys::HtmlAudioElement {
+        &self.inner
+    }
+}
 
-impl_html_common_traits!(HtmlAudioElement);
+impl_html_media_element_traits!(HtmlAudioElement);
+impl_known_element!(HtmlAudioElement, "AUDIO");

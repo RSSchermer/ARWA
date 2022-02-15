@@ -1,12 +1,3 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlMetaElement {
     inner: web_sys::HtmlMetaElement,
@@ -19,10 +10,6 @@ impl HtmlMetaElement {
 
             pub fn set_name(&self, name: &str);
 
-            pub fn http_equiv(&self) -> String;
-
-            pub fn set_http_equiv(&self, http_equiv: &str);
-
             pub fn content(&self) -> String;
 
             pub fn set_content(&self, content: &str);
@@ -30,4 +17,18 @@ impl HtmlMetaElement {
     }
 }
 
-impl_html_common_traits!(HtmlMetaElement);
+impl From<web_sys::HtmlMetaElement> for HtmlMetaElement {
+    fn from(inner: web_sys::HtmlMetaElement) -> Self {
+        HtmlMetaElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlMetaElement> for HtmlMetaElement {
+    fn as_ref(&self) -> &web_sys::HtmlMetaElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlMetaElement);
+impl_try_from_element!(HtmlMetaElement);
+impl_known_element!(HtmlMetaElement, "META");

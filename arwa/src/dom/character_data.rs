@@ -37,7 +37,8 @@ macro_rules! impl_character_data_traits {
             }
         }
 
-        $crate::dom::impl_node_traits!($tpe, $web_sys_tpe);
+        $crate::dom::impl_node_traits!($tpe);
+        $crate::dom::impl_try_from_node!($tpe, $web_sys_tpe);
     };
 }
 

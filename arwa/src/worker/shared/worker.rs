@@ -1,6 +1,6 @@
 use crate::fetch::RequestCredentials;
 use crate::message::MessagePort;
-use crate::url::ContextualUrl;
+use crate::url::AbsoluteOrRelativeUrl;
 use crate::worker::{worker_seal, CreateWorkerError, Worker, WorkerOptions, WorkerType};
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
@@ -10,14 +10,17 @@ pub struct SharedWorker {
 }
 
 impl SharedWorker {
-    pub fn create(url: ContextualUrl, options: WorkerOptions) -> Self {
+    pub fn create<T>(url: T, options: WorkerOptions) -> Self
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
         create_shared_worker_internal(url, options).unwrap_throw()
     }
 
-    pub fn try_create(
-        url: ContextualUrl,
-        options: WorkerOptions,
-    ) -> Result<Self, CreateWorkerError> {
+    pub fn try_create<T>(url: T, options: WorkerOptions) -> Result<Self, CreateWorkerError>
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
         create_shared_worker_internal(url, options)
             .map_err(|err| CreateWorkerError::new(err.unchecked_into()))
     }
@@ -47,14 +50,15 @@ impl AsRef<web_sys::SharedWorker> for SharedWorker {
     }
 }
 
-impl_common_wrapper_traits!(SharedWorker);
+impl_event_target_traits!(SharedWorker);
+impl_try_from_event_target_traits!(SharedWorker, web_sys::SharedWorker);
 
-fn create_shared_worker_internal(
-    url: ContextualUrl,
-    options: WorkerOptions,
-) -> Result<SharedWorker, JsValue> {
+fn create_shared_worker_internal<T>(url: T, options: WorkerOptions) -> Result<SharedWorker, JsValue>
+where
+    T: AbsoluteOrRelativeUrl,
+{
     let result = web_sys::SharedWorker::new_with_worker_options(
-        url.as_ref(),
+        url.as_str(),
         &options.into_web_sys_worker_options(),
     );
 

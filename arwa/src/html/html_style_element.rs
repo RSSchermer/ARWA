@@ -1,13 +1,4 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{
-    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node, StyleSheet,
-};
+use crate::cssom::{link_style_seal, CssStyleSheet, LinkStyle};
 
 #[derive(Clone)]
 pub struct HtmlStyleElement {
@@ -20,24 +11,34 @@ impl HtmlStyleElement {
             pub fn disabled(&self) -> bool;
 
             pub fn set_disabled(&self, disabled: bool);
-
-            pub fn media(&self) -> String;
-
-            pub fn set_media(&self, media: &str);
         }
     }
 
-    pub fn mime_type(&self) -> String {
-        self.inner.type_()
-    }
+    // TODO: media
+}
 
-    pub fn set_mime_type(&self, mime_type: &str) {
-        self.inner.set_type(mime_type);
-    }
+impl link_style_seal::Seal for HtmlStyleElement {}
 
-    pub fn sheet(&self) -> Option<StyleSheet> {
-        self.inner.sheet().map(|s| s.into())
+impl LinkStyle for HtmlStyleElement {
+    fn sheet(&self) -> Option<CssStyleSheet> {
+        self.inner
+            .sheet()
+            .map(|s| CssStyleSheet::from(s.unchecked_into()))
     }
 }
 
-impl_html_common_traits!(HtmlStyleElement);
+impl From<web_sys::HtmlStyleElement> for HtmlStyleElement {
+    fn from(inner: web_sys::HtmlStyleElement) -> Self {
+        HtmlStyleElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlStyleElement> for HtmlStyleElement {
+    fn as_ref(&self) -> &web_sys::HtmlStyleElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlStyleElement);
+impl_try_from_element!(HtmlStyleElement);
+impl_known_element!(HtmlStyleElement, "STYLE");

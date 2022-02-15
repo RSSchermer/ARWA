@@ -1,6 +1,7 @@
 use crate::connection::{
     connection_event_target_seal, connection_status_seal, ConnectionEventTarget, ConnectionStatus,
 };
+use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
 
 #[derive(Clone)]
@@ -11,10 +12,8 @@ pub struct WorkerNavigator {
 impl navigator_seal::Seal for WorkerNavigator {}
 
 impl Navigator for WorkerNavigator {
-    delegate! {
-        to self.inner {
-            fn language(&self) -> Option<String>;
-        }
+    fn language(&self) -> Option<LanguageTag> {
+        self.inner.language().and_then(|l| LanguageTag::parse(l))
     }
 
     fn hardware_concurrency(&self) -> u32 {

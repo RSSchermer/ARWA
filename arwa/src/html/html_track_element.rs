@@ -1,14 +1,6 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{
-    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node, TextTrack,
-    TextTrackReadyState,
-};
+use crate::lang::LanguageTag;
+use crate::media::{TextTrack, TextTrackReadyState};
+use crate::url::{AbsoluteOrRelativeUrl, Url};
 
 #[derive(Clone)]
 pub struct HtmlTrackElement {
@@ -18,14 +10,6 @@ pub struct HtmlTrackElement {
 impl HtmlTrackElement {
     delegate! {
         target self.inner {
-            pub fn src(&self) -> String;
-
-            pub fn set_src(&self, src: &str);
-
-            pub fn srclang(&self) -> String;
-
-            pub fn set_srclang(&self, srclang: &str);
-
             pub fn label(&self) -> String;
 
             pub fn set_label(&self, label: &str);
@@ -34,6 +18,26 @@ impl HtmlTrackElement {
 
             pub fn set_default(&self, default: bool);
         }
+    }
+
+    pub fn src(&self) -> Option<Url> {
+        Url::parse(self.inner.src()).ok()
+    }
+
+    pub fn set_src<T>(&self, src: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.set_src(src.as_str());
+    }
+
+    pub fn src_lang(&self) -> Option<LanguageTag> {
+        LanguageTag::parse(self.inner.srclang()).ok()
+    }
+
+    pub fn set_src_lang(&self, src_lang: Option<&LanguageTag>) {
+        self.inner
+            .set_srclang(src_lang.map(|l| l.as_ref()).unwrap_or(""))
     }
 
     pub fn ready_state(&self) -> TextTrackReadyState {
@@ -51,4 +55,18 @@ impl HtmlTrackElement {
     }
 }
 
-impl_html_common_traits!(HtmlTrackElement);
+impl From<web_sys::HtmlTrackElement> for HtmlTrackElement {
+    fn from(inner: web_sys::HtmlTrackElement) -> Self {
+        HtmlTrackElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlTrackElement> for HtmlTrackElement {
+    fn as_ref(&self) -> &web_sys::HtmlTrackElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlTrackElement);
+impl_try_from_element!(HtmlTrackElement);
+impl_known_element!(HtmlTrackElement, "TRACK");

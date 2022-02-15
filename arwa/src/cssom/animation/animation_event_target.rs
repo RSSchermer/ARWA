@@ -47,3 +47,17 @@ typed_event_stream!(
     AnimationStartEvent,
     "animationstart"
 );
+
+macro_rules! impl_animation_event_target_for_element {
+    ($element:ident) => {
+        impl crate::cssom::animation_event_target_seal::Seal for $element {
+            fn as_web_sys_event_target(&self) -> &web_sys::EventTarget {
+                self.as_web_sys_element().as_ref()
+            }
+        }
+
+        impl crate::cssom::AnimationEventTarget for $element {}
+    };
+}
+
+pub(crate) use impl_animation_event_target_for_element;

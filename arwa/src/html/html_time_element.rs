@@ -1,25 +1,24 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlTimeElement {
     inner: web_sys::HtmlTimeElement,
 }
 
 impl HtmlTimeElement {
-    delegate! {
-        target self.inner {
-            pub fn date_time(&self) -> String;
+    // TODO: date_time
+}
 
-            pub fn set_date_time(&self, date_time: &str);
-        }
+impl From<web_sys::HtmlTimeElement> for HtmlTimeElement {
+    fn from(inner: web_sys::HtmlTimeElement) -> Self {
+        HtmlTimeElement { inner }
     }
 }
 
-impl_html_common_traits!(HtmlTimeElement);
+impl AsRef<web_sys::HtmlTimeElement> for HtmlTimeElement {
+    fn as_ref(&self) -> &web_sys::HtmlTimeElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlTimeElement);
+impl_try_from_element!(HtmlTimeElement);
+impl_known_element!(HtmlTimeElement, "TIME");

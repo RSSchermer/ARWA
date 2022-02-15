@@ -1,161 +1,109 @@
-use std::convert::TryFrom;
+use crate::collection::{Collection, Sequence};
+use crate::html::HtmlTrElement;
 
-use wasm_bindgen::JsCast;
+mod table_section_element_seal {
+    pub trait Seal {
+        #[doc(hidden)]
+        fn as_web_sys_html_table_section_element(&self) -> &web_sys::HtmlTableSectionElement;
+    }
+}
 
-use crate::console::{Write, Writer};
-use crate::error::RangeError;
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, HtmlTableRowElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
+pub trait TableSectionElement: table_section_element_seal::Seal {
+    fn rows(&self) -> TableSectionRows {
+        TableSectionRows {
+            inner: self.inner.rows(),
+        }
+    }
+}
+
+pub struct TableSectionRows {
+    inner: web_sys::HtmlCollection,
+}
+
+
+impl Collection for TableSectionRows {
+    fn len(&self) -> u32 {
+        self.inner.length()
+    }
+}
+
+impl Sequence for TableSectionRows {
+    type Item = HtmlTrElement;
+
+    fn get(&self, index: u32) -> Option<Self::Item> {
+        self.inner.get_with_index(index).map(|e| HtmlTableRowElement::from(e.unchecked_into()))
+    }
+
+    fn to_host_array(&self) -> js_sys::Array {
+        js_sys::Array::from(self.inner.as_ref())
+    }
+}
 
 #[derive(Clone)]
-pub struct HtmlTableSectionElement {
+pub struct HtmlTheadElement {
     inner: web_sys::HtmlTableSectionElement,
 }
 
-impl HtmlTableSectionElement {
-    pub fn rows(&self) -> TableSectionRows {
-        TableSectionRows {
-            table_section: &self.inner,
-            rows: self.inner.rows(),
-        }
+impl table_section_element_seal::Seal for HtmlTheadElement {
+    fn as_web_sys_html_table_section_element(&self) -> &web_sys::HtmlTableSectionElement {
+        &self.inner
     }
 }
 
-impl_html_common_traits!(HtmlTableSectionElement);
+impl TableSectionElement for HtmlTheadElement {}
 
-pub struct TableSectionRows<'a> {
-    table_section: &'a web_sys::HtmlTableSectionElement,
-    rows: web_sys::HtmlCollection,
-}
-
-impl<'a> TableSectionRows<'a> {
-    pub fn get(&self, index: usize) -> Option<HtmlTableRowElement> {
-        u32::try_from(index)
-            .ok()
-            .and_then(|index| self.rows.get_with_index(index))
-            .map(|e| {
-                let e: web_sys::HtmlTableRowElement = e.unchecked_into();
-
-                e.into()
-            })
-    }
-
-    pub fn find_by_id(&self, id: &str) -> Option<HtmlTableRowElement> {
-        self.rows.get_with_name(id).map(|e| {
-            let e: web_sys::HtmlTableRowElement = e.unchecked_into();
-
-            e.into()
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.rows.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn first(&self) -> Option<HtmlTableRowElement> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<HtmlTableRowElement> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn push_new(&self) -> HtmlTableRowElement {
-        let row: web_sys::HtmlTableRowElement =
-            self.table_section.insert_row().unwrap().unchecked_into();
-
-        row.into()
-    }
-
-    pub fn insert_new(&self, index: usize) -> Result<HtmlTableRowElement, RangeError> {
-        self.table_section
-            .insert_row_with_index(index as i32)
-            .map(|row| {
-                let row: web_sys::HtmlTableRowElement = row.unchecked_into();
-
-                row.into()
-            })
-            .map_err(|e| {
-                let e: web_sys::DomException = e.unchecked_into();
-
-                RangeError::new(e)
-            })
-    }
-
-    pub fn remove(&self, index: usize) {
-        // TODO: decide: panic to match std behaviour for e.g. Vec, or Result?
-        self.table_section
-            .delete_row(index as i32)
-            .expect("Index out of bounds");
-    }
-
-    pub fn iter(&self) -> TableSectionRowsIter {
-        TableSectionRowsIter {
-            table_section_rows: self,
-            current: 0,
-        }
+impl AsRef<web_sys::HtmlTableSectionElement> for HtmlTheadElement {
+    fn as_ref(&self) -> &web_sys::HtmlTableSectionElement {
+        &self.inner
     }
 }
 
-impl<'a> Write for TableSectionRows<'a> {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.rows.as_ref());
+impl_html_element_traits!(HtmlTheadElement);
+impl_try_from_element_with_tag_check!(HtmlTheadElement, web_sys::HtmlTableSectionElement, "THEAD");
+impl_known_element!(HtmlTheadElement, web_sys::HtmlTableSectionElement, "THEAD");
+
+#[derive(Clone)]
+pub struct HtmlTbodyElement {
+    inner: web_sys::HtmlTableSectionElement,
+}
+
+impl table_section_element_seal::Seal for HtmlTbodyElement {
+    fn as_web_sys_html_table_section_element(&self) -> &web_sys::HtmlTableSectionElement {
+        &self.inner
     }
 }
 
-impl<'a> IntoIterator for TableSectionRows<'a> {
-    type Item = HtmlTableRowElement;
-    type IntoIter = TableSectionRowsIntoIter<'a>;
+impl TableSectionElement for HtmlTbodyElement {}
 
-    fn into_iter(self) -> Self::IntoIter {
-        TableSectionRowsIntoIter {
-            table_section_rows: self,
-            current: 0,
-        }
+impl AsRef<web_sys::HtmlTableSectionElement> for HtmlTbodyElement {
+    fn as_ref(&self) -> &web_sys::HtmlTableSectionElement {
+        &self.inner
     }
 }
 
-pub struct TableSectionRowsIter<'a> {
-    table_section_rows: &'a TableSectionRows<'a>,
-    current: usize,
+impl_html_element_traits!(HtmlTbodyElement);
+impl_try_from_element_with_tag_check!(HtmlTbodyElement, web_sys::HtmlTableSectionElement, "TBODY");
+impl_known_element!(HtmlTbodyElement, web_sys::HtmlTableSectionElement, "TBODY");
+
+#[derive(Clone)]
+pub struct HtmlTfootElement {
+    inner: web_sys::HtmlTableSectionElement,
 }
 
-impl<'a> Iterator for TableSectionRowsIter<'a> {
-    type Item = HtmlTableRowElement;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.table_section_rows.get(current)
+impl table_section_element_seal::Seal for HtmlTfootElement {
+    fn as_web_sys_html_table_section_element(&self) -> &web_sys::HtmlTableSectionElement {
+        &self.inner
     }
 }
 
-pub struct TableSectionRowsIntoIter<'a> {
-    table_section_rows: TableSectionRows<'a>,
-    current: usize,
-}
+impl TableSectionElement for HtmlTfootElement {}
 
-impl<'a> Iterator for TableSectionRowsIntoIter<'a> {
-    type Item = HtmlTableRowElement;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.table_section_rows.get(current)
+impl AsRef<web_sys::HtmlTableSectionElement> for HtmlTfootElement {
+    fn as_ref(&self) -> &web_sys::HtmlTableSectionElement {
+        &self.inner
     }
 }
+
+impl_html_element_traits!(HtmlTfootElement);
+impl_try_from_element_with_tag_check!(HtmlTfootElement, web_sys::HtmlTableSectionElement, "TFOOT");
+impl_known_element!(HtmlTfootElement, web_sys::HtmlTableSectionElement, "TFOOT");

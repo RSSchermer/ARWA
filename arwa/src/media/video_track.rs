@@ -1,4 +1,5 @@
-use crate::console::{Write, Writer};
+use crate::lang::LanguageTag;
+use arwa::console::{Write, Writer};
 use delegate::delegate;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -22,12 +23,14 @@ impl VideoTrack {
 
             pub fn label(&self) -> String;
 
-            pub fn language(&self) -> String;
-
             pub fn selected(&self) -> bool;
 
             pub fn set_selected(&self, selected: bool);
         }
+    }
+
+    pub fn language(&self) -> Option<LanguageTag> {
+        LanguageTag::parse(self.inner.language()).ok()
     }
 
     pub fn kind(&self) -> Option<VideoTrackKind> {
@@ -55,8 +58,4 @@ impl AsRef<web_sys::VideoTrack> for VideoTrack {
     }
 }
 
-impl Write for VideoTrack {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(VideoTrack, web_sys::VideoTrack);

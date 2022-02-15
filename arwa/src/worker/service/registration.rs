@@ -63,7 +63,11 @@ impl AsRef<web_sys::ServiceWorkerRegistration> for ServiceWorkerRegistration {
     }
 }
 
-impl_event_target_traits!(ServiceWorker, web_sys::ServiceWorker);
+impl_event_target_traits!(ServiceWorkerRegistration);
+impl_try_from_event_targets!(
+    ServiceWorkerRegistration,
+    web_sys::ServiceWorkerRegistration
+);
 
 #[must_use = "futures do nothing unless polled or spawned."]
 pub struct ServiceWorkerRegistrationUpdate {

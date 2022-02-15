@@ -1,16 +1,14 @@
+use crate::dom::DynamicDocument;
+use crate::html::{
+    constraint_validation_target_seal, form_listed_element_seal, ConstraintValidationTarget,
+    DynamicFormListedElement, FormListedElement, HtmlFormElement, ValidityState,
+};
+use crate::media_type::MediaType;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::window::Window;
+use crate::InvalidCast;
 use std::convert::TryFrom;
 use std::str::FromStr;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement};
-use crate::{
-    DynamicElement, DynamicNode, Element, GenericDocument, GlobalEventHandlers, InvalidCast, Node,
-};
-
-pub use web_sys::ValidityState;
 
 #[derive(Clone)]
 pub struct HtmlObjectElement {
@@ -20,40 +18,30 @@ pub struct HtmlObjectElement {
 impl HtmlObjectElement {
     delegate! {
         target self.inner {
-            pub fn name(&self) -> String;
-
-            pub fn set_name(&self, name: &str);
-
-            pub fn data(&self) -> String;
-
-            pub fn set_data(&self, data: &str);
-
-            pub fn type_must_match(&self) -> bool;
-
-            pub fn set_type_must_match(&self, type_must_match: bool);
-
             pub fn use_map(&self) -> String;
 
             pub fn set_use_map(&self, use_map: &str);
-
-            pub fn check_validity(&self) -> bool;
-
-            pub fn report_validity(&self) -> bool;
-
-            pub fn will_validate(&self) -> bool;
-
-            pub fn validity(&self) -> ValidityState;
-
-            pub fn set_custom_validity(&self, error: &str);
         }
     }
 
-    pub fn mime_type(&self) -> String {
-        self.inner.type_()
+    pub fn data(&self) -> Option<Url> {
+        Url::parse(self.inner.data()).ok()
     }
 
-    pub fn set_mime_type(&self, mime_type: &str) {
-        self.inner.set_type(mime_type);
+    pub fn set_data<T>(&self, data: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.set_data(data.as_str());
+    }
+
+    pub fn media_type(&self) -> Option<MediaType> {
+        MediaType::parse(self.inner.type_().as_ref()).ok()
+    }
+
+    pub fn set_media_type(&self, media_type: Option<&MediaType>) {
+        self.inner
+            .set_type(media_type.map(|m| m.as_ref()).unwrap_or(""));
     }
 
     pub fn width(&self) -> u32 {
@@ -72,22 +60,82 @@ impl HtmlObjectElement {
         self.inner.set_height(&height.to_string());
     }
 
-    pub fn form(&self) -> Option<HtmlFormElement> {
-        self.inner.form().map(|form| form.into())
-    }
-
-    pub fn content_document(&self) -> Option<GenericDocument> {
+    pub fn content_document(&self) -> Option<DynamicDocument> {
         self.inner
             .content_document()
             .map(|document| document.into())
     }
 
-    // TODO: content_window once Window has been figured out.
-
-    pub fn validation_message(&self) -> String {
-        // There's no indication in the spec that this can actually fail, unwrap for now.
-        self.inner.validation_message().unwrap()
+    pub fn content_window(&self) -> Option<Window> {
+        self.inner.content_window().map(|w| w.into())
     }
 }
 
-impl_html_common_traits!(HtmlObjectElement);
+impl form_listed_element_seal::Seal for HtmlObjectElement {}
+
+impl FormListedElement for HtmlObjectElement {
+    delegate! {
+        to self.inner {
+            fn name(&self) -> String;
+
+            fn set_name(&self, name: &str);
+        }
+    }
+
+    fn form(&self) -> Option<HtmlFormElement> {
+        self.inner.form().map(|form| form.into())
+    }
+}
+
+impl TryFrom<DynamicFormListedElement> for HtmlObjectElement {
+    type Error = InvalidCast<DynamicFormListedElement>;
+
+    fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
+        let value: web_sys::HtmlElement = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlObjectElement>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
+    }
+}
+
+impl constraint_validation_target_seal::Seal for HtmlObjectElement {}
+
+impl ConstraintValidationTarget for HtmlObjectElement {
+    delegate! {
+        to self.inner {
+            fn will_validate(&self) -> bool;
+
+            fn check_validity(&self) -> bool;
+
+            fn report_validity(&self) -> bool;
+
+            fn set_custom_validity(&self, error: &str);
+        }
+    }
+
+    fn validity(&self) -> ValidityState {
+        self.inner.validity().into()
+    }
+
+    fn validation_message(&self) -> String {
+        self.inner.validation_message().unwrap_or(String::new())
+    }
+}
+
+impl From<web_sys::HtmlObjectElement> for HtmlObjectElement {
+    fn from(inner: web_sys::HtmlObjectElement) -> Self {
+        HtmlObjectElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlObjectElement> for HtmlObjectElement {
+    fn as_ref(&self) -> &web_sys::HtmlObjectElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlObjectElement);
+impl_try_from_element!(HtmlObjectElement);
+impl_known_element!(HtmlObjectElement, "OBJECT");

@@ -1,3 +1,4 @@
+use crate::media_type::MediaType;
 use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 
 #[derive(Clone)]
@@ -6,12 +7,14 @@ pub struct Blob {
 }
 
 impl Blob {
-    pub fn from_bytes(bytes: &[u8], format_type: &str) -> Self {
+    pub fn from_bytes(bytes: &[u8], media_type: Option<&MediaType>) -> Self {
         unsafe {
             let array_buffer = js_sys::Uint8Array::view(bytes);
             let mut options = web_sys::BlobPropertyBag::new();
 
-            options.type_(format_type);
+            if let Some(media_type) = media_type {
+                options.type_(media_type.as_ref());
+            }
 
             Blob {
                 inner: web_sys::Blob::new_with_buffer_source_sequence_and_options(
@@ -22,18 +25,18 @@ impl Blob {
         }
     }
 
-    pub fn view(blob: &Blob, format_type: &str) -> Self {
+    pub fn view(blob: &Blob, media_type: Option<&MediaType>) -> Self {
         Blob {
             inner: blob.inner.slice_with_f64_and_f64_and_content_type(
                 0,
                 blob.inner.size(),
-                format_type,
+                media_type.map(|m| m.as_ref()).unwrap_or(""),
             ),
         }
     }
 
-    pub fn format_type(&self) -> String {
-        self.inner.type_()
+    pub fn media_type(&self) -> Option<MediaType> {
+        MediaType::parse(self.inner.type_()).ok()
     }
 
     // Note: std seems to prefer `len` to refer to a file size in bytes (e.g.

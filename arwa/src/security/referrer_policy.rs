@@ -12,7 +12,7 @@ pub enum ReferrerPolicy {
 }
 
 impl ReferrerPolicy {
-    pub fn from_str(policy: &str) -> Self {
+    pub(crate) fn from_str(policy: &str) -> Self {
         match policy {
             "no-referrer" => ReferrerPolicy::NoReferrer,
             "no-referrer-when-downgrade" => ReferrerPolicy::NoReferrerWhenDowngrade,
@@ -25,16 +25,8 @@ impl ReferrerPolicy {
             _ => ReferrerPolicy::Default,
         }
     }
-}
 
-impl Default for ReferrerPolicy {
-    fn default() -> Self {
-        ReferrerPolicy::Default
-    }
-}
-
-impl AsRef<str> for ReferrerPolicy {
-    fn as_ref(&self) -> &str {
+    pub(crate) fn as_str(&self) -> &str {
         match self {
             ReferrerPolicy::Default => "",
             ReferrerPolicy::NoReferrer => "no-referrer",
@@ -46,5 +38,11 @@ impl AsRef<str> for ReferrerPolicy {
             ReferrerPolicy::StrictOriginWhenCrossOrigin => "strict-origin-when-cross-origin",
             ReferrerPolicy::UnsafeUrl => "unsafe-url",
         }
+    }
+}
+
+impl Default for ReferrerPolicy {
+    fn default() -> Self {
+        ReferrerPolicy::Default
     }
 }

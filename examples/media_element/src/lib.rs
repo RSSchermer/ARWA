@@ -1,7 +1,7 @@
 #![feature(async_closure)]
 use std::convert::TryInto;
 
-use arwa::html::{HtmlAudioElement, HtmlButtonElement, HtmlMediaElement};
+use arwa::html::{HtmlAudioElement, HtmlButtonElement, MediaElement};
 use arwa::{console, document, Document, GlobalEventHandlers};
 use futures::{FutureExt, StreamExt, TryFutureExt};
 use wasm_bindgen::prelude::*;

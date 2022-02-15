@@ -84,7 +84,8 @@ macro_rules! impl_worker_global_scope_traits {
             }
         }
 
-        impl_event_target_traits!($tpe, $web_sys_tpe);
+        impl_event_target_traits!($tpe);
+        impl_try_from_event_targets!($tpe, $web_sys_tpe);
     };
 }
 

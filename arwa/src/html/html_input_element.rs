@@ -1,21 +1,16 @@
-use std::convert::TryFrom;
-use std::ops::{Bound, RangeBounds};
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::error::{InvalidStateError, RangeError, SetTextRangeError};
-use crate::event::GenericEventTarget;
+use crate::collection::{Collection, Sequence};
+use crate::file::File;
 use crate::html::{
-    AutoComplete, FormMethod, GenericHtmlElement, HtmlDataListElement, HtmlElement,
-    HtmlFormElement, Labels,
+    constraint_validation_target_seal, form_listed_element_seal, form_submitter_element_seal,
+    labelable_element_seal, AutoComplete, ConstraintValidationTarget, DynamicFormListedElement,
+    FormEncoding, FormListedElement, FormMethod, FormSubmitterElement, HtmlDataListElement,
+    HtmlFormElement, LabelableElement, Labels, ValidityState,
 };
-use crate::{
-    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node,
-    SelectionDirection,
-};
-
-pub use web_sys::ValidityState;
+use crate::ui::DragEventFiles;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::InvalidCast;
+use std::convert::TryFrom;
+use std::ops::{Bound, Range, RangeBounds};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum InputType {
@@ -61,10 +56,6 @@ impl HtmlInputElement {
 
     delegate! {
         target self.inner {
-            pub fn name(&self) -> String;
-
-            pub fn set_name(&self, name: &str);
-
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -76,10 +67,6 @@ impl HtmlInputElement {
             pub fn default_value(&self) -> String;
 
             pub fn set_default_value(&self, default_value: &str);
-
-            pub fn accept(&self) -> String;
-
-            pub fn set_accept(&self, accept: &str);
 
             pub fn alt(&self) -> String;
 
@@ -101,18 +88,6 @@ impl HtmlInputElement {
 
             pub fn set_disabled(&self, disabled: bool);
 
-            pub fn form_action(&self) -> String;
-
-            pub fn set_form_action(&self, form_action: &str);
-
-            pub fn form_no_validate(&self) -> bool;
-
-            pub fn set_form_no_validate(&self, form_no_validate: bool);
-
-            pub fn form_target(&self) -> String;
-
-            pub fn set_form_target(&self, form_target: &str);
-
             pub fn width(&self) -> u32;
 
             pub fn set_width(&self, width: u32);
@@ -125,21 +100,9 @@ impl HtmlInputElement {
 
             pub fn set_indeterminate(&self, indeterminate: bool);
 
-            pub fn min(&self) -> String;
-
-            pub fn set_min(&self, min: &str);
-
-            pub fn max(&self) -> String;
-
-            pub fn set_max(&self, max: &str);
-
             pub fn multiple(&self) -> bool;
 
             pub fn set_multiple(&self, multiple: bool);
-
-            pub fn pattern(&self) -> String;
-
-            pub fn set_pattern(&self, pattern: &str);
 
             pub fn placeholder(&self) -> String;
 
@@ -157,23 +120,9 @@ impl HtmlInputElement {
 
             pub fn set_size(&self, size: u32);
 
-            pub fn src(&self) -> String;
-
-            pub fn set_src(&self, src: &str);
-
             pub fn step(&self) -> String;
 
             pub fn set_step(&self, step: &str);
-
-            pub fn will_validate(&self) -> bool;
-
-            pub fn check_validity(&self) -> bool;
-
-            pub fn report_validity(&self) -> bool;
-
-            pub fn set_custom_validity(&self, error: &str);
-
-            pub fn validity(&self) -> ValidityState;
 
             pub fn select(&self);
         }
@@ -235,6 +184,17 @@ impl HtmlInputElement {
         self.inner.set_type(input_type);
     }
 
+    pub fn src(&self) -> Option<Url> {
+        Url::parse(self.inner.src()).ok()
+    }
+
+    pub fn set_src<T>(&self, src: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.set_src(src.as_str());
+    }
+
     pub fn autocomplete(&self) -> AutoComplete {
         match &*self.inner.autocomplete() {
             "off" => AutoComplete::Off,
@@ -267,37 +227,16 @@ impl HtmlInputElement {
         self.inner.set_min_length(min_length as i32);
     }
 
-    pub fn form(&self) -> Option<HtmlFormElement> {
-        self.inner.form().map(|form| form.into())
+    pub fn files(&self) -> Option<InputFiles> {
+        self.inner.files().map(|inner| InputFiles { inner })
     }
 
-    pub fn form_encoding(&self) -> String {
-        self.inner.form_enctype()
+    pub fn set_files<S>(&self, files: S)
+    where
+        S: InputFilesSource,
+    {
+        self.inner.set_files(Some(files.as_web_sys_file_list()));
     }
-
-    pub fn set_form_encoding(&self, encoding: &str) {
-        self.inner.set_form_enctype(encoding);
-    }
-
-    pub fn form_method(&self) -> FormMethod {
-        match &*self.inner.form_method() {
-            "post" => FormMethod::Post,
-            "dialog" => FormMethod::Dialog,
-            _ => FormMethod::Get,
-        }
-    }
-
-    pub fn set_form_method(&self, method: FormMethod) {
-        let method = match method {
-            FormMethod::Get => "get",
-            FormMethod::Post => "post",
-            FormMethod::Dialog => "dialog",
-        };
-
-        self.inner.set_form_method(method);
-    }
-
-    // TODO: files
 
     pub fn list(&self) -> Option<HtmlDataListElement> {
         self.inner.list().map(|e| {
@@ -305,38 +244,6 @@ impl HtmlInputElement {
 
             list.into()
         })
-    }
-
-    pub fn validation_message(&self) -> String {
-        // There's no indication in the spec that this can actually fail, unwrap for now.
-        self.inner.validation_message().unwrap()
-    }
-
-    pub fn selection_start(&self) -> Option<u32> {
-        self.inner.selection_start().ok().flatten()
-    }
-
-    pub fn selection_end(&self) -> Option<u32> {
-        self.inner.selection_end().ok().flatten()
-    }
-
-    pub fn selection_direction(&self) -> Option<SelectionDirection> {
-        self.inner
-            .selection_direction()
-            .ok()
-            .flatten()
-            .map(|direction| match &*direction {
-                "forward" => SelectionDirection::Forward,
-                "backward" => SelectionDirection::Backward,
-                _ => SelectionDirection::None,
-            })
-    }
-
-    // TODO: set_selection_start, set_selection_end, set_selection_direction or rely on
-    // set_selection_range?
-
-    pub fn labels(&self) -> Option<Labels> {
-        self.inner.labels().map(|inner| Labels::new(inner))
     }
 
     pub fn set_text_range<R>(&self, range: R, text: &str) -> Result<(), SetTextRangeError>
@@ -366,6 +273,26 @@ impl HtmlInputElement {
                     "InvalidStateError" => InvalidStateError::new(err).into(),
                     _ => unreachable!(),
                 }
+            })
+    }
+
+    pub fn selection_start(&self) -> Option<u32> {
+        self.inner.selection_start().ok().flatten()
+    }
+
+    pub fn selection_end(&self) -> Option<u32> {
+        self.inner.selection_end().ok().flatten()
+    }
+
+    pub fn selection_direction(&self) -> Option<SelectionDirection> {
+        self.inner
+            .selection_direction()
+            .ok()
+            .flatten()
+            .map(|direction| match &*direction {
+                "forward" => SelectionDirection::Forward,
+                "backward" => SelectionDirection::Backward,
+                _ => SelectionDirection::None,
             })
     }
 
@@ -399,6 +326,189 @@ impl HtmlInputElement {
             .set_selection_range_with_direction(start, end, direction)
             .map_err(|err| InvalidStateError::new(err.unchecked_into()))
     }
+
+    // TODO: `accept`, `min`, `max`, `pattern` all take complex restricted string types.
 }
 
-impl_html_common_traits!(HtmlInputElement);
+impl form_listed_element_seal::Seal for HtmlInputElement {}
+
+impl FormListedElement for HtmlInputElement {
+    delegate! {
+        to self.inner {
+            fn name(&self) -> String;
+
+            fn set_name(&self, name: &str);
+        }
+    }
+
+    fn form(&self) -> Option<HtmlFormElement> {
+        self.inner.form().map(|form| form.into())
+    }
+}
+
+impl TryFrom<DynamicFormListedElement> for HtmlInputElement {
+    type Error = InvalidCast<DynamicFormListedElement>;
+
+    fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
+        let value: web_sys::HtmlElement = value.into();
+
+        value
+            .dyn_into::<web_sys::HtmlButtonElement>()
+            .map(|e| e.into())
+            .map_err(|e| InvalidCast(e.into()))
+    }
+}
+
+impl form_submitter_element_seal::Seal for HtmlInputElement {}
+
+impl FormSubmitterElement for HtmlInputElement {
+    delegate! {
+        to self.inner {
+            fn form_no_validate(&self) -> bool;
+
+            fn set_form_no_validate(&self, form_no_validate: bool);
+
+            fn form_target(&self) -> String;
+
+            fn set_form_target(&self, form_target: &str);
+        }
+    }
+
+    fn form_action(&self) -> Option<Url> {
+        Url::parse(self.inner.form_action()).ok()
+    }
+
+    fn set_form_action<T>(&self, form_action: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.set_form_action(form_action.as_str());
+    }
+
+    fn form_encoding(&self) -> Option<FormEncoding> {
+        match self.inner.form_enctype().as_ref() {
+            "multipart/form-data" => Some(FormEncoding::FormData),
+            "text/plain" => Some(FormEncoding::Plain),
+            "application/x-www-form-urlencoded" => Some(FormEncoding::UrlEncoded),
+            _ => None,
+        }
+    }
+
+    fn set_form_encoding(&self, encoding: Option<FormEncoding>) {
+        self.inner
+            .set_form_enctype(encoding.map(|e| e.as_ref()).unwrap_or(""));
+    }
+
+    fn form_method(&self) -> FormMethod {
+        match &*self.inner.form_method() {
+            "post" => FormMethod::Post,
+            "dialog" => FormMethod::Dialog,
+            _ => FormMethod::Get,
+        }
+    }
+
+    fn set_form_method(&self, method: FormMethod) {
+        let method = match method {
+            FormMethod::Get => "get",
+            FormMethod::Post => "post",
+            FormMethod::Dialog => "dialog",
+        };
+
+        self.inner.set_form_method(method);
+    }
+}
+
+impl labelable_element_seal::Seal for HtmlInputElement {}
+
+impl LabelableElement for HtmlInputElement {
+    fn labels(&self) -> Labels {
+        Labels::new(self.inner.labels())
+    }
+}
+
+impl constraint_validation_target_seal::Seal for HtmlInputElement {}
+
+impl ConstraintValidationTarget for HtmlInputElement {
+    delegate! {
+        to self.inner {
+            fn will_validate(&self) -> bool;
+
+            fn check_validity(&self) -> bool;
+
+            fn report_validity(&self) -> bool;
+
+            fn set_custom_validity(&self, error: &str);
+        }
+    }
+
+    fn validity(&self) -> ValidityState {
+        self.inner.validity().into()
+    }
+
+    fn validation_message(&self) -> String {
+        self.inner.validation_message().unwrap_or(String::new())
+    }
+}
+
+impl From<web_sys::HtmlInputElement> for HtmlInputElement {
+    fn from(inner: web_sys::HtmlInputElement) -> Self {
+        HtmlInputElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlInputElement> for HtmlInputElement {
+    fn as_ref(&self) -> &web_sys::HtmlInputElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlInputElement);
+impl_try_from_element!(HtmlInputElement);
+impl_known_element!(HtmlInputElement, "INPUT");
+
+pub struct InputFiles {
+    inner: web_sys::FileList,
+}
+
+impl Collection for InputFiles {
+    fn len(&self) -> u32 {
+        self.inner.length()
+    }
+}
+
+impl Sequence for InputFiles {
+    type Item = File;
+
+    fn get(&self, index: u32) -> Option<Self::Item> {
+        self.inner.get(index).map(|f| f.into())
+    }
+
+    fn to_host_array(&self) -> js_sys::Array {
+        js_sys::Array::from(self.inner.as_ref())
+    }
+}
+
+pub(crate) mod input_files_source_seal {
+    pub trait Seal {
+        #[doc(hidden)]
+        fn as_web_sys_file_list(&self) -> &web_sys::FileList;
+    }
+}
+
+pub trait InputFilesSource: input_files_source_seal::Seal {}
+
+impl input_files_source_seal::Seal for web_sys::FileList {
+    fn as_web_sys_file_list(&self) -> &web_sys::FileList {
+        self
+    }
+}
+
+impl InputFilesSource for web_sys::FileList {}
+
+impl input_files_source_seal::Seal for InputFiles {
+    fn as_web_sys_file_list(&self) -> &web_sys::FileList {
+        &self.inner
+    }
+}
+
+impl InputFilesSource for InputFiles {}

@@ -1,6 +1,7 @@
 use crate::collection::{Collection, Sequence};
 use crate::dom::element::Element;
 use crate::file::File;
+use crate::html::{input_files_source_seal, InputFilesSource};
 use crate::DynamicEventTarget;
 use std::convert::TryFrom;
 use std::iter::FusedIterator;
@@ -147,6 +148,14 @@ impl Sequence for DragEventFiles {
         js_sys::Array::from(self.inner.as_ref())
     }
 }
+
+impl input_files_source_seal::Seal for DragEventFiles {
+    fn as_web_sys_file_list(&self) -> &web_sys::FileList {
+        &self.inner
+    }
+}
+
+impl InputFilesSource for DragEventFiles {}
 
 #[derive(Clone)]
 pub struct DragStartEvent<T> {

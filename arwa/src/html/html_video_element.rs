@@ -1,12 +1,3 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, HtmlMediaElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlVideoElement {
     inner: web_sys::HtmlVideoElement,
@@ -34,12 +25,17 @@ impl HtmlVideoElement {
     }
 }
 
-impl_html_common_traits!(HtmlVideoElement);
-
-impl AsRef<web_sys::HtmlMediaElement> for HtmlVideoElement {
-    fn as_ref(&self) -> &web_sys::HtmlMediaElement {
-        self.inner.as_ref()
+impl From<web_sys::HtmlAudioElement> for HtmlVideoElement {
+    fn from(inner: web_sys::HtmlVideoElement) -> Self {
+        HtmlVideoElement { inner }
     }
 }
 
-impl HtmlMediaElement for HtmlVideoElement {}
+impl AsRef<web_sys::HtmlVideoElement> for HtmlVideoElement {
+    fn as_ref(&self) -> &web_sys::HtmlVideoElement {
+        &self.inner
+    }
+}
+
+impl_html_media_element_traits!(HtmlVideoElement);
+impl_known_element!(HtmlVideoElement, "VIDEO");

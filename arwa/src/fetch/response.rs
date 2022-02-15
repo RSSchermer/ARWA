@@ -1,6 +1,6 @@
 use crate::fetch::{Body, BodySource, Headers, Status};
 use crate::file::Blob;
-use crate::url::ContextualUrl;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -60,8 +60,11 @@ impl Response {
             .map_err(|err| ResponseInitError::new(err.unchecked_into()))
     }
 
-    fn redirect(url: ContextualUrl, status: Status) -> Response {
-        web_sys::Response::redirect_with_status(url.as_ref(), status)
+    fn redirect<T>(url: T, status: Status) -> Response
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        web_sys::Response::redirect_with_status(url.as_str(), status)
             .unwrap_throw()
             .into()
     }
@@ -100,7 +103,7 @@ impl Response {
             None
         } else {
             // Assume URL is always valid for now (until counter-example).
-            Some(Url::parse(self.inner.url().as_ref()).unwrap())
+            Some(Url::parse(&url).unwrap())
         }
     }
 

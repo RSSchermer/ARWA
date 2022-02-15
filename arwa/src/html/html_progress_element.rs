@@ -1,11 +1,4 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, Labels};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
+use crate::html::{labelable_element_seal, LabelableElement, Labels};
 
 #[derive(Clone)]
 pub struct HtmlProgressElement {
@@ -34,10 +27,28 @@ impl HtmlProgressElement {
             None
         }
     }
+}
 
-    pub fn labels(&self) -> Labels {
+impl labelable_element_seal::Seal for HtmlProgressElement {}
+
+impl LabelableElement for HtmlProgressElement {
+    fn labels(&self) -> Labels {
         Labels::new(self.inner.labels())
     }
 }
 
-impl_html_common_traits!(HtmlProgressElement);
+impl From<web_sys::HtmlProgressElement> for HtmlProgressElement {
+    fn from(inner: web_sys::HtmlProgressElement) -> Self {
+        HtmlProgressElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlProgressElement> for HtmlProgressElement {
+    fn as_ref(&self) -> &web_sys::HtmlProgressElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlProgressElement);
+impl_try_from_element!(HtmlProgressElement);
+impl_known_element!(HtmlProgressElement, "PROGRESS");

@@ -1,4 +1,4 @@
-use crate::console::{Write, Writer};
+use arwa::console::{Write, Writer};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TextTrackReadyState {
@@ -25,8 +25,4 @@ impl AsRef<web_sys::TextTrack> for TextTrack {
     }
 }
 
-impl Write for TextTrack {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(TextTrack, web_sys::TextTrack);

@@ -3,11 +3,10 @@ use crate::fetch::{
     RequestRedirect, RequestReferrer, Response, Status,
 };
 use crate::security::ReferrerPolicy;
-use crate::url::ContextualUrl;
+use crate::url::AbsoluteOrRelativeUrl;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use url::Url;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
 

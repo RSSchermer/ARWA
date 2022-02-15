@@ -80,7 +80,8 @@ pub trait Sequence: Collection {
     /// Returns a [Vec] in linear memory where each element in the sequence has been copied into the
     /// [Vec] in sequence order.
     ///
-    /// Note that especially for long sequences, [to_host_array] may perform significantly better.
+    /// Note that especially for long sequences, [to_host_array] may offer significantly better
+    /// performance.
     fn to_vec(&self) -> Vec<Self::Item> {
         let mut vec = Vec::with_capacity(self.len() as usize);
 

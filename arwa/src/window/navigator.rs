@@ -2,6 +2,7 @@ use crate::connection::{
     connection_event_target_seal, connection_status_seal, ConnectionEventTarget, ConnectionStatus,
 };
 use crate::geolocation::Geolocation;
+use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
 use crate::security::SecurityError;
 use crate::worker::service::ServiceWorkerContainer;
@@ -65,11 +66,10 @@ impl WindowNavigator {
 impl navigator_seal::Seal for WindowNavigator {}
 
 impl Navigator for WindowNavigator {
-    delegate! {
-        to self.inner {
-            fn language(&self) -> Option<String>;
-        }
+    fn language(&self) -> Option<LanguageTag> {
+        self.inner.language().and_then(|l| LanguageTag::parse(l))
     }
+
     fn hardware_concurrency(&self) -> u32 {
         self.inner.hardware_concurrency() as u32
     }

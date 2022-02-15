@@ -1,13 +1,13 @@
 use crate::collection::{Collection, Sequence};
 use crate::connection::{connection_event_target_seal, ConnectionEventTarget};
-use crate::cssom::CssStyleSheet;
+use crate::cssom::{style_context_seal, CssStyleSheet, StyleContext, StyleSheets};
 use crate::dom::document_seal::Seal;
 use crate::dom::selector::CompiledSelector;
 use crate::dom::{
     parent_node_seal, AdoptNodeError, Attribute, CDATAError, CDATASection, ChildElements,
     ChildNode, Comment, DocumentFragment, DocumentType, DynamicElement, DynamicNode,
-    GenericDocumentFragment, HierarchyRequestError, InvalidAttributeName, LiveRange, Node,
-    ParentNode, ProcessingInstruction, ProcessingInstructionError, QuerySelectorAll, Text,
+    GenericDocumentFragment, HierarchyRequestError, InvalidName, LiveRange, Name, Node, ParentNode,
+    ProcessingInstruction, ProcessingInstructionError, QualifiedName, QuerySelectorAll, Text,
     TextDirectionality,
 };
 use crate::event::DynamicEventTarget;
@@ -168,18 +168,62 @@ pub trait Document: document_seal::Seal {
         GenericDocumentFragment::from(self.as_web_sys_document().create_document_fragment())
     }
 
-    fn create_attribute(&self, name: &str) -> Attribute {
+    fn create_attribute(&self, name: &Name) -> Attribute {
         self.as_web_sys_document()
-            .create_attribute(name)
+            .create_attribute(name.as_ref())
             .unwrap_throw()
             .into()
     }
 
-    fn try_create_attribute(&self, name: &str) -> Result<Attribute, InvalidAttributeName> {
+    fn create_attribute_namespaced(
+        &self,
+        qualified_name: &QualifiedName,
+        namespace: &str,
+    ) -> Attribute {
         self.as_web_sys_document()
-            .create_attribute(name)
+            .create_attribute_ns(Some(namespace), qualified_name.as_ref())
+            .unwrap_throw()
+            .into()
+    }
+
+    fn try_create_attribute_namespaced(
+        &self,
+        qualified_name: &QualifiedName,
+        namespace: &str,
+    ) -> Result<Attribute, NamespaceError> {
+        self.as_web_sys_document()
+            .create_attribute_ns(Some(namespace), qualified_name.as_ref())
             .map(|a| a.into())
-            .map_err(|e| InvalidAttributeName(name.to_string()))
+            .map_err(|err| NamespaceError::new(err.unchecked_into()))
+    }
+
+    fn create_element(&self, name: &Name) -> DynamicElement {
+        self.as_web_sys_document()
+            .create_element(name.as_ref())
+            .unwrap_throw()
+            .into()
+    }
+
+    fn create_element_namespaced(
+        &self,
+        qualified_name: &QualifiedName,
+        namespace: &str,
+    ) -> DynamicElement {
+        self.as_web_sys_document()
+            .create_element_ns(Some(namespace), qualified_name.as_ref())
+            .unwrap_throw()
+            .into()
+    }
+
+    fn try_create_element_namespaced(
+        &self,
+        qualified_name: &QualifiedName,
+        namespace: &str,
+    ) -> Result<DynamicElement, NamespaceError> {
+        self.as_web_sys_document()
+            .create_element_ns(Some(namespace), qualified_name.as_ref())
+            .map(|a| a.into())
+            .map_err(|err| NamespaceError::new(err.unchecked_into()))
     }
 
     #[allow(non_snake_case)]
@@ -279,6 +323,17 @@ pub trait Document: document_seal::Seal {
     // TODO: node iterator?
 }
 
+#[derive(Clone)]
+pub struct NamespaceError {
+    inner: web_sys::DomException,
+}
+
+impl NamespaceError {
+    fn new(inner: web_sys::DomException) -> Self {
+        NamespaceError { inner }
+    }
+}
+
 pub struct DynamicDocument {
     inner: web_sys::Document,
 }
@@ -307,6 +362,13 @@ impl ui_event_target_seal::Seal for DynamicDocument {
 
 impl UiEventTarget for DynamicDocument {}
 
+impl style_context_seal::Seal for DynamicDocument {}
+impl StyleContext for DynamicDocument {
+    fn style_sheets(&self) -> StyleSheets {
+        StyleSheets::new(self.inner.style_sheets())
+    }
+}
+
 impl From<web_sys::Document> for DynamicDocument {
     fn from(inner: web_sys::Document) -> Self {
         DynamicDocument { inner }
@@ -326,29 +388,8 @@ impl AsRef<web_sys::Document> for DynamicDocument {
 }
 
 impl_node_traits!(DynamicDocument);
+impl_try_from_node!(DynamicDocument, web_sys::Document);
 impl_parent_node_for_document!(DynamicDocument);
-
-pub struct DocumentStyleSheets {
-    inner: web_sys::ShyleSheetList,
-}
-
-impl Collection for DocumentStyleSheets {
-    fn len(&self) -> u32 {
-        self.inner.length()
-    }
-}
-
-impl Sequence for DocumentStyleSheets {
-    type Item = CssStyleSheet;
-
-    fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.get(index).map(|_| s.into())
-    }
-
-    fn to_host_array(&self) -> js_sys::Array {
-        js_sys::Array::from(self.inner.as_ref())
-    }
-}
 
 typed_event_stream!(
     OnFullscreenChange,
@@ -392,3 +433,63 @@ typed_event_stream!(
     VisibilityChangeEvent,
     "visibilitychange"
 );
+
+macro_rules! impl_document_traits {
+    ($document:ident, $web_sys_tpe:ident) => {
+        impl $crate::dom::document_seal::Seal for $document {
+            fn as_web_sys_document(&self) -> &web_sys::Document {
+                self.inner.as_ref()
+            }
+        }
+
+        impl $crate::dom::Document for $document {}
+
+        impl $crate::connection::connection_event_target_seal::Seal for $document {
+            fn as_web_sys_event_target(&self) -> &web_sys::EventTarget {
+                self.as_web_sys_document().as_ref()
+            }
+        }
+
+        impl $crate::connection::ConnectionEventTarget for $document {}
+
+        impl $crate::ui::ui_event_target_seal::Seal for $document {
+            fn as_web_sys_event_target(&self) -> &web_sys::EventTarget {
+                self.as_web_sys_document().as_ref()
+            }
+        }
+
+        impl $crate::ui::UiEventTarget for $document {}
+
+        impl $crate::cssom::style_context_seal::Seal for $document {}
+        impl $crate::cssom::StyleContext for $document {
+            fn style_sheets(&self) -> $crate::cssom::StyleSheets {
+                $crate::cssom::StyleSheets::new(self.as_web_sys_document().style_sheets())
+            }
+        }
+
+        impl AsRef<web_sys::Document> for $document {
+            fn as_ref(&self) -> &web_sys::Document {
+                self.as_web_sys_document()
+            }
+        }
+
+        impl TryFrom<$crate::dom::DynamicDocument> for $document {
+            type Error = $crate::InvalidCast<$tpe>;
+
+            fn try_from(value: $crate::dom::DynamicDocument) -> Result<Self, Self::Error> {
+                let value: web_sys::Document = value.into();
+
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .map(|e| e.into())
+                    .map_err(|e| $crate::InvalidCast(e.into()))
+            }
+        }
+
+        impl_node_traits!($document);
+        impl_try_from_node!($document, $web_sys_tpe);
+        impl_parent_node_for_document!($document);
+    };
+}
+
+pub(crate) use impl_document_traits;

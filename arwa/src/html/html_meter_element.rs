@@ -1,11 +1,4 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, Labels};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
+use crate::html::{labelable_element_seal, LabelableElement, Labels};
 
 #[derive(Clone)]
 pub struct HtmlMeterElement {
@@ -40,10 +33,28 @@ impl HtmlMeterElement {
             pub fn set_optimum(&self, optimum: f64);
         }
     }
+}
 
-    pub fn labels(&self) -> Labels {
+impl labelable_element_seal::Seal for HtmlMeterElement {}
+
+impl LabelableElement for HtmlMeterElement {
+    fn labels(&self) -> Labels {
         Labels::new(self.inner.labels())
     }
 }
 
-impl_html_common_traits!(HtmlMeterElement);
+impl From<web_sys::HtmlMeterElement> for HtmlMeterElement {
+    fn from(inner: web_sys::HtmlMeterElement) -> Self {
+        HtmlMeterElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlMeterElement> for HtmlMeterElement {
+    fn as_ref(&self) -> &web_sys::HtmlMeterElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlMeterElement);
+impl_try_from_element!(HtmlMeterElement);
+impl_known_element!(HtmlMeterElement, "METER");

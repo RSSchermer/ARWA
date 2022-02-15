@@ -1,5 +1,5 @@
 use crate::message::{message_event_target_seal, MessageEventTarget};
-use crate::url::ContextualUrl;
+use crate::url::AbsoluteOrRelativeUrl;
 use crate::worker::service::{ServiceWorker, ServiceWorkerRegistration};
 use crate::worker::WorkerType;
 use std::future::Future;
@@ -23,7 +23,7 @@ impl Default for UpdateViaCache {
 }
 
 pub struct ServiceWorkerOptions<'a> {
-    pub scope: Option<ContextualUrl<'a>>,
+    pub scope: Option<AbsoluteOrRelativeUrl<'a>>,
     pub worker_type: WorkerType,
     pub update_via_cache: UpdateViaCache,
 }
@@ -57,7 +57,7 @@ impl ServiceWorkerContainer {
 
     pub fn register(
         &self,
-        script_url: ContextualUrl,
+        script_url: AbsoluteOrRelativeUrl,
         options: ServiceWorkerOptions,
     ) -> ServiceWorkerRegister {
         let ServiceWorkerOptions {
@@ -100,7 +100,7 @@ impl ServiceWorkerContainer {
     // Note: while get_registration make the scope url argument optional, we don't here. A scope of
     // `None` should be equivalent to `ready`.
 
-    pub fn registration_for(&self, scope: ContextualUrl) -> ServiceWorkerRegistrationFor {
+    pub fn registration_for(&self, scope: AbsoluteOrRelativeUrl) -> ServiceWorkerRegistrationFor {
         ServiceWorkerRegistrationFor {
             init: Some(RegistrationForInit {
                 container: self.inner.clone(),
@@ -144,7 +144,8 @@ impl AsRef<web_sys::ServiceWorkerContainer> for ServiceWorkerContainer {
     }
 }
 
-impl_event_target_traits!(ServiceWorker, web_sys::ServiceWorker);
+impl_event_target_traits!(ServiceWorker);
+impl_try_from_event_targets!(ServiceWorker, web_sys::ServiceWorker);
 
 #[must_use = "a future does nothing unless polled or spawned"]
 pub struct ServiceWorkerReady {

@@ -1,7 +1,7 @@
 use crate::message::{message_sender_seal, MessageSender};
+use crate::url::Url;
 use crate::worker::{worker_seal, Worker};
 use std::marker;
-use url::Url;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ServiceWorkerState {
@@ -62,7 +62,8 @@ impl AsRef<web_sys::ServiceWorker> for ServiceWorker {
     }
 }
 
-impl_event_target_traits!(ServiceWorker, web_sys::ServiceWorker);
+impl_event_target_traits!(ServiceWorker);
+impl_try_from_event_target_traits!(ServiceWorker, web_sys::ServiceWorker);
 
 #[derive(Clone)]
 pub struct StateChangeEvent<T> {

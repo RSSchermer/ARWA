@@ -1,31 +1,15 @@
-use std::convert::TryFrom;
-use std::ops::{Bound, RangeBounds};
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::error::{InvalidStateError, RangeError, SetTextRangeError};
-use crate::event::GenericEventTarget;
-use crate::html::{AutoComplete, GenericHtmlElement, HtmlElement, HtmlFormElement, Labels};
-use crate::{
-    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node,
-    SelectionDirection, TextWrap,
-};
-
-pub use web_sys::ValidityState;
+use crate::html::{AutoComplete, form_listed_element_seal, FormListedElement, HtmlFormElement, labelable_element_seal, LabelableElement, Labels, constraint_validation_target_seal, ConstraintValidationTarget, ValidityState};
+use crate::cssom::TextWrap;
+use std::ops::{RangeBounds, Bound};
 
 #[derive(Clone)]
-pub struct HtmlTextAreaElement {
+pub struct HtmlTextareaElement {
     inner: web_sys::HtmlTextAreaElement,
 }
 
-impl HtmlTextAreaElement {
+impl HtmlTextareaElement {
     delegate! {
         target self.inner {
-            pub fn name(&self) -> String;
-
-            pub fn set_name(&self, name: &str);
-
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -59,16 +43,6 @@ impl HtmlTextAreaElement {
             pub fn rows(&self) -> u32;
 
             pub fn set_rows(&self, rows: u32);
-
-            pub fn will_validate(&self) -> bool;
-
-            pub fn check_validity(&self) -> bool;
-
-            pub fn report_validity(&self) -> bool;
-
-            pub fn set_custom_validity(&self, error: &str);
-
-            pub fn validity(&self) -> ValidityState;
 
             pub fn select(&self);
         }
@@ -130,19 +104,6 @@ impl HtmlTextAreaElement {
 
     pub fn set_min_length(&self, min_length: u32) {
         self.inner.set_min_length(min_length as i32);
-    }
-
-    pub fn form(&self) -> Option<HtmlFormElement> {
-        self.inner.form().map(|form| form.into())
-    }
-
-    pub fn validation_message(&self) -> String {
-        // There's no indication in the spec that this can actually fail, unwrap for now.
-        self.inner.validation_message().unwrap()
-    }
-
-    pub fn labels(&self) -> Labels {
-        Labels::new(self.inner.labels())
     }
 
     pub fn selection_start(&self) -> Option<u32> {
@@ -227,4 +188,66 @@ impl HtmlTextAreaElement {
     }
 }
 
-impl_html_common_traits!(HtmlTextAreaElement);
+impl form_listed_element_seal::Seal for HtmlTextareaElement {}
+
+impl FormListedElement for HtmlTextareaElement {
+    delegate! {
+        to self.inner {
+            fn name(&self) -> String;
+
+            fn set_name(&self, name: &str);
+        }
+    }
+
+    fn form(&self) -> Option<HtmlFormElement> {
+        self.inner.form().map(|form| form.into())
+    }
+}
+
+impl labelable_element_seal::Seal for HtmlTextareaElement {}
+
+impl LabelableElement for HtmlTextareaElement {
+    fn labels(&self) -> Labels {
+        Labels::new(self.inner.labels())
+    }
+}
+
+impl constraint_validation_target_seal::Seal for HtmlTextareaElement {}
+
+impl ConstraintValidationTarget for HtmlTextareaElement {
+    delegate! {
+        to self.inner {
+            fn will_validate(&self) -> bool;
+
+            fn check_validity(&self) -> bool;
+
+            fn report_validity(&self) -> bool;
+
+            fn set_custom_validity(&self, error: &str);
+        }
+    }
+
+    fn validity(&self) -> ValidityState {
+        self.inner.validity().into()
+    }
+
+    fn validation_message(&self) -> String {
+        self.inner.validation_message().unwrap_or(String::new())
+    }
+}
+
+impl From<web_sys::HtmlTextAreaElement> for HtmlTextareaElement {
+    fn from(inner: web_sys::HtmlTextAreaElement) -> Self {
+        HtmlTextareaElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlTextAreaElement> for HtmlTextareaElement {
+    fn as_ref(&self) -> &web_sys::HtmlTextAreaElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlTextareaElement);
+impl_try_from_element!(HtmlTextareaElement, web_sys::HtmlTextAreaElement);
+impl_known_element!(HtmlTextareaElement, web_sys::HtmlTextAreaElement, "TEXTAREA");

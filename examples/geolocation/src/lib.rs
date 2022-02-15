@@ -1,7 +1,7 @@
 #![feature(async_closure)]
 use std::convert::TryInto;
 
-use arwa::html::{GenericHtmlElement, HtmlElement};
+use arwa::html::{DynamicHtmlElement, HtmlElement};
 use arwa::{console, document, navigator, Document, PositionOptions};
 use futures::{future, StreamExt};
 use wasm_bindgen::prelude::*;
@@ -13,7 +13,7 @@ pub fn start() {
     let navigator = navigator().unwrap();
     let geolocation = navigator.geolocation().unwrap();
 
-    let position_container: GenericHtmlElement = document
+    let position_container: DynamicHtmlElement = document
         .query_id("position_container")
         .expect("No element with id `position_container`")
         .try_into()

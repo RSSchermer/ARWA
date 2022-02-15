@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "arwa",
+    "arwa_parse",
     "examples/animation_frame",
     "examples/console",
     "examples/events",

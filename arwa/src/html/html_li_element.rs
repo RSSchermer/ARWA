@@ -1,12 +1,3 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlLiElement {
     inner: web_sys::HtmlLiElement,
@@ -22,4 +13,18 @@ impl HtmlLiElement {
     }
 }
 
-impl_html_common_traits!(HtmlLiElement);
+impl From<web_sys::HtmlLiElement> for HtmlLiElement {
+    fn from(inner: web_sys::HtmlLiElement) -> Self {
+        HtmlLiElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlLiElement> for HtmlLiElement {
+    fn as_ref(&self) -> &web_sys::HtmlLiElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlLiElement);
+impl_try_from_element!(HtmlLiElement);
+impl_known_element!(HtmlLiElement, "LI");

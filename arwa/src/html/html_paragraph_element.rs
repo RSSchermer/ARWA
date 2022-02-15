@@ -1,14 +1,20 @@
-use std::convert::TryFrom;
-
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlParagraphElement {
     inner: web_sys::HtmlParagraphElement,
 }
 
-impl_html_common_traits!(HtmlParagraphElement);
+impl From<web_sys::HtmlParagraphElement> for HtmlParagraphElement {
+    fn from(inner: web_sys::HtmlParagraphElement) -> Self {
+        HtmlParagraphElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlParagraphElement> for HtmlParagraphElement {
+    fn as_ref(&self) -> &web_sys::HtmlParagraphElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlParagraphElement);
+impl_try_from_element!(HtmlParagraphElement);
+impl_known_element!(HtmlParagraphElement, "P");

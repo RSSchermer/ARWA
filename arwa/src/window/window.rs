@@ -15,8 +15,12 @@ use crate::cssom::{CssReadOnlyStyleDeclaration, Screen};
 use crate::dom::{DynamicElement, Element};
 use crate::error::TypeError;
 use crate::execution::{execution_event_target_seal, ExecutionEventTarget};
-use crate::fetch::{fetch_context_seal, ContextInternal, Fetch, FetchContext, Request, cache_context_seal, CacheContext};
+use crate::fetch::{
+    cache_context_seal, fetch_context_seal, CacheContext, ContextInternal, Fetch, FetchContext,
+    Request,
+};
 use crate::history::History;
+use crate::html::{slot_change_event_target_seal, SlotChangeEventTarget};
 use crate::message::{message_event_target_seal, MessageEventTarget};
 use crate::performance::Performance;
 use crate::scroll::{scrollable_seal, ScrollByOptions, ScrollToOptions, Scrollable};
@@ -70,8 +74,12 @@ impl Window {
         self.inner.set_status(status).unwrap();
     }
 
-    pub fn document(&self) -> Option<GenericDocument> {
-        self.inner.document().map(|inner| inner.into())
+    pub fn document(&self) -> GenericDocument {
+        // The spec gives no indication this can be null in a browser context, neither for top
+        // level contexts, nor for iframed contexts (though as I understand it the iframe's
+        // contentWindow can be null, but if it isn't then the contentWindow's document is never
+        // null).
+        self.inner.document().unwrap().into()
     }
 
     // TODO: custom_elements
@@ -476,7 +484,16 @@ impl ui_event_target_seal::Seal for Window {
 
 impl UiEventTarget for Window {}
 
-impl_event_target_traits!(Window, web_sys::Window);
+impl slot_change_event_target_seal::Seal for Window {
+    fn as_web_sys_event_target(&self) -> &web_sys::EventTarget {
+        self.inner.as_ref()
+    }
+}
+
+impl SlotChangeEventTarget for Window {}
+
+impl_event_target_traits!(Window);
+impl_try_from_event_targets!(Window, web_sys::Window);
 
 typed_event_stream!(
     OnBeforePrint,

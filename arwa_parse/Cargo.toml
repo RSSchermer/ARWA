@@ -1,0 +1,11 @@
+[package]
+name = "arwa_parse"
+version = "0.1.0"
+description = "Parsing internals for the arwa crate."
+keywords = ["web", "wasm"]
+authors = ["RSSchermer <roland0507@gmail.com>"]
+edition = "2018"
+repository = "https://github.com/RSSchermer/ARWA"
+homepage = "https://github.com/RSSchermer/ARWA"
+license = "MIT"
+readme = "../README.md"

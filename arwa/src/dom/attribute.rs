@@ -1,5 +1,8 @@
-use crate::dom::DynamicElement;
+use crate::dom::{DynamicElement, Name};
 use delegate::delegate;
+use std::borrow::Cow;
+use std::ops::Deref;
+use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct Attribute {
@@ -13,11 +16,7 @@ impl Attribute {
 
     delegate! {
         target self.inner {
-            pub fn name(&self) -> String;
-
             pub fn namespace_uri(&self) -> Option<String>;
-
-            pub fn local_name(&self) -> String;
 
             pub fn prefix(&self) -> Option<String>;
 
@@ -25,6 +24,14 @@ impl Attribute {
 
             pub fn set_value(&self, value: &str);
         }
+    }
+
+    pub fn name(&self) -> Name<'static> {
+        Name(self.inner.name().into())
+    }
+
+    pub fn local_name(&self) -> Name<'static> {
+        Name(self.inner.local_name().into())
     }
 
     pub fn owner_element(&self) -> Option<DynamicElement> {
@@ -45,15 +52,5 @@ impl From<web_sys::Attr> for Attribute {
     }
 }
 
-impl_node_traits!(Attribute, web_sys::Attr);
-
-#[derive(Clone)]
-pub struct InvalidAttributeName {
-    inner: web_sys::DomException,
-}
-
-impl InvalidAttributeName {
-    pub(crate) fn new(inner: web_sys::DomException) -> Self {
-        InvalidAttributeName { inner }
-    }
-}
+impl_node_traits!(Attribute);
+impl_try_from_node!(Attribute, web_sys::Attr);

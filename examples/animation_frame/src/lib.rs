@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::convert::TryInto;
 use std::rc::Rc;
 
-use arwa::html::{GenericHtmlElement, HtmlButtonElement, HtmlElement};
+use arwa::html::{DynamicHtmlElement, HtmlButtonElement, HtmlElement};
 use arwa::{
     document, window, AnimationFrameCancelled, AnimationFrameHandle, Document, GlobalEventHandlers,
     Window,
@@ -20,7 +20,7 @@ use wasm_bindgen_futures::spawn_local;
 // your game loop for example, where instead of a frame count you would track your game state.
 struct FrameLoop {
     count: usize,
-    display_container: GenericHtmlElement,
+    display_container: DynamicHtmlElement,
     frame_provider: Window,
     cancellation_handle: Rc<RefCell<Option<AnimationFrameHandle>>>,
 }
@@ -63,7 +63,7 @@ pub fn start() {
     let document = document().unwrap();
 
     // Obtain a reference to our "display container" element.
-    let display_container: GenericHtmlElement = document
+    let display_container: DynamicHtmlElement = document
         .query_id("display_container")
         .expect("No element with id `display_container`.")
         .try_into()

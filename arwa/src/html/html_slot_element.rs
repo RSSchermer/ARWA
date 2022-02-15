@@ -5,8 +5,9 @@ use wasm_bindgen::JsCast;
 
 use crate::console::{Write, Writer};
 use crate::event::{GenericEventTarget, OnSlotChange};
-use crate::html::{GenericHtmlElement, HtmlElement};
+use crate::html::{DynamicHtmlElement, HtmlElement};
 use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
+use std::marker;
 
 #[derive(Clone)]
 pub struct HtmlSlotElement {
@@ -39,111 +40,49 @@ impl HtmlSlotElement {
             inner: self.inner.assigned_nodes_with_options(&options),
         }
     }
+}
 
-    pub fn on_slot_change(&self) -> OnSlotChange {
-        OnSlotChange::new(self.inner.clone().into())
+impl From<web_sys::HtmlSlotElement> for HtmlSlotElement {
+    fn from(inner: web_sys::HtmlSlotElement) -> Self {
+        HtmlSlotElement { inner }
     }
 }
 
-impl_html_common_traits!(HtmlSlotElement);
-
-pub struct SlotAssignedNodes {
-    inner: js_sys::Array,
-}
-
-impl SlotAssignedNodes {
-    pub fn get(&self, index: usize) -> Option<DynamicNode> {
-        u32::try_from(index).ok().and_then(|index| {
-            let value = self.inner.get(index);
-
-            if value.is_undefined() {
-                None
-            } else {
-                let value: web_sys::Node = value.unchecked_into();
-
-                Some(value.into())
-            }
-        })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn first(&self) -> Option<DynamicNode> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<DynamicNode> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn iter(&self) -> SlotAssignedNodesIter {
-        SlotAssignedNodesIter {
-            slot_assigned_nodes: self,
-            current: 0,
-        }
+impl AsRef<web_sys::HtmlSlotElement> for HtmlSlotElement {
+    fn as_ref(&self) -> &web_sys::HtmlSlotElement {
+        &self.inner
     }
 }
 
-impl Write for SlotAssignedNodes {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref());
+impl_html_element_traits!(HtmlSlotElement);
+impl_try_from_element!(HtmlSlotElement);
+impl_known_element!(HtmlSlotElement, "SLOT");
+
+unchecked_cast_array!(DynamicNode, web_sys::Node, SlotAssignedNodes);
+
+pub(crate) mod slot_change_event_target_seal {
+    pub trait Seal {
+        #[doc(hidden)]
+        fn as_web_sys_event_target(&self) -> &web_sys::EventTarget;
     }
 }
 
-impl IntoIterator for SlotAssignedNodes {
-    type Item = DynamicNode;
-    type IntoIter = SlotAssignedNodesIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SlotAssignedNodesIntoIter {
-            slot_assigned_nodes: self,
-            current: 0,
-        }
+pub trait SlotChangeEventTarget: slot_change_event_target_seal::Seal {
+    fn on_slot_change(&self) -> OnSlotChange<Self> {
+        OnSlotChange::new(self.as_web_sys_event_target().clone().into())
     }
 }
 
-pub struct SlotAssignedNodesIter<'a> {
-    slot_assigned_nodes: &'a SlotAssignedNodes,
-    current: usize,
+pub struct SlotChangeEvent<T> {
+    inner: web_sys::Event,
+    _marker: marker::PhantomData<T>,
 }
 
-impl<'a> Iterator for SlotAssignedNodesIter<'a> {
-    type Item = DynamicNode;
+impl_event_traits!(SlotChangeEvent, web_sys::Event);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.slot_assigned_nodes.get(current)
-    }
-}
-
-pub struct SlotAssignedNodesIntoIter {
-    slot_assigned_nodes: SlotAssignedNodes,
-    current: usize,
-}
-
-impl Iterator for SlotAssignedNodesIntoIter {
-    type Item = DynamicNode;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.slot_assigned_nodes.get(current)
-    }
-}
+typed_event_stream!(
+    OnSlotChange,
+    OnSlotChangeWithOptions,
+    SlotChangeEvent,
+    "slotchange"
+);

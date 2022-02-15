@@ -37,8 +37,14 @@ pub use self::fullscreen_error_event::*;
 mod hierarchy_request_error;
 pub use self::hierarchy_request_error::*;
 
+mod name;
+pub use self::name::*;
+
 mod node;
 pub use self::node::*;
+
+mod non_colon_name;
+pub use self::non_colon_name::*;
 
 mod non_document_node;
 pub use self::non_document_node::*;
@@ -58,6 +64,9 @@ pub use self::pointer_lock_change_event::*;
 mod processing_instruction;
 pub use self::processing_instruction::*;
 
+mod qualified_name;
+pub use self::qualified_name::*;
+
 mod range;
 pub use self::range::*;
 
@@ -67,11 +76,17 @@ pub use self::ready_state_change_event::*;
 mod selection;
 pub use self::selection::*;
 
+mod shadow_root;
+pub use self::shadow_root::*;
+
 mod text;
 pub use self::text::*;
 
 mod text_directionality;
 pub use self::text_directionality::*;
+
+mod token;
+pub use self::token::*;
 
 mod selector;
 

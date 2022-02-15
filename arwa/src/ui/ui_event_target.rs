@@ -6,6 +6,13 @@ pub(crate) mod ui_event_target_seal {
 }
 
 pub trait UiEventTarget: ui_event_target_seal::Seal {
+    fn on_input(&self) -> OnInput<Self> {
+        OnInput::new(self.as_web_sys_event_target().clone().into())
+    }
+
+    fn on_before_input(&self) -> OnBeforeInput<Self> {
+        OnBeforeInput::new(self.as_web_sys_event_target().clone().into())
+    }
     // Note: the `focus` and `blur` events don't always seem to result in FocusEvents, they
     // sometimes result in generic events. It's also unclear to me whether they add functionality
     // over the `focusin` and `focusout` events that cannot be emulated by listening in the capture

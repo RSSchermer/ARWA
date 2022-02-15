@@ -32,7 +32,8 @@ impl AsRef<web_sys::DocumentType> for DocumentType {
     }
 }
 
-impl_node_traits!(DocumentType, web_sys::DocumentType);
+impl_node_traits!(DocumentType);
+impl_try_from_node!(DocumentType, web_sys::DocumentType);
 
 impl child_node_seal::Seal for DocumentType {
     fn as_web_sys_node(&self) -> &web_sys::Node {

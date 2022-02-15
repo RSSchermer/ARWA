@@ -1,4 +1,5 @@
-use crate::console::{Write, Writer};
+use crate::lang::LanguageTag;
+use arwa::console::{Write, Writer};
 use delegate::delegate;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -30,6 +31,10 @@ impl AudioTrack {
         }
     }
 
+    pub fn language(&self) -> Option<LanguageTag> {
+        LanguageTag::parse(self.inner.language()).ok()
+    }
+
     pub fn kind(&self) -> Option<AudioTrackKind> {
         match &*self.inner.kind() {
             "alternative" => Some(AudioTrackKind::Alternative),
@@ -55,8 +60,4 @@ impl AsRef<web_sys::AudioTrack> for AudioTrack {
     }
 }
 
-impl Write for AudioTrack {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(AudioTrack, web_sys::AudioTrack);

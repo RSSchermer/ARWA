@@ -1,18 +1,11 @@
-use std::convert::TryFrom;
+use crate::security::{ReferrerPolicy, CORS};
+use crate::url::{AbsoluteOrRelativeUrl, Url, Url};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-
-use delegate::delegate;
+use url::Url;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{
-    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node, ReferrerPolicy,
-    CORS,
-};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ImageDecoding {
@@ -28,24 +21,16 @@ impl Default for ImageDecoding {
 }
 
 #[derive(Clone)]
-pub struct HtmlImageElement {
+pub struct HtmlImgElement {
     inner: web_sys::HtmlImageElement,
 }
 
-impl HtmlImageElement {
+impl HtmlImgElement {
     delegate! {
         target self.inner {
             pub fn alt(&self) -> String;
 
             pub fn set_alt(&self, alt: &str);
-
-            pub fn src(&self) -> String;
-
-            pub fn set_src(&self, src: &str);
-
-            pub fn srcset(&self) -> String;
-
-            pub fn set_srcset(&self, srcset: &str);
 
             pub fn use_map(&self) -> String;
 
@@ -68,13 +53,22 @@ impl HtmlImageElement {
             pub fn natural_height(&self) -> u32;
 
             pub fn complete(&self) -> bool;
-
-            pub fn current_src(&self) -> String;
-
-            pub fn sizes(&self) -> String;
-
-            pub fn set_sizes(&self, sizes: &str);
         }
+    }
+
+    pub fn src(&self) -> Option<Url> {
+        Url::parse(self.inner.src()).ok()
+    }
+
+    pub fn set_src<T>(&self, src: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.set_src(src.as_str());
+    }
+
+    pub fn current_src(&self) -> Url {
+        Url::new(self.inner.current_src())
     }
 
     pub fn cross_origin(&self) -> CORS {
@@ -125,33 +119,59 @@ impl HtmlImageElement {
 
     pub fn decode(&self) -> ImageDecode {
         ImageDecode {
-            inner: JsFuture::from(self.inner.decode()),
+            image_element: Some(self.inner.clone()),
+            inner: None,
         }
+    }
+
+    // TODO: `srcset` and `sizes`.
+}
+
+impl From<web_sys::HtmlImageElement> for HtmlImgElement {
+    fn from(inner: web_sys::HtmlImageElement) -> Self {
+        HtmlImageElement { inner }
     }
 }
 
-impl_html_common_traits!(HtmlImageElement);
+impl AsRef<web_sys::HtmlImageElement> for HtmlImgElement {
+    fn as_ref(&self) -> &web_sys::HtmlImageElement {
+        &self.inner
+    }
+}
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct EncodingError(String);
+impl_html_element_traits!(HtmlImgElement);
+impl_try_from_element!(HtmlImgElement, web_sys::HtmlImageElement);
+impl_known_element!(HtmlImgElement, "IMG");
+
+#[derive(Clone)]
+pub struct ImageEncodingError {
+    inner: web_sys::DomException,
+}
+
+impl ImageEncodingError {
+    fn new(inner: web_sys::DomException) -> Self {
+        ImageEncodingError { inner }
+    }
+}
 
 pub struct ImageDecode {
-    inner: JsFuture,
+    image_element: Option<web_sys::HtmlImageElement>,
+    inner: Option<JsFuture>,
 }
 
 impl Future for ImageDecode {
-    type Output = Result<(), EncodingError>;
+    type Output = Result<(), ImageEncodingError>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        unsafe {
-            self.map_unchecked_mut(|s| &mut s.inner)
-                .poll(cx)
-                .map_ok(|_| ())
-                .map_err(|err| {
-                    let err: web_sys::DomException = err.unchecked_into();
-
-                    EncodingError(err.message())
-                })
+        if let Some(image_element) = self.image_element.take() {
+            self.inner = Some(image_element.decode().into());
         }
+
+        self.inner
+            .as_mut()
+            .unwrap()
+            .poll(cx)
+            .map_ok(|_| ())
+            .map_err(|err| ImageEncodingError::new(err.unchecked_into()))
     }
 }

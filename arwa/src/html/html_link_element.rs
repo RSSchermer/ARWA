@@ -1,14 +1,37 @@
-use std::convert::TryFrom;
+use crate::collection::{Collection, Sequence};
+use crate::cssom::{link_style_seal, CssStyleSheet, LinkStyle, StyleSheet};
+use crate::dom::{InvalidToken, Token};
+use crate::html::LinkTypes;
+use crate::lang::LanguageTag;
+use crate::media_type::MediaType;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
+use std::cell::{RefCell, RefMut};
+use std::str::FromStr;
+use crate::ui::DeltaMode::Line;
 
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::console::{Write, Writer};
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{
-    DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node, StyleSheet,
-};
+pub enum PotentialRequestDestination {
+    Fetch,
+    Audio,
+    AudioWorklet,
+    Document,
+    Embed,
+    Font,
+    Frame,
+    IFrame,
+    Image,
+    Manifest,
+    Object,
+    PaintWorklet,
+    Report,
+    Script,
+    ServiceWorker,
+    SharedWorker,
+    Style,
+    Track,
+    Video,
+    Worker,
+    Xslt,
+}
 
 #[derive(Clone)]
 pub struct HtmlLinkElement {
@@ -21,282 +44,162 @@ impl HtmlLinkElement {
             pub fn disabled(&self) -> bool;
 
             pub fn set_disabled(&self, disabled: bool);
-
-            pub fn href(&self) -> String;
-
-            pub fn set_href(&self, href: &str);
-
-            pub fn hreflang(&self) -> String;
-
-            pub fn set_hreflang(&self, hreflang: &str);
-
-            pub fn media(&self) -> String;
-
-            pub fn set_media(&self, media: &str);
         }
     }
 
-    pub fn as_content(&self) -> String {
-        self.inner.as_()
+    pub fn href(&self) -> Option<Url> {
+        Url::parse(self.inner.href()).ok()
     }
 
-    pub fn set_as_content(&self, as_content: &str) {
-        self.inner.set_as(as_content);
+    pub fn set_href<T>(&self, href: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.set_href(href.as_str());
     }
 
-    pub fn mime_type(&self) -> String {
-        self.inner.type_()
+    pub fn href_lang(&self) -> Option<LanguageTag> {
+        LanguageTag::parse(self.inner.hreflang).ok()
     }
 
-    pub fn set_mime_type(&self, mime_type: &str) {
-        self.inner.set_type(mime_type);
+    pub fn set_href_lang(&self, hreflang: Option<&LanguageTag>) {
+        self.inner
+            .set_hreflang(hreflang.map(|l| l.as_ref()).unwrap_or(""))
     }
 
-    pub fn sheet(&self) -> Option<StyleSheet> {
-        self.inner.sheet().map(|s| s.into())
-    }
-
-    pub fn rel(&self) -> LinkRel {
-        LinkRel {
-            link: &self.inner,
-            rel_list: self.inner.rel_list(),
+    pub fn as_destination(&self) -> Option<PotentialRequestDestination> {
+        // Note: the `as` attribute is lower-cased by the host.
+        match self.inner.as_().as_ref() {
+            "fetch" => Some(PotentialRequestDestination::Fetch),
+            "audio" => Some(PotentialRequestDestination::Audio),
+            "audioworklet" => Some(PotentialRequestDestination::AudioWorklet),
+            "document" => Some(PotentialRequestDestination::Document),
+            "embed" => Some(PotentialRequestDestination::Embed),
+            "font" => Some(PotentialRequestDestination::Font),
+            "frame" => Some(PotentialRequestDestination::Frame),
+            "iframe" => Some(PotentialRequestDestination::IFrame),
+            "image" => Some(PotentialRequestDestination::Image),
+            "manifest" => Some(PotentialRequestDestination::Manifest),
+            "object" => Some(PotentialRequestDestination::Object),
+            "paintworklet" => Some(PotentialRequestDestination::PaintWorklet),
+            "report" => Some(PotentialRequestDestination::Report),
+            "script" => Some(PotentialRequestDestination::Script),
+            "serviceworker" => Some(PotentialRequestDestination::ServiceWorker),
+            "sharedworker" => Some(PotentialRequestDestination::SharedWorker),
+            "style" => Some(PotentialRequestDestination::Style),
+            "track" => Some(PotentialRequestDestination::Track),
+            "video" => Some(PotentialRequestDestination::Video),
+            "worker" => Some(PotentialRequestDestination::Worker),
+            "xslt" => Some(PotentialRequestDestination::Xslt),
+            _ => None,
         }
     }
 
-    pub fn set_rel(&self, rel: &str) {
-        self.inner.set_rel(rel);
+    pub fn set_as_destination(&self, as_destination: &str) {
+        self.inner.set_as(as_destination);
     }
 
-    pub fn sizes(&self) -> LinkSizes {
-        LinkSizes {
-            size_list: self.inner.sizes(),
+    pub fn media_type(&self) -> Option<MediaType> {
+        MediaType::parse(self.inner.type_().as_ref()).ok()
+    }
+
+    pub fn set_media_type(&self, media_type: Option<&MediaType>) {
+        self.inner
+            .set_type(media_type.map(|m| m.as_ref()).unwrap_or(""));
+    }
+
+    pub fn rel(&self) -> LinkRelationshipTypes {
+        LinkRelationshipTypes::new(self.inner.clone())
+    }
+
+    pub fn sizes(&self) -> LinkIconSizes {
+        LinkIconSizes::from_serialized(self.inner.sizes().value())
+    }
+
+    // TODO: media
+}
+
+impl link_style_seal::Seal for HtmlLinkElement {}
+
+impl LinkStyle for HtmlLinkElement {
+    fn sheet(&self) -> Option<CssStyleSheet> {
+        self.inner
+            .sheet()
+            .map(|s| CssStyleSheet::from(s.unchecked_into()))
+    }
+}
+
+impl From<web_sys::HtmlLinkElement> for HtmlLinkElement {
+    fn from(inner: web_sys::HtmlLinkElement) -> Self {
+        HtmlLinkElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlLinkElement> for HtmlLinkElement {
+    fn as_ref(&self) -> &web_sys::HtmlLinkElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlLinkElement);
+impl_try_from_element!(HtmlLinkElement);
+impl_known_element!(HtmlLinkElement, "LINK");
+
+pub enum LinkIconSizes {
+    Any,
+    Listed(Vec<LinkIconSize>)
+}
+
+impl LinkIconSizes {
+    fn from_serialized(mut serialized: String) -> Self {
+        serialized.make_ascii_lowercase();
+        serialized.trim();
+
+        if serialized == "any" {
+            LinkIconSizes::Any
+        } else {
+            let mut res = Vec::new();
+
+            for token in serialized.split_ascii_whitespace() {
+                if let Some(link_size) = LinkIconSize::from_token(token) {
+                    res.push(link_size);
+                }
+            }
+
+            LinkIconSizes::Listed(res)
         }
     }
 
-    pub fn set_sizes(&self, sizes: &str) {
-        self.inner.sizes().set_value(sizes);
-    }
-}
+    pub fn serialize(&self) -> String {
+        match self {
+            LinkIconSizes::Any => "any".to_string(),
+            LinkIconSizes::Listed(listed) => {
+                let mut result = String::new();
 
-impl_html_common_traits!(HtmlLinkElement);
-
-pub struct LinkRel<'a> {
-    link: &'a web_sys::HtmlLinkElement,
-    rel_list: web_sys::DomTokenList,
-}
-
-impl<'a> LinkRel<'a> {
-    pub fn get(&self, index: usize) -> Option<String> {
-        u32::try_from(index)
-            .ok()
-            .and_then(|index| self.rel_list.item(index))
-    }
-
-    pub fn len(&self) -> usize {
-        self.rel_list.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn contains(&self, rel: &str) -> bool {
-        self.rel_list.contains(rel)
-    }
-
-    // TODO: make insert and remove add a bool by adding a `contains` check?
-
-    pub fn insert(&self, rel: &str) {
-        self.rel_list.toggle_with_force(rel, true).unwrap();
-    }
-
-    pub fn remove(&self, rel: &str) {
-        self.rel_list.remove_1(rel).unwrap();
-    }
-
-    pub fn toggle(&self, rel: &str) -> bool {
-        self.rel_list.toggle(rel).unwrap()
-    }
-
-    pub fn replace(&self, old: &str, new: &str) -> bool {
-        // It seems the error case covers old browser returning void instead of a bool, but I don't
-        // believe there's any overlap between browsers that support WASM and browsers that still
-        // return void, so this should never cause an error.
-        self.rel_list.replace(old, new).unwrap()
-    }
-
-    pub fn iter(&self) -> LinkRelIter {
-        LinkRelIter {
-            link_rel: self,
-            current: 0,
-        }
-    }
-}
-
-impl<'a> Write for LinkRel<'a> {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.rel_list.as_ref());
-    }
-}
-
-impl<'a> ToString for LinkRel<'a> {
-    fn to_string(&self) -> String {
-        self.link.rel()
-    }
-}
-
-impl<'a> IntoIterator for LinkRel<'a> {
-    type Item = String;
-    type IntoIter = LinkRelIntoIter<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        LinkRelIntoIter {
-            link_rel: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct LinkRelIter<'a> {
-    link_rel: &'a LinkRel<'a>,
-    current: usize,
-}
-
-impl<'a> Iterator for LinkRelIter<'a> {
-    type Item = String;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.link_rel.get(current)
-    }
-}
-
-pub struct LinkRelIntoIter<'a> {
-    link_rel: LinkRel<'a>,
-    current: usize,
-}
-
-impl<'a> Iterator for LinkRelIntoIter<'a> {
-    type Item = String;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.link_rel.get(current)
-    }
-}
-
-pub struct LinkSizes {
-    size_list: web_sys::DomTokenList,
-}
-
-impl LinkSizes {
-    pub fn get(&self, index: usize) -> Option<String> {
-        u32::try_from(index)
-            .ok()
-            .and_then(|index| self.size_list.item(index))
-    }
-
-    pub fn len(&self) -> usize {
-        self.size_list.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn contains(&self, class: &str) -> bool {
-        self.size_list.contains(class)
-    }
-
-    // TODO: make insert and remove add a bool by adding a `contains` check?
-
-    pub fn insert(&self, class: &str) {
-        self.size_list.toggle_with_force(class, true).unwrap();
-    }
-
-    pub fn remove(&self, class: &str) {
-        self.size_list.remove_1(class).unwrap();
-    }
-
-    pub fn toggle(&self, class: &str) -> bool {
-        self.size_list.toggle(class).unwrap()
-    }
-
-    pub fn replace(&self, old: &str, new: &str) -> bool {
-        // It seems the error case covers old browser returning void instead of a bool, but I don't
-        // believe there's any overlap between browsers that support WASM and browsers that still
-        // return void, so this should never cause an error.
-        self.size_list.replace(old, new).unwrap()
-    }
-
-    pub fn iter(&self) -> LinkSizesIter {
-        LinkSizesIter {
-            link_sizes: self,
-            current: 0,
+                for LinkIconSize(width, height) in listed {
+                    write!(&mut result, "{}x{}", width, height);
+                }
+            }
         }
     }
 }
 
-impl Write for LinkSizes {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.size_list.as_ref());
-    }
-}
+pub struct LinkIconSize(u32, u32);
 
-impl ToString for LinkSizes {
-    fn to_string(&self) -> String {
-        self.size_list.value()
-    }
-}
+impl LinkIconSize {
+    fn from_token(token: &str) -> Option<Self> {
+        token.find('x').and_then(|pos| {
+            if pos == token.len() - 1 {
+                None
+            } else {
+                let maybe_width = u32::from_str(&token[..pos]);
+                let maybe_height = u32::from_str(&token[(pos + 1)..]);
 
-impl IntoIterator for LinkSizes {
-    type Item = String;
-    type IntoIter = LinkSizesIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        LinkSizesIntoIter {
-            link_sizes: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct LinkSizesIter<'a> {
-    link_sizes: &'a LinkSizes,
-    current: usize,
-}
-
-impl<'a> Iterator for LinkSizesIter<'a> {
-    type Item = String;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.link_sizes.get(current)
-    }
-}
-
-pub struct LinkSizesIntoIter {
-    link_sizes: LinkSizes,
-    current: usize,
-}
-
-impl Iterator for LinkSizesIntoIter {
-    type Item = String;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.link_sizes.get(current)
+                match (maybe_width, maybe_height) {
+                    (Ok(width), Ok(height)) => Some(LinkIconSize(width, height)),
+                    _ => None
+                }
+            }
+        })
     }
 }

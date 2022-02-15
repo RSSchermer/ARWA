@@ -1,10 +1,4 @@
-use std::convert::TryFrom;
-
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
+use crate::html::HtmlFormElement;
 
 #[derive(Clone)]
 pub struct HtmlLegendElement {
@@ -17,4 +11,18 @@ impl HtmlLegendElement {
     }
 }
 
-impl_html_common_traits!(HtmlLegendElement);
+impl From<web_sys::HtmlLegendElement> for HtmlLegendElement {
+    fn from(inner: web_sys::HtmlLegendElement) -> Self {
+        HtmlLegendElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlLegendElement> for HtmlLegendElement {
+    fn as_ref(&self) -> &web_sys::HtmlLegendElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlLegendElement);
+impl_try_from_element!(HtmlLegendElement);
+impl_known_element!(HtmlLegendElement, "LEGEND");

@@ -8,7 +8,7 @@ use crate::collection::{Collection, Sequence};
 use crate::console::{Write, Writer};
 use crate::dom::attribute::Attribute;
 use crate::dom::selector::{CompiledSelector, Selector};
-use crate::dom::InvalidAttributeName;
+use crate::dom::{InvalidName, Name, NonColonName, Token};
 use crate::error::SyntaxError;
 use crate::event::GenericEventTarget;
 use crate::{
@@ -82,33 +82,32 @@ pub trait Element: element_seal::Seal {
         }
     }
 
-    /// Returns a live collection of the current classes attached to the element.
+    /// Returns a live collection of the set of class labels attached to the element.
     ///
     /// Reflects the value of the `class` attribute (see [class]) as a whitespace delimited set of
-    /// unique class labels. Modifying the value of the `class` attribute (e.g. by calling
-    /// [set_class]), will change the classes in the collection. Conversely, toggling classes in
-    /// the collection or removing classes from the collection will update the value of the `class`
-    /// attribute.
-    fn classes(&self) -> Classes {
-        Classes {
-            class_list: self.as_web_sys_element().class_list(),
+    /// unique class labels.
+    fn class(&self) -> Class {
+        Class {
+            inner: self.as_web_sys_element().class_list(),
         }
     }
 
-    fn tag_name(&self) -> String {
-        self.as_web_sys_element().tag_name()
+    fn tag_name(&self) -> Name {
+        Name::trusted(self.as_web_sys_element().tag_name())
     }
 
     fn namespace_uri(&self) -> Option<String> {
         self.as_web_sys_element().namespace_uri()
     }
 
-    fn local_name(&self) -> String {
-        self.as_web_sys_element().local_name()
+    fn local_name(&self) -> Option<NonColonName> {
+        NonColonName::from_str(self.as_web_sys_element().local_name()).ok()
     }
 
-    fn prefix(&self) -> Option<String> {
-        self.as_web_sys_element().prefix()
+    fn prefix(&self) -> Option<NonColonName> {
+        self.as_web_sys_element()
+            .prefix()
+            .map(|n| NonColonName::trusted(n))
     }
 
     fn client_width(&self) -> i32 {
@@ -133,18 +132,6 @@ pub trait Element: element_seal::Seal {
 
     fn set_id(&self, id: &str) {
         self.as_web_sys_element().set_id(id);
-    }
-
-    /// Returns the current value of the `class` attribute.
-    fn class(&self) -> String {
-        self.as_web_sys_element().class_name()
-    }
-
-    /// Sets the value of the `class` attribute to the given string.
-    ///
-    /// Setting this modifies the set of [classes] attached to the element.
-    fn set_class(&self, value: &str) {
-        self.as_web_sys_element().set_class_name(value);
     }
 
     fn slot(&self) -> String {
@@ -186,28 +173,25 @@ pub struct Attributes {
 }
 
 impl Attributes {
-    pub fn lookup(&self, name: &str) -> Option<Attribute> {
+    pub fn lookup(&self, qualified_name: Name) -> Option<Attribute> {
         self.attributes
-            .get_named_item(name)
+            .get_named_item(qualified_name.as_ref())
             .map(|a| Attribute::new(a))
     }
 
-    pub fn lookup_namespaced(
-        &self,
-        namespace: Option<&str>,
-        local_name: &str,
-    ) -> Option<Attribute> {
+    pub fn lookup_namespaced(&self, local_name: Name, namespace: &str) -> Option<Attribute> {
         self.attributes
-            .get_named_item_ns(namespace, local_name)
+            .get_named_item_ns(Some(namespace), local_name.as_ref())
             .map(|a| Attribute::new(a))
     }
 
-    pub fn contains(&self, name: &str) -> bool {
-        self.element.has_attribute(name)
+    pub fn contains(&self, qualified_name: Name) -> bool {
+        self.element.has_attribute(qualified_name.as_ref())
     }
 
-    pub fn contains_namespaced(&self, namespace: Option<&str>, local_name: &str) -> bool {
-        self.element.has_attribute_ns(namespace, local_name)
+    pub fn contains_namespaced(&self, local_name: Name, namespace: &str) -> bool {
+        self.element
+            .has_attribute_ns(Some(namespace), local_name.as_ref())
     }
 
     pub fn names(&self) -> AttributeNames {
@@ -230,67 +214,34 @@ impl Attributes {
             .map_err(|err| InUseAttribute::new(err.unchecked_into()))
     }
 
-    pub fn insert_namespaced(&self, attribute: &Attribute) -> Option<Attribute> {
-        self.attributes
-            .set_named_item_ns(attribute.as_ref())
-            .unwrap_throw()
-            .map(|attr| attr.into())
-    }
-
-    pub fn try_insert_namespaced(
-        &self,
-        attribute: &Attribute,
-    ) -> Result<Option<Attribute>, InUseAttribute> {
-        self.attributes
-            .set_named_item_ns(attribute.as_ref())
-            .map_ok(|ok| ok.map(|attr| attr.into()))
-            .map_err(|err| InUseAttribute::new(err.unchecked_into()))
-    }
-
-    pub fn toggle(&self, qualified_name: &str) -> bool {
-        self.element.toggle_attribute(qualified_name).unwrap_throw()
-    }
-
-    pub fn try_toggle(&self, qualified_name: &str) -> Result<bool, InvalidAttributeName> {
+    pub fn toggle(&self, qualified_name: Name) -> bool {
         self.element
-            .toggle_attribute(qualified_name)
-            .map_err(|_| InvalidAttributeName(qualified_name.to_string()))
+            .toggle_attribute(qualified_name.as_ref())
+            .unwrap_throw()
     }
 
-    pub fn toggle_on(&self, qualified_name: &str) -> bool {
-        self.element.toggle_attribute(qualified_name).unwrap_throw()
-    }
-
-    pub fn try_toggle_on(&self, qualified_name: &str) -> Result<bool, InvalidAttributeName> {
+    pub fn toggle_on(&self, qualified_name: Name) {
         self.element
             .toggle_attribute_with_force(qualified_name, true)
-            .map_err(|_| InvalidAttributeName(qualified_name.to_string()))
+            .unwrap_throw();
     }
 
-    pub fn toggle_off(&self, qualified_name: &str) -> bool {
-        self.element.toggle_attribute(qualified_name).unwrap_throw()
-    }
-
-    pub fn try_toggle_off(&self, qualified_name: &str) -> Result<bool, InvalidAttributeName> {
+    pub fn toggle_off(&self, qualified_name: Name) {
         self.element
             .toggle_attribute_with_force(qualified_name, false)
-            .map_err(|_| InvalidAttributeName(qualified_name.to_string()))
+            .unwrap_throw();
     }
 
-    pub fn remove(&self, name: &str) -> Option<Attribute> {
+    pub fn remove(&self, qualified_name: Name) -> Option<Attribute> {
         self.attributes
-            .remove_named_item(name)
+            .remove_named_item(qualified_name)
             .ok()
             .map(|attr| Attribute::new(attr))
     }
 
-    pub fn remove_namespaced(
-        &self,
-        namespace: Option<&str>,
-        local_name: &str,
-    ) -> Option<Attribute> {
+    pub fn remove_namespaced(&self, local_name: Name, namespace: &str) -> Option<Attribute> {
         self.attributes
-            .remove_named_item_ns(namespace, local_name)
+            .remove_named_item_ns(Some(namespace), local_name)
             .ok()
             .map(|attr| Attribute::new(attr))
     }
@@ -316,20 +267,18 @@ impl Sequence for Attributes {
 
 unchecked_cast_array_wrapper!(String, js_sys::JsString, AttributeNames, AttributeNamesIter);
 
-pub struct Classes {
-    class_list: web_sys::DomTokenList,
+pub struct Class {
+    inner: web_sys::DomTokenList,
 }
 
-impl Classes {
-    pub fn contains(&self, class: &str) -> bool {
-        self.class_list.contains(class)
+impl Class {
+    pub fn contains(&self, class: &Token) -> bool {
+        self.inner.contains(class)
     }
 
-    pub fn insert(&self, class: &str) -> bool {
+    pub fn insert(&self, class: &Token) -> bool {
         if !self.contains(class) {
-            self.class_list
-                .toggle_with_force(class, true)
-                .unwrap_throw();
+            self.inner.toggle_with_force(class, true).unwrap_throw();
 
             true
         } else {
@@ -337,20 +286,9 @@ impl Classes {
         }
     }
 
-    pub fn try_insert(&self, class: &str) -> Result<bool, InvalidClassName> {
-        if !self.contains(class) {
-            self.class_list
-                .toggle_with_force(class, true)
-                .map_ok(|ok| Ok(true))
-                .map_err(|err| InvalidClassName::new(err.unchecked_into()))
-        } else {
-            Ok(false)
-        }
-    }
-
-    pub fn remove(&self, class: &str) -> bool {
+    pub fn remove(&self, class: &Token) -> bool {
         if self.contains(class) {
-            self.class_list.remove_1(class).unwrap_throw();
+            self.inner.remove_1(class).unwrap_throw();
 
             true
         } else {
@@ -358,41 +296,47 @@ impl Classes {
         }
     }
 
-    pub fn toggle(&self, class: &str) -> bool {
-        self.class_list.toggle(class).unwrap_throw()
+    pub fn toggle(&self, class: &Token) -> bool {
+        self.inner.toggle(class).unwrap_throw()
     }
 
-    pub fn try_toggle(&self, class: &str) -> Result<bool, InvalidClassName> {
-        self.class_list
-            .toggle(class)
-            .map_err(|err| InvalidClassName::new(err.unchecked_into()))
-    }
-
-    pub fn replace(&self, old: &str, new: &str) -> bool {
+    pub fn replace(&self, old: &Token, new: &Token) -> bool {
         // It seems the error case covers old browser returning void instead of a bool, but I don't
         // believe there's any overlap between browsers that support WASM and browsers that still
         // return void, so this should never cause an error.
-        self.class_list
-            .replace(old, new)
-            .map_err(|err| InvalidClassName::new(err.unchecked_into()))
+        self.inner.replace(old, new).unwrap_throw()
+    }
+
+    pub fn serialize(&self) -> String {
+        self.to_string()
+    }
+
+    pub fn deserialize(&self, serialized: &str) {
+        self.inner.set_value(serialized);
     }
 }
 
-impl Collection for Classes {
+impl Collection for Class {
     fn len(&self) -> u32 {
-        self.class_list.length()
+        self.inner.length()
     }
 }
 
-impl Sequence for Classes {
+impl Sequence for Class {
     type Item = String;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.class_list.item(index)
+        self.inner.item(index)
     }
 
     fn to_host_array(&self) -> js_sys::Array {
-        js_sys::Array::from(self.class_list.as_ref())
+        js_sys::Array::from(self.inner.as_ref())
+    }
+}
+
+impl ToString for Class {
+    fn to_string(&self) -> String {
+        self.inner.value()
     }
 }
 
@@ -481,13 +425,16 @@ impl element_seal::Seal for DynamicElement {
 
 impl Element for DynamicElement {}
 
-impl_node_traits!(DynamicElement, web_sys::Element);
+impl_node_traits!(DynamicElement);
+impl_try_from_node!(DynamicElement, web_sys::Element);
 impl_parent_node_for_element!(DynamicElement);
 impl_child_node_for_element!(DynamicElement);
 impl_owned_node!(DynamicElement);
 impl_scrollable_for_element!(DynamicElement);
 impl_scroll_into_view_for_element!(DynamicElement);
 impl_ui_event_target_for_element!(DynamicElement);
+impl_animation_event_target_for_element!(DynamicElement);
+impl_transition_event_target_for_element!(DynamicElement);
 
 #[derive(Clone)]
 pub struct InUseAttribute {
@@ -507,17 +454,17 @@ impl fmt::Debug for InUseAttribute {
 }
 
 #[derive(Clone)]
-pub struct InvalidClassName {
+pub struct InvalidToken {
     inner: web_sys::DomException,
 }
 
-impl InvalidClassName {
+impl InvalidToken {
     pub(crate) fn new(inner: web_sys::DomException) -> Self {
-        InvalidClassName { inner }
+        InvalidToken { inner }
     }
 }
 
-impl fmt::Debug for InvalidClassName {
+impl fmt::Debug for InvalidToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "InvalidClassName: {}", self.inner.message())
     }
@@ -525,20 +472,112 @@ impl fmt::Debug for InvalidClassName {
 
 macro_rules! impl_element_traits {
     ($tpe:ident, $web_sys_tpe:ident) => {
-        impl AsRef<web_sys::Element> for DynamicElement {
-            fn as_ref(&self) -> &web_sys::Element {
+        impl $crate::dom::element_seal::Seal for $tpe {
+            fn as_web_sys_element(&self) -> &web_sys::Element {
                 &self.inner
             }
         }
+        impl $crate::dom::Element for $tpe {}
 
-        impl $crate::dom::element_seal::Seal for DynamicElement {}
-        impl $crate::dom::Element for DynamicElement {}
+        impl AsRef<web_sys::Element> for $tpe {
+            fn as_ref(&self) -> &web_sys::Element {
+                self.as_web_sys_element()
+            }
+        }
 
-        $crate::dom::impl_node_traits!(DynamicElement, web_sys::Element);
-        $crate::dom::impl_parent_node_for_element!(DynamicElement);
-        $crate::dom::impl_child_node_for_element!(DynamicElement);
-        $crate::dom::impl_owned_node!(DynamicElement);
-        $crate::scroll::impl_scrollable_for_element!(DynamicElement);
-        $crate::scroll::impl_scroll_into_view_for_element!(DynamicElement);
+        $crate::dom::impl_node_traits!($tpe);
+        $crate::dom::impl_parent_node_for_element!($tpe);
+        $crate::dom::impl_child_node_for_element!($tpe);
+        $crate::dom::impl_owned_node!($tpe);
+        $crate::scroll::impl_scrollable_for_element!($tpe);
+        $crate::scroll::impl_scroll_into_view_for_element!($tpe);
+        $crate::ui::impl_ui_event_target_for_element!($tpe);
+        $crate::ccsom::impl_animation_event_target_for_element!($tpe);
+        $crate::ccsom::impl_transition_event_target_for_element!($tpe);
     };
 }
+
+macro_rules! impl_try_from_element {
+    ($tpe:ident, $web_sys_tpe:ident) => {
+        impl TryFrom<$crate::dom::DynamicElement> for $tpe {
+            type Error = $crate::InvalidCast<$tpe>;
+
+            fn try_from(value: $crate::dom::DynamicElement) -> Result<Self, Self::Error> {
+                let value: web_sys::Element = value.into();
+
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .map(|e| e.into())
+                    .map_err(|e| $crate::InvalidCast(e.into()))
+            }
+        }
+
+        impl_try_from_node!($tpe, $web_sys_tpe);
+    };
+    ($tpe:ident) => {
+        $crate::dom::impl_try_from_element($tpe, $tpe)
+    };
+}
+
+pub(crate) use impl_try_from_element;
+
+macro_rules! impl_try_from_element_with_tag_check {
+    ($tpe:ident, $web_sys_tpe:ident, $tag_name:literal) => {
+        impl TryFrom<$crate::dom::DynamicElement> for $tpe {
+            type Error = $crate::InvalidCast<$tpe>;
+
+            fn try_from(value: $crate::dom::DynamicElement) -> Result<Self, Self::Error> {
+                let value: web_sys::Element = value.into();
+
+                if &value.tag_name() != $tag_name {
+                    return $crate::InvalidCast(e.into());
+                }
+
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .map(|e| e.into())
+                    .map_err(|e| $crate::InvalidCast(e.into()))
+            }
+        }
+
+        impl TryFrom<$crate::dom::DynamicNode> for $tpe {
+            type Error = $crate::InvalidCast<$tpe>;
+
+            fn try_from(value: $crate::dom::DynamicNode) -> Result<Self, Self::Error> {
+                let value: web_sys::Node = value.into();
+
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .map_err(|e| $crate::InvalidCast(e.into()))
+                    .map(|e| {
+                        if e.tag_name() == $tag_name {
+                            Ok(e.into())
+                        } else {
+                            Err($crate::InvalidCast(e.into()))
+                        }
+                    })
+            }
+        }
+
+        impl TryFrom<$crate::dom::DynamicEventTarget> for $tpe {
+            type Error = $crate::InvalidCast<$tpe>;
+
+            fn try_from(value: $crate::dom::DynamicEventTarget) -> Result<Self, Self::Error> {
+                let value: web_sys::EventTarget = value.into();
+
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .map_err(|e| $crate::InvalidCast(e.into()))
+                    .map(|e| {
+                        if e.tag_name() == $tag_name {
+                            Ok(e.into())
+                        } else {
+                            Err($crate::InvalidCast(e.into()))
+                        }
+                    })
+            }
+        }
+    };
+}
+
+pub(crate) use impl_try_from_element_with_tag_check;

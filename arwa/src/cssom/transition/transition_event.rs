@@ -13,7 +13,7 @@ macro_rules! transition_event {
         #[derive(Clone)]
         pub struct $event<T> {
             inner: web_sys::TransitionEvent,
-            _marker: marker::PhantomData<T>
+            _marker: marker::PhantomData<T>,
         }
 
         impl<T> transition_event_seal::Seal for $event<T> {}
@@ -35,7 +35,7 @@ macro_rules! transition_event {
         }
 
         impl_event_traits!($event, web_sys::TransitionEvent, $name);
-    }
+    };
 }
 
 transition_event!(TransitionStart, "transitionstart");

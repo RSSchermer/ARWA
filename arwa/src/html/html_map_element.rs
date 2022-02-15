@@ -1,11 +1,5 @@
-use std::convert::TryFrom;
-
-use wasm_bindgen::JsCast;
-
-use crate::console::{Write, Writer};
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlAreaElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
+use crate::collection::{Collection, Sequence};
+use web_sys::HtmlAreaElement;
 
 #[derive(Clone)]
 pub struct HtmlMapElement {
@@ -20,110 +14,42 @@ impl HtmlMapElement {
     }
 }
 
-impl_html_common_traits!(HtmlMapElement);
+impl From<web_sys::HtmlMapElement> for HtmlMapElement {
+    fn from(inner: web_sys::HtmlMapElement) -> Self {
+        HtmlMapElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlMapElement> for HtmlMapElement {
+    fn as_ref(&self) -> &web_sys::HtmlMapElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlMapElement);
+impl_try_from_element!(HtmlMapElement);
+impl_known_element!(HtmlMapElement, "MAP");
 
 pub struct MapAreas {
     inner: web_sys::HtmlCollection,
 }
 
-impl MapAreas {
-    pub fn get(&self, index: usize) -> Option<HtmlAreaElement> {
-        u32::try_from(index)
-            .ok()
-            .and_then(|index| self.inner.item(index))
-            .map(|area| {
-                let area: web_sys::HtmlAreaElement = area.unchecked_into();
-
-                area.into()
-            })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn first(&self) -> Option<HtmlAreaElement> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<HtmlAreaElement> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn find_by_id(&self, id: &str) -> Option<HtmlAreaElement> {
-        self.inner.get_with_name(id).map(|area| {
-            let area: web_sys::HtmlAreaElement = area.unchecked_into();
-
-            area.into()
-        })
-    }
-
-    pub fn iter(&self) -> MapAreasIter {
-        MapAreasIter {
-            map_areas: self,
-            current: 0,
-        }
+impl Collection for MapAreas {
+    fn len(&self) -> u32 {
+        self.inner.length()
     }
 }
 
-impl Write for MapAreas {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref());
-    }
-}
-
-impl IntoIterator for MapAreas {
-    type Item = HtmlAreaElement;
-    type IntoIter = MapAreasIntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        MapAreasIntoIter {
-            map_areas: self,
-            current: 0,
-        }
-    }
-}
-
-pub struct MapAreasIter<'a> {
-    map_areas: &'a MapAreas,
-    current: usize,
-}
-
-impl<'a> Iterator for MapAreasIter<'a> {
+impl Sequence for MapAreas {
     type Item = HtmlAreaElement;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.map_areas.get(current)
+    fn get(&self, index: u32) -> Option<Self::Item> {
+        self.inner
+            .item(index)
+            .map(|e| HtmlAreaElement::from(e.unchecked_into()))
     }
-}
 
-pub struct MapAreasIntoIter {
-    map_areas: MapAreas,
-    current: usize,
-}
-
-impl Iterator for MapAreasIntoIter {
-    type Item = HtmlAreaElement;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-
-        self.current += 1;
-
-        self.map_areas.get(current)
+    fn to_host_array(&self) -> js_sys::Array {
+        js_sys::Array::from(self.inner.as_ref())
     }
 }

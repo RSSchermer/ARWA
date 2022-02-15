@@ -1,10 +1,9 @@
 use crate::fetch::{Body, BodySource, Headers, RequestMethod};
 use crate::security::ReferrerPolicy;
-use crate::url::ContextualUrl;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::fmt;
-use url::Url;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
 // Note: decided to duplicate the various web_sys enums, because though at first glance they seem
@@ -153,15 +152,18 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn init(url: ContextualUrl, descriptor: RequestDescriptor) -> Self {
-        create_request_internal(url, descriptor).unwrap_throw()
+    pub fn init<T>(url: T, descriptor: RequestDescriptor) -> Self
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        create_request_internal(url.as_str(), descriptor).unwrap_throw()
     }
 
-    pub fn try_init(
-        url: ContextualUrl,
-        descriptor: RequestDescriptor,
-    ) -> Result<Self, RequestInitError> {
-        create_request_internal(url, descriptor)
+    pub fn try_init<T>(url: T, descriptor: RequestDescriptor) -> Result<Self, RequestInitError>
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        create_request_internal(url.as_str(), descriptor)
             .map_err(|err| CreateRequestError::new(err.unchecked_into()))
     }
 
@@ -297,10 +299,7 @@ impl AsRef<web_sys::Request> for Request {
 
 impl_common_wrapper_traits!(Request);
 
-fn create_request_internal(
-    url: ContextualUrl,
-    descriptor: RequestDescriptor,
-) -> Result<Request, JsValue> {
+fn create_request_internal(url: &str, descriptor: RequestDescriptor) -> Result<Request, JsValue> {
     let RequestDescriptor {
         method,
         headers,
@@ -388,5 +387,5 @@ fn create_request_internal(
         init.integrity(integrity);
     }
 
-    web_sys::Request::new_with_str_and_init(url.as_ref(), &init).map(|r| r.into())
+    web_sys::Request::new_with_str_and_init(url, &init).map(|r| r.into())
 }

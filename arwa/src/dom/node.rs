@@ -70,8 +70,8 @@ pub trait Node: node_seal::Seal + Sized {
         self.as_web_sys_node().is_default_namespace(Some(namespace))
     }
 
-    fn lookup_namespace_uri(&self, prefix: Option<&str>) -> Option<String> {
-        self.as_web_sys_node().lookup_namespace_uri(prefix)
+    fn lookup_namespace_uri(&self, prefix: &str) -> Option<String> {
+        self.as_web_sys_node().lookup_namespace_uri(Some(prefix))
     }
 
     fn lookup_prefix(&self, namespace: &str) -> Option<String> {
@@ -121,7 +121,7 @@ impl_common_wrapper_traits!(DynamicNode, Node);
 impl_common_event_target_traits!(DynamicNode, Node);
 
 macro_rules! impl_node_traits {
-    ($tpe:ident, $web_sys_tpe:ident) => {
+    ($tpe:ident) => {
         impl $crate::dom::node_seal::Seal for $tpe {
             fn as_web_sys_node(&self) -> &web_sys::Node {
                 self.inner.as_ref()
@@ -136,6 +136,14 @@ macro_rules! impl_node_traits {
             }
         }
 
+        $crate::event::impl_event_target_traits!($tpe);
+    };
+}
+
+pub(crate) use impl_node_traits;
+
+macro_rules! impl_try_from_node {
+    ($tpe:ident, $web_sys_tpe:ident) => {
         impl TryFrom<$crate::dom::DynamicNode> for $tpe {
             type Error = $crate::InvalidCast<$tpe>;
 
@@ -149,8 +157,8 @@ macro_rules! impl_node_traits {
             }
         }
 
-        $crate::event::impl_event_target_traits!($tpe, $web_sys_tpe);
+        $crate::event::impl_try_from_event_target!($tpe, $web_sys_tpe);
     };
 }
 
-pub(crate) use impl_node_traits;
+pub(crate) use impl_try_from_node;

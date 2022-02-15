@@ -33,7 +33,7 @@ pub trait EventTarget: event_target_seal::Seal {
 }
 
 macro_rules! impl_event_target_traits {
-    ($tpe:ident, $web_sys_tpe:ident) => {
+    ($tpe:ident) => {
         impl AsRef<web_sys::EventTarget> for $tpe {
             fn as_ref(&self) -> &web_sys::EventTarget {
                 &self.inner
@@ -48,6 +48,14 @@ macro_rules! impl_event_target_traits {
 
         impl $crate::EventTarget for $tpe {}
 
+        $crate::impl_common_wrapper_traits!($tpe);
+    };
+}
+
+pub(crate) use impl_event_target_traits;
+
+macro_rules! impl_try_from_event_target {
+    ($tpe:ident, $web_sys_tpe:ident) => {
         impl TryFrom<$crate::event::DynamicEventTarget> for $tpe {
             type Error = $crate::InvalidCast<$tpe>;
 
@@ -60,12 +68,8 @@ macro_rules! impl_event_target_traits {
                     .map_err(|e| $crate::InvalidCast(e.into()))
             }
         }
-
-        $crate::impl_common_wrapper_traits!($tpe);
     };
 }
-
-pub(crate) use impl_event_target_traits;
 
 pub struct DynamicEventTarget {
     inner: web_sys::EventTarget,

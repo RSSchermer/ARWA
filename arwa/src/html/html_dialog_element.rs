@@ -1,12 +1,3 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlDialogElement {
     inner: web_sys::HtmlDialogElement,
@@ -15,10 +6,6 @@ pub struct HtmlDialogElement {
 impl HtmlDialogElement {
     delegate! {
         target self.inner {
-            pub fn open(&self) -> bool;
-
-            pub fn set_open(&self, open: bool);
-
             pub fn return_value(&self) -> String;
 
             pub fn set_return_value(&self, return_value: &str);
@@ -29,9 +16,27 @@ impl HtmlDialogElement {
         }
     }
 
+    pub fn is_open(&self) -> bool {
+        self.inner.open()
+    }
+
     pub fn close_with(&self, return_value: &str) {
         self.inner.close_with_return_value(return_value);
     }
 }
 
-impl_html_common_traits!(HtmlDialogElement);
+impl From<web_sys::HtmlDialogElement> for HtmlDialogElement {
+    fn from(inner: web_sys::HtmlDialogElement) -> Self {
+        HtmlDialogElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlDialogElement> for HtmlDialogElement {
+    fn as_ref(&self) -> &web_sys::HtmlDialogElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlDialogElement);
+impl_try_from_element!(HtmlDialogElement);
+impl_known_element!(HtmlDetailsElement, "DIALOG");

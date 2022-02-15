@@ -1,3 +1,4 @@
+use crate::collection::{Collection, Sequence};
 use crate::dom::child_node::ChildNode;
 use crate::dom::hierarchy_request_error::HierarchyRequestError;
 use crate::dom::selector::{CompiledSelector, Selector};
@@ -123,37 +124,15 @@ impl Collection for ChildNodes {
     }
 }
 
-impl Sequence for ChildNodes {}
+impl Sequence for ChildNodes {
+    type Item = DynamicNode;
 
-impl ChildNodes {
-    pub fn get(&self, index: u32) -> Option<DynamicNode> {
+    fn get(&self, index: u32) -> Option<Self::Item> {
         self.inner.get(index).map(|n| n.into())
     }
 
-    pub fn first(&self) -> Option<DynamicNode> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<DynamicNode> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn len(&self) -> u32 {
-        self.inner.length()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn snapshot(&self) -> ChildNodesSnapshot {
-        ChildNodesSnapshot::new(Array::from(self.inner.as_ref()))
+    fn to_host_array(&self) -> js_sys::Array {
+        js_sys::Array::from(self.inner.as_ref())
     }
 }
 
@@ -164,113 +143,45 @@ pub struct ChildElements {
     inner: web_sys::HtmlCollection,
 }
 
-impl ChildElements {
-    pub(crate) fn new(inner: web_sys::HtmlCollection) -> Self {
-        ChildElements { inner }
-    }
-
-    pub fn get(&self, index: u32) -> Option<DynamicElement> {
-        self.inner.item(index).map(|n| n.into())
-    }
-
-    pub fn first(&self) -> Option<DynamicElement> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<DynamicElement> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn len(&self) -> u32 {
+impl Collection for ChildElements {
+    fn len(&self) -> u32 {
         self.inner.length()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn snapshot(&self) -> ChildElementsSnapshot {
-        ChildElementsSnapshot::new(Array::from(self.inner.as_ref()))
     }
 }
 
-unchecked_cast_array_wrapper!(
-    DynamicNode,
-    web_sys::Node,
-    ChildElementsSnapshot,
-    ChildElementsSnapshotIter
-);
+impl Sequence for ChildElements {
+    type Item = DynamicElement;
+
+    fn get(&self, index: u32) -> Option<Self::Item> {
+        self.inner.item(index).map(|n| n.into())
+    }
+
+    fn to_host_array(&self) -> js_sys::Array {
+        js_sys::Array::from(self.inner.as_ref())
+    }
+}
 
 pub struct QuerySelectorAll {
     inner: web_sys::NodeList,
 }
 
-impl QuerySelectorAll {
-    pub(crate) fn new(inner: web_sys::NodeList) -> Self {
-        QuerySelectorAll { inner }
-    }
-
-    pub fn get(&self, index: usize) -> Option<DynamicElement> {
-        u32::try_from(index)
-            .ok()
-            .and_then(|index| self.inner.get(index))
-            .map(|node| {
-                let element: web_sys::Element = node.unchecked_into();
-
-                element.into()
-            })
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.length() as usize
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn first(&self) -> Option<DynamicElement> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<DynamicElement> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn iter(&self) -> QuerySelectorAllIter {
-        QuerySelectorAllIter {
-            query_selector_all: self,
-            current: 0,
-        }
+impl Collection for QuerySelectorAll {
+    fn len(&self) -> u32 {
+        self.inner.length()
     }
 }
 
-pub struct QuerySelectorAllIter<'a> {
-    query_selector_all: &'a QuerySelectorAll,
-    current: usize,
-}
-
-impl<'a> Iterator for QuerySelectorAllIter<'a> {
+impl Sequence for QuerySelectorAll {
     type Item = DynamicElement;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
+    fn get(&self, index: u32) -> Option<Self::Item> {
+        self.inner
+            .get(index)
+            .map(|n| DynamicElement::from(n.unchecked_into()))
+    }
 
-        self.current += 1;
-
-        self.query_selector_all.get(current)
+    fn to_host_array(&self) -> js_sys::Array {
+        js_sys::Array::from(self.inner.as_ref())
     }
 }
 
@@ -402,5 +313,4 @@ macro_rules! impl_parent_node_for_document {
     };
 }
 
-use crate::collection::{Collection, Sequence};
 pub(crate) use impl_parent_node_for_document;

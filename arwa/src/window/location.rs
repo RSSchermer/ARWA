@@ -3,7 +3,7 @@ use wasm_bindgen::JsCast;
 use crate::console::{Write, Writer};
 use crate::error::{LocationAssignError, SecurityError, SyntaxError};
 use crate::security::SecurityError;
-use url::Url;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
 
 pub struct WindowLocation {
     inner: web_sys::Location,
@@ -16,22 +16,15 @@ impl WindowLocation {
     // avoids having to deal with syntax errors here.
 
     pub fn to_url(&self) -> Url {
-        // Note: assuming Location.href is always a valid URL.
-        self.inner
-            .href()
-            .map(|href| Url::parse(self.inner.href().as_ref()).unwrap())
-            .map_err(|e| {
-                let e: web_sys::DomException = e.unchecked_into();
-
-                SecurityError::new(e)
-            })
+        // Location.href is always a valid URL.
+        Url::parse(self.inner.href().unwrap_throw()).unwrap()
     }
 
     pub fn try_to_url(&self) -> Result<String, SecurityError> {
         // Note: assuming Location.href is always a valid URL.
         self.inner
             .href()
-            .map(|href| Url::parse(self.inner.href().as_ref()).unwrap())
+            .map(|href| Url::parse(self.inner.href()).unwrap())
             .map_err(|e| {
                 let e: web_sys::DomException = e.unchecked_into();
 
@@ -39,25 +32,29 @@ impl WindowLocation {
             })
     }
 
-    pub fn assign(&self, url: &Url) {
-        self.inner.assign(url).unwrap_throw()
+    pub fn assign<T>(&self, url: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner.assign(url.as_str()).unwrap_throw()
     }
 
-    pub fn try_assign(&self, url: &Url) -> Result<(), SecurityError> {
-        self.inner.assign(url).map_err(|err| {
-            let err: web_sys::DomException = err.unchecked_into();
-
-            match &*err.name() {
-                "SecurityError" => SecurityError::new(err).into(),
-                _ => unreachable!(),
-            }
-        })
+    pub fn try_assign<T>(&self, url: T) -> Result<(), SecurityError>
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
+        self.inner
+            .assign(url.as_str())
+            .map_err(|err| SecurityError::new(err.unchecked_into()))
     }
 
     // TODO: the spec explicitly says that replace does not do security checks, whereas MDN implies
     // that it does. Figure out which is source is correct when it comes to actual browser behavior.
 
-    pub fn replace(&self, url: &Url) {
+    pub fn replace<T>(&self, url: T)
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
         self.inner.assign(url).unwrap_throw()
     }
 

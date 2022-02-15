@@ -1,150 +1,17 @@
-macro_rules! impl_html_common_traits {
-    ($crate_tpe:ident, $web_sys_tpe:ident) => {
-        impl From<web_sys::$web_sys_tpe> for $crate_tpe {
-            fn from(inner: web_sys::$web_sys_tpe) -> Self {
-                $crate_tpe { inner }
-            }
-        }
+mod constraint_validation;
+pub use self::constraint_validation::*;
 
-        impl AsRef<web_sys::$web_sys_tpe> for $crate_tpe {
-            fn as_ref(&self) -> &web_sys::$web_sys_tpe {
-                &self.inner
-            }
-        }
+mod form_listed_element;
+pub use self::form_listed_element::*;
 
-        impl AsRef<web_sys::HtmlElement> for $crate_tpe {
-            fn as_ref(&self) -> &web_sys::HtmlElement {
-                self.inner.as_ref()
-            }
-        }
+mod form_submitter;
+pub use self::form_submitter::*;
 
-        impl AsRef<web_sys::Element> for $crate_tpe {
-            fn as_ref(&self) -> &web_sys::Element {
-                self.inner.as_ref()
-            }
-        }
+mod generic_html_elements;
+pub use self::generic_html_elements::*;
 
-        impl AsRef<web_sys::Node> for $crate_tpe {
-            fn as_ref(&self) -> &web_sys::Node {
-                self.inner.as_ref()
-            }
-        }
-
-        impl AsRef<web_sys::EventTarget> for $crate_tpe {
-            fn as_ref(&self) -> &web_sys::EventTarget {
-                self.inner.as_ref()
-            }
-        }
-
-        impl $crate::console::Write for $crate_tpe {
-            fn write(&self, writer: &mut $crate::console::Writer) {
-                writer.write_1(self.inner.as_ref());
-            }
-        }
-
-        impl PartialEq for $crate_tpe {
-            fn eq(&self, other: &$crate_tpe) -> bool {
-                self.inner.eq(&other.inner)
-            }
-        }
-
-        impl GlobalEventHandlers for $crate_tpe {}
-        impl Node for $crate_tpe {}
-        impl Element for $crate_tpe {}
-        impl HtmlElement for $crate_tpe {}
-
-        impl TryFrom<GenericEventTarget> for $crate_tpe {
-            type Error = InvalidCast<GenericEventTarget>;
-
-            fn try_from(value: GenericEventTarget) -> Result<Self, Self::Error> {
-                let value: web_sys::EventTarget = value.into();
-
-                value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
-                    .map_err(|e| InvalidCast(e.into()))
-            }
-        }
-
-        impl TryFrom<GenericNode> for $crate_tpe {
-            type Error = InvalidCast<GenericNode>;
-
-            fn try_from(value: GenericNode) -> Result<Self, Self::Error> {
-                let value: web_sys::Node = value.into();
-
-                value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
-                    .map_err(|e| InvalidCast(e.into()))
-            }
-        }
-
-        impl TryFrom<GenericElement> for $crate_tpe {
-            type Error = InvalidCast<GenericElement>;
-
-            fn try_from(value: GenericElement) -> Result<Self, Self::Error> {
-                let value: web_sys::Element = value.into();
-
-                value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
-                    .map_err(|e| InvalidCast(e.into()))
-            }
-        }
-
-        impl TryFrom<GenericHtmlElement> for $crate_tpe {
-            type Error = InvalidCast<GenericHtmlElement>;
-
-            fn try_from(value: GenericHtmlElement) -> Result<Self, Self::Error> {
-                let value: web_sys::HtmlElement = value.into();
-
-                value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
-                    .map_err(|e| InvalidCast(e.into()))
-            }
-        }
-
-        impl From<$crate_tpe> for GenericHtmlElement {
-            fn from(element: $crate_tpe) -> Self {
-                let element: web_sys::HtmlElement = element.inner.unchecked_into();
-
-                element.into()
-            }
-        }
-
-        impl From<$crate_tpe> for GenericElement {
-            fn from(element: $crate_tpe) -> Self {
-                let element: web_sys::Element = element.inner.unchecked_into();
-
-                element.into()
-            }
-        }
-
-        impl From<$crate_tpe> for GenericNode {
-            fn from(element: $crate_tpe) -> Self {
-                let element: web_sys::Node = element.inner.unchecked_into();
-
-                element.into()
-            }
-        }
-    };
-    ($tpe:ident) => {
-        impl_html_common_traits!($tpe, $tpe);
-    };
-}
-
-// TODO: HtmlUnknownElement. Any use-cases where it makes sense in addition to GenericHtmlElement?
-
-// TODO: include wrapper types for all HTML elements, even ones that don't have any additional
-// interface over GenericHtmlElement? This would eliminate the risk that the addition of a new
-// attribute to an existing element in a future spec would require a breaking change. Currently we
-// do include types that are in web_sys that only have deprecated attributes/methods, as even
-// though we won't expose deprecated attributes/methods, it may still be useful to be able to drop
-// into the web_sys type in a type-safe fashion to access such attributes/methods when necessary.
-
-mod html_anchor_element;
-pub use self::html_anchor_element::*;
+mod html_a_element;
+pub use self::html_a_element::*;
 
 mod html_area_element;
 pub use self::html_area_element::*;
@@ -170,8 +37,8 @@ pub use self::html_canvas_element::*;
 mod html_data_element;
 pub use self::html_data_element::*;
 
-mod html_data_list_element;
-pub use self::html_data_list_element::*;
+mod html_datalist_element;
+pub use self::html_datalist_element::*;
 
 mod html_details_element;
 pub use self::html_details_element::*;
@@ -182,8 +49,8 @@ pub use self::html_dialog_element::*;
 mod html_div_element;
 pub use self::html_div_element::*;
 
-mod html_dlist_element;
-pub use self::html_dlist_element::*;
+mod html_dl_element;
+pub use self::html_dl_element::*;
 
 mod html_document;
 pub use self::html_document::*;
@@ -194,8 +61,8 @@ pub use self::html_element::*;
 mod html_embed_element;
 pub use self::html_embed_element::*;
 
-mod html_field_set_element;
-pub use self::html_field_set_element::*;
+mod html_fieldset_element;
+pub use self::html_fieldset_element::*;
 
 mod html_form_element;
 pub use self::html_form_element::*;
@@ -215,8 +82,8 @@ pub use self::html_html_element::*;
 mod html_iframe_element;
 pub use self::html_iframe_element::*;
 
-mod html_image_element;
-pub use self::html_image_element::*;
+mod html_img_element;
+pub use self::html_img_element::*;
 
 mod html_input_element;
 pub use self::html_input_element::*;
@@ -236,8 +103,8 @@ pub use self::html_link_element::*;
 mod html_map_element;
 pub use self::html_map_element::*;
 
-mod html_media_element;
-pub use self::html_media_element::*;
+mod html_menu_element;
+pub use self::html_menu_elementt::*;
 
 mod html_meta_element;
 pub use self::html_meta_element::*;
@@ -251,11 +118,11 @@ pub use self::html_mod_element::*;
 mod html_object_element;
 pub use self::html_object_element::*;
 
-mod html_olist_element;
-pub use self::html_olist_element::*;
+mod html_ol_element;
+pub use self::html_ol_element::*;
 
-mod html_opt_group_element;
-pub use self::html_opt_group_element::*;
+mod html_optgroup_element;
+pub use self::html_optgroup_element::*;
 
 mod html_option_element;
 pub use self::html_option_element::*;
@@ -299,20 +166,20 @@ pub use self::html_span_element::*;
 mod html_style_element;
 pub use self::html_style_element::*;
 
-mod html_table_caption_element;
-pub use self::html_table_caption_element::*;
+mod html_caption_element;
+pub use self::html_caption_element::*;
 
 mod html_table_cell_element;
 pub use self::html_table_cell_element::*;
 
-mod html_table_col_element;
-pub use self::html_table_col_element::*;
+mod html_colgroup_element;
+pub use self::html_colgroup_element::*;
 
 mod html_table_element;
 pub use self::html_table_element::*;
 
-mod html_table_row_element;
-pub use self::html_table_row_element::*;
+mod html_tr_element;
+pub use self::html_tr_element::*;
 
 mod html_table_section_element;
 pub use self::html_table_section_element::*;
@@ -320,8 +187,8 @@ pub use self::html_table_section_element::*;
 mod html_template_element;
 pub use self::html_template_element::*;
 
-mod html_text_area_element;
-pub use self::html_text_area_element::*;
+mod html_textarea_element;
+pub use self::html_textarea_element::*;
 
 mod html_time_element;
 pub use self::html_time_element::*;
@@ -332,14 +199,20 @@ pub use self::html_title_element::*;
 mod html_track_element;
 pub use self::html_track_element::*;
 
-mod html_ulist_element;
-pub use self::html_ulist_element::*;
+mod html_ul_element;
+pub use self::html_ul_element::*;
 
 mod html_video_element;
 pub use self::html_video_element::*;
 
-mod labels;
-pub use self::labels::*;
+mod labelable_element;
+pub use self::labelable_element::*;
+
+mod link_types;
+pub use self::link_types::*;
+
+mod media_element;
+pub use self::media_element::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AutoComplete {

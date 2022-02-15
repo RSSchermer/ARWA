@@ -59,6 +59,15 @@ pub trait CssStyleDeclarationWrite: css_style_declaration_write_seal::Seal {
             .remove_property(property_name)
             .unwrap_throw()
     }
+
+    fn serialize(&self) -> String {
+        self.as_web_sys_css_style_declaration().css_text()
+    }
+
+    fn deserialize(&self, serialized: &str) {
+        self.as_web_sys_css_style_declaration()
+            .set_css_text(serialized)
+    }
 }
 
 #[derive(Clone)]

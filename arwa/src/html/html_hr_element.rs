@@ -1,14 +1,20 @@
-use std::convert::TryFrom;
-
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlHrElement {
     inner: web_sys::HtmlHrElement,
 }
 
-impl_html_common_traits!(HtmlHrElement);
+impl From<web_sys::HtmlHrElement> for HtmlHrElement {
+    fn from(inner: web_sys::HtmlHrElement) -> Self {
+        HtmlHrElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlHrElement> for HtmlHrElement {
+    fn as_ref(&self) -> &web_sys::HtmlHrElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlHrElement);
+impl_try_from_element!(HtmlHrElement);
+impl_known_element!(HtmlHrElement, "HR");

@@ -1,7 +1,7 @@
+use crate::fetch::{cache_context_seal, CacheContext};
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
-use crate::fetch::{cache_context_seal, CacheContext};
 
 #[derive(Clone)]
 pub struct DedicatedWorkerGlobalScope {

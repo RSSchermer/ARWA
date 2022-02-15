@@ -1,14 +1,20 @@
-use std::convert::TryFrom;
-
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-
 #[derive(Clone)]
 pub struct HtmlPictureElement {
     inner: web_sys::HtmlPictureElement,
 }
 
-impl_html_common_traits!(HtmlPictureElement);
+impl From<web_sys::HtmlPictureElement> for HtmlPictureElement {
+    fn from(inner: web_sys::HtmlPictureElement) -> Self {
+        HtmlPictureElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlPictureElement> for HtmlPictureElement {
+    fn as_ref(&self) -> &web_sys::HtmlPictureElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlPictureElement);
+impl_try_from_element!(HtmlPictureElement);
+impl_known_element!(HtmlPictureElement, "PICTURE");

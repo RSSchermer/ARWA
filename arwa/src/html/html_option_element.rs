@@ -1,11 +1,4 @@
-use std::convert::TryFrom;
-
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::GenericEventTarget;
-use crate::html::{GenericHtmlElement, HtmlElement, HtmlFormElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
+use crate::html::HtmlFormElement;
 
 #[derive(Clone)]
 pub struct HtmlOptionElement {
@@ -50,4 +43,18 @@ impl HtmlOptionElement {
     }
 }
 
-impl_html_common_traits!(HtmlOptionElement);
+impl From<web_sys::HtmlOptionElement> for HtmlOptionElement {
+    fn from(inner: web_sys::HtmlOptionElement) -> Self {
+        HtmlOptionElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlOptionElement> for HtmlOptionElement {
+    fn as_ref(&self) -> &web_sys::HtmlOptionElement {
+        &self.inner
+    }
+}
+
+impl_html_element_traits!(HtmlOptionElement);
+impl_try_from_element!(HtmlOptionElement);
+impl_known_element!(HtmlOptionElement, "OPTION");
