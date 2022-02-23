@@ -37,7 +37,7 @@ impl AnchorRelationshipType {
             "prev" => Some(AnchorRelationshipType::Previous),
             "search" => Some(AnchorRelationshipType::Search),
             "tag" => Some(AnchorRelationshipType::Tag),
-            _ => None
+            _ => None,
         }
     }
 
@@ -96,7 +96,7 @@ impl AreaRelationshipType {
             "prev" => Some(AreaRelationshipType::Previous),
             "search" => Some(AreaRelationshipType::Search),
             "tag" => Some(AreaRelationshipType::Tag),
-            _ => None
+            _ => None,
         }
     }
 
@@ -163,7 +163,7 @@ impl LinkRelationshipType {
             "prev" => Some(LinkRelationshipType::Previous),
             "search" => Some(LinkRelationshipType::Search),
             "stylesheet" => Some(LinkRelationshipType::Stylesheet),
-            _ => None
+            _ => None,
         }
     }
 
@@ -207,7 +207,7 @@ macro_rules! link_types {
 
                     for token in rel_string.split_ascii_whitespace() {
                         if let Some(rel) = $target::from_token(token) {
-                            if !parsed_new.iter().any(|r| r == rel) {
+                            if !parsed_new.iter().any(|r| r == &rel) {
                                 parsed_new.push(rel);
                             }
                         }
@@ -219,31 +219,35 @@ macro_rules! link_types {
             }
 
             fn contains(&self, rel: $target) -> bool {
-                self.parsed.iter().any(|r| r == rel)
+                self.parsed.iter().any(|r| r == &rel)
             }
 
             fn serialize(&self) -> String {
-                self.parsed.iter().map(|rel| rel.to_token()).join(" ")
+                self.parsed
+                    .iter()
+                    .map(|rel| rel.to_token())
+                    .intersperse(" ")
+                    .collect()
             }
         }
 
         pub struct $tpe {
-            link: $web_sys_tpe,
+            link: web_sys::$web_sys_tpe,
             cached: RefCell<$cache>,
         }
 
         impl $tpe {
-            pub(crate) fn new(link: $web_sys_tpe) -> Self {
+            pub(crate) fn new(link: web_sys::$web_sys_tpe) -> Self {
                 $tpe {
                     link,
                     cached: RefCell::new($cache {
                         raw: String::new(),
-                        parsed: Vec::new()
-                    })
+                        parsed: Vec::new(),
+                    }),
                 }
             }
 
-            fn refresh(&self) -> RefMut<$cache> {
+            fn refresh(&self) -> std::cell::RefMut<$cache> {
                 let mut cached = self.cached.borrow_mut();
 
                 cached.refresh(self.link.rel());
@@ -256,7 +260,7 @@ macro_rules! link_types {
             }
 
             pub fn insert(&self, rel: $target) -> bool {
-                let cached = self.refresh();
+                let mut cached = self.refresh();
 
                 if !cached.contains(rel) {
                     cached.parsed.push(rel);
@@ -274,10 +278,10 @@ macro_rules! link_types {
             }
 
             pub fn remove(&self, rel: $target) -> bool {
-                let cached = self.refresh();
+                let mut cached = self.refresh();
 
                 if cached.contains(rel) {
-                    cached.parsed.retain(|r| r != rel);
+                    cached.parsed.retain(|r| r != &rel);
 
                     let new_rel = cached.serialize();
 
@@ -292,10 +296,10 @@ macro_rules! link_types {
             }
 
             pub fn toggle(&self, rel: $target) -> bool {
-                let cached = self.refresh();
+                let mut cached = self.refresh();
 
                 let output = if cached.contains(rel) {
-                    cached.parsed.retain(|r| r != rel);
+                    cached.parsed.retain(|r| r != &rel);
 
                     false
                 } else {
@@ -314,12 +318,12 @@ macro_rules! link_types {
             }
 
             pub fn replace(&self, old: $target, new: $target) -> bool {
-                let cached = self.refresh();
+                let mut cached = self.refresh();
 
                 let mut did_replace = false;
 
                 for rel in cached.parsed.iter_mut() {
-                    if rel == old {
+                    if rel == &old {
                         *rel = new;
 
                         did_replace = true;
@@ -352,7 +356,7 @@ macro_rules! link_types {
 
                 cached.refresh(serialized);
 
-                self.link.set_rel(cached.serialized());
+                self.link.set_rel(cached.serialize().as_ref());
             }
         }
 
@@ -373,9 +377,24 @@ macro_rules! link_types {
                 js_sys::JsString::from(self.refresh().serialize()).split(" ")
             }
         }
-    }
+    };
 }
 
-link_types!(AnchorRelationshipTypes, AnchorRelationshipTypesCache, web_sys::HtmlAnchorElement, AnchorRelationshipType);
-link_types!(AreaRelationshipTypes, AreaRelationshipTypesCache, web_sys::HtmlAreaElement, AreaRelationshipType);
-link_types!(LinkRelationshipTypes, LinkRelationshipTypesCache, web_sys::HtmlLinkElement, LinkRelationshipType);
+link_types!(
+    AnchorRelationshipTypes,
+    AnchorRelationshipTypesCache,
+    HtmlAnchorElement,
+    AnchorRelationshipType
+);
+link_types!(
+    AreaRelationshipTypes,
+    AreaRelationshipTypesCache,
+    HtmlAreaElement,
+    AreaRelationshipType
+);
+link_types!(
+    LinkRelationshipTypes,
+    LinkRelationshipTypesCache,
+    HtmlLinkElement,
+    LinkRelationshipType
+);

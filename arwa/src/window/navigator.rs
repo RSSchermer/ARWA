@@ -1,16 +1,19 @@
-use crate::connection::{
-    connection_event_target_seal, connection_status_seal, ConnectionEventTarget, ConnectionStatus,
-};
+use js_sys::Uint32Array;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::connection::{connection_status_seal, ConnectionStatus};
+use crate::dom_exception_wrapper;
 use crate::geolocation::Geolocation;
 use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
-use crate::security::SecurityError;
 use crate::worker::service::ServiceWorkerContainer;
 
 pub struct ProtocolHandler<'a> {
     pub scheme: &'a str,
     pub url: &'a str,
 }
+
+dom_exception_wrapper!(RegisterProtocolHandlerError);
 
 pub struct WindowNavigator {
     inner: web_sys::Navigator,
@@ -41,14 +44,7 @@ impl WindowNavigator {
 
         self.inner
             .register_protocol_handler(scheme, url, "")
-            .map_err(|err| match err.dyn_into::<js_sys::SyntaxError>() {
-                Ok(syntax_error) => SyntaxError::new(syntax_error).into(),
-                Err(err) => {
-                    let err: web_sys::DomException = err.unchecked_into();
-
-                    SecurityError::new(err).into()
-                }
-            })
+            .map_err(|err| RegisterProtocolHandlerError::new(err.unchecked_into()))
     }
 
     pub fn service_worker(&self) -> ServiceWorkerContainer {
@@ -67,7 +63,9 @@ impl navigator_seal::Seal for WindowNavigator {}
 
 impl Navigator for WindowNavigator {
     fn language(&self) -> Option<LanguageTag> {
-        self.inner.language().and_then(|l| LanguageTag::parse(l))
+        self.inner
+            .language()
+            .and_then(|l| LanguageTag::parse(l.as_ref()).ok())
     }
 
     fn hardware_concurrency(&self) -> u32 {
@@ -75,7 +73,7 @@ impl Navigator for WindowNavigator {
     }
 
     fn user_agent(&self) -> String {
-        self.inner.user_agent().unwrap()
+        self.inner.user_agent().unwrap_throw()
     }
 }
 
@@ -83,7 +81,7 @@ impl connection_status_seal::Seal for WindowNavigator {}
 
 impl ConnectionStatus for WindowNavigator {
     fn online(&self) -> bool {
-        self.inner.online()
+        self.inner.on_line()
     }
 }
 

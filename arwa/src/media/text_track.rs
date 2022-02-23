@@ -1,4 +1,4 @@
-use arwa::console::{Write, Writer};
+use crate::impl_common_wrapper_traits;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TextTrackReadyState {
@@ -25,4 +25,4 @@ impl AsRef<web_sys::TextTrack> for TextTrack {
     }
 }
 
-impl_common_wrapper_traits!(TextTrack, web_sys::TextTrack);
+impl_common_wrapper_traits!(TextTrack);

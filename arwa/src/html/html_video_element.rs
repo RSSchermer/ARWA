@@ -1,3 +1,7 @@
+use delegate::delegate;
+
+use crate::html::{impl_html_media_element_traits, impl_known_element};
+
 #[derive(Clone)]
 pub struct HtmlVideoElement {
     inner: web_sys::HtmlVideoElement,
@@ -25,7 +29,7 @@ impl HtmlVideoElement {
     }
 }
 
-impl From<web_sys::HtmlAudioElement> for HtmlVideoElement {
+impl From<web_sys::HtmlVideoElement> for HtmlVideoElement {
     fn from(inner: web_sys::HtmlVideoElement) -> Self {
         HtmlVideoElement { inner }
     }

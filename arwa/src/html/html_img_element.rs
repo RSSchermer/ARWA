@@ -1,11 +1,16 @@
-use crate::security::{ReferrerPolicy, CORS};
-use crate::url::{AbsoluteOrRelativeUrl, Url, Url};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use url::Url;
-use wasm_bindgen::JsCast;
+
+use delegate::delegate;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
+
+use crate::dom::impl_try_from_element;
+use crate::dom_exception_wrapper;
+use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::security::{ReferrerPolicy, CORS};
+use crate::url::{AbsoluteOrRelativeUrl, Url};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ImageDecoding {
@@ -57,7 +62,7 @@ impl HtmlImgElement {
     }
 
     pub fn src(&self) -> Option<Url> {
-        Url::parse(self.inner.src()).ok()
+        Url::parse(self.inner.src().as_ref()).ok()
     }
 
     pub fn set_src<T>(&self, src: T)
@@ -67,8 +72,8 @@ impl HtmlImgElement {
         self.inner.set_src(src.as_str());
     }
 
-    pub fn current_src(&self) -> Url {
-        Url::new(self.inner.current_src())
+    pub fn current_src(&self) -> Option<Url> {
+        Url::parse(self.inner.current_src().as_ref()).ok()
     }
 
     pub fn cross_origin(&self) -> CORS {
@@ -96,7 +101,7 @@ impl HtmlImgElement {
     }
 
     pub fn set_referrer_policy(&self, referrer_policy: ReferrerPolicy) {
-        self.inner.set_referrer_policy(referrer_policy.as_ref())
+        self.inner.set_referrer_policy(referrer_policy.as_str())
     }
 
     pub fn decoding(&self) -> ImageDecoding {
@@ -129,7 +134,7 @@ impl HtmlImgElement {
 
 impl From<web_sys::HtmlImageElement> for HtmlImgElement {
     fn from(inner: web_sys::HtmlImageElement) -> Self {
-        HtmlImageElement { inner }
+        HtmlImgElement { inner }
     }
 }
 
@@ -140,19 +145,10 @@ impl AsRef<web_sys::HtmlImageElement> for HtmlImgElement {
 }
 
 impl_html_element_traits!(HtmlImgElement);
-impl_try_from_element!(HtmlImgElement, web_sys::HtmlImageElement);
-impl_known_element!(HtmlImgElement, "IMG");
+impl_try_from_element!(HtmlImgElement, HtmlImageElement);
+impl_known_element!(HtmlImgElement, HtmlImageElement, "IMG");
 
-#[derive(Clone)]
-pub struct ImageEncodingError {
-    inner: web_sys::DomException,
-}
-
-impl ImageEncodingError {
-    fn new(inner: web_sys::DomException) -> Self {
-        ImageEncodingError { inner }
-    }
-}
+dom_exception_wrapper!(ImageEncodingError);
 
 pub struct ImageDecode {
     image_element: Option<web_sys::HtmlImageElement>,
@@ -162,14 +158,14 @@ pub struct ImageDecode {
 impl Future for ImageDecode {
     type Output = Result<(), ImageEncodingError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(image_element) = self.image_element.take() {
             self.inner = Some(image_element.decode().into());
         }
 
-        self.inner
-            .as_mut()
-            .unwrap()
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner
             .poll(cx)
             .map_ok(|_| ())
             .map_err(|err| ImageEncodingError::new(err.unchecked_into()))

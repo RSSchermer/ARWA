@@ -1,20 +1,31 @@
+use std::marker;
+
+use delegate::delegate;
+
+use crate::event::impl_typed_event_traits;
+
 #[derive(Clone)]
-pub struct ErrorEvent {
+pub struct ErrorEvent<T> {
     inner: web_sys::ErrorEvent,
+    _marker: marker::PhantomData<T>,
 }
 
-impl ErrorEvent {
+impl<T> ErrorEvent<T> {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn message(&self) -> String;
 
             pub fn filename(&self) -> String;
-
-            pub fn lineno(&self) -> u32;
-
-            pub fn colno(&self) -> u32;
         }
+    }
+
+    pub fn line_number(&self) -> u32 {
+        self.inner.lineno()
+    }
+
+    pub fn column_number(&self) -> u32 {
+        self.inner.colno()
     }
 }
 
-impl_common_event_traits!(ErrorEvent);
+impl_typed_event_traits!(ErrorEvent, "error");

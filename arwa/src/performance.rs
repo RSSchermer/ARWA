@@ -1,23 +1,28 @@
 use std::convert::TryFrom;
 
 use delegate::delegate;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::{
+    PerformanceEntry, PerformanceMark, PerformanceMeasure, PerformanceResourceTiming,
+    PerformanceServerTiming,
+};
 
-use crate::console::{Write, Writer};
+use crate::impl_common_wrapper_traits;
+use crate::unchecked_cast_array::unchecked_cast_array;
 use crate::InvalidCast;
 
 // TODO: the spec also allows just and end-mark (from navigation to named mark) by specifying
 // `undefined` for the start mark, but web_sys's API currently does not allow this
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum PerformanceMarkRange<'a, 'b> {
+pub enum MarkRange<'a, 'b> {
     FromNavigation,
     From(&'a str),
     Between(&'a str, &'b str),
 }
 
-impl Default for PerformanceMarkRange<'_, '_> {
+impl Default for MarkRange<'_, '_> {
     fn default() -> Self {
-        PerformanceMarkRange::FromNavigation
+        MarkRange::FromNavigation
     }
 }
 
@@ -45,27 +50,27 @@ impl Performance {
         // No clear indication in the spec that this can fail (there's a TypeError when invoking a
         // timestamp constructor with a negative timestamp, but I don't believe we could ever end up
         // creating a negative timestamp in this manner, barring a browser bug), unwrap for now.
-        self.inner.mark(mark_name).unwrap();
+        self.inner.mark(mark_name).unwrap_throw();
     }
 
-    pub fn measure(&self, measure_name: &str, range: PerformanceMarkRange) {
+    pub fn measure(&self, measure_name: &str, range: MarkRange) {
         // TODO: unwrap or return Error? The only error that should occur is an invalid mark name
         // (note: negative ranges are explicitly permitted), which *should* always indicate
         // programmer error, hence panic?
 
         match range {
-            PerformanceMarkRange::FromNavigation => {
-                self.inner.measure(measure_name).unwrap();
+            MarkRange::FromNavigation => {
+                self.inner.measure(measure_name).unwrap_throw();
             }
-            PerformanceMarkRange::From(start_mark) => {
+            MarkRange::From(start_mark) => {
                 self.inner
                     .measure_with_start_mark(measure_name, start_mark)
-                    .unwrap();
+                    .unwrap_throw();
             }
-            PerformanceMarkRange::Between(start_mark, end_mark) => {
+            MarkRange::Between(start_mark, end_mark) => {
                 self.inner
                     .measure_with_start_mark_and_end_mark(measure_name, start_mark, end_mark)
-                    .unwrap();
+                    .unwrap_throw();
             }
         }
     }
@@ -78,56 +83,42 @@ impl Performance {
         self.inner.clear_measures_with_measure_name(measure_name);
     }
 
-    pub fn entries(&self) -> PerformanceEntries {
-        PerformanceEntries {
-            inner: self.inner.get_entries(),
-        }
+    pub fn entries(&self) -> Entries {
+        Entries::new(self.inner.get_entries())
     }
 
-    pub fn marks(&self) -> PerformanceMarks {
-        PerformanceMarks {
-            inner: self.inner.get_entries_by_type("mark"),
-        }
+    pub fn marks(&self) -> Marks {
+        Marks::new(self.inner.get_entries_by_type("mark"))
     }
 
-    pub fn measures(&self) -> PerformanceMeasures {
-        PerformanceMeasures {
-            inner: self.inner.get_entries_by_type("measure"),
-        }
+    pub fn measures(&self) -> Measures {
+        Measures::new(self.inner.get_entries_by_type("measure"))
     }
 
-    pub fn resource_timings(&self) -> PerformanceResourceTimings {
-        PerformanceResourceTimings {
-            inner: self.inner.get_entries_by_type("resource"),
-        }
+    pub fn resource_timings(&self) -> ResourceTimings {
+        ResourceTimings::new(self.inner.get_entries_by_type("resource"))
     }
 
-    pub fn entries_named(&self, name: &str) -> PerformanceEntries {
-        PerformanceEntries {
-            inner: self.inner.get_entries_by_name(name),
-        }
+    pub fn entries_named(&self, name: &str) -> Entries {
+        Entries::new(self.inner.get_entries_by_name(name))
     }
 
-    pub fn marks_named(&self, name: &str) -> PerformanceMarks {
-        PerformanceMarks {
-            inner: self.inner.get_entries_by_name_with_entry_type(name, "mark"),
-        }
+    pub fn marks_named(&self, name: &str) -> Marks {
+        Marks::new(self.inner.get_entries_by_name_with_entry_type(name, "mark"))
     }
 
-    pub fn measures_named(&self, name: &str) -> PerformanceMeasures {
-        PerformanceMeasures {
-            inner: self
-                .inner
+    pub fn measures_named(&self, name: &str) -> Measures {
+        Measures::new(
+            self.inner
                 .get_entries_by_name_with_entry_type(name, "measure"),
-        }
+        )
     }
 
-    pub fn resource_timings_named(&self, name: &str) -> PerformanceResourceTimings {
-        PerformanceResourceTimings {
-            inner: self
-                .inner
+    pub fn resource_timings_named(&self, name: &str) -> ResourceTimings {
+        ResourceTimings::new(
+            self.inner
                 .get_entries_by_name_with_entry_type(name, "resource"),
-        }
+        )
     }
 }
 
@@ -146,42 +137,38 @@ impl AsRef<web_sys::Performance> for Performance {
 impl_common_wrapper_traits!(Performance);
 
 #[derive(Clone)]
-pub struct PerformanceEntry {
+pub struct Entry {
     inner: web_sys::PerformanceEntry,
 }
 
-impl From<web_sys::PerformanceEntry> for PerformanceEntry {
+impl From<web_sys::PerformanceEntry> for Entry {
     fn from(inner: web_sys::PerformanceEntry) -> Self {
-        PerformanceEntry { inner }
+        Entry { inner }
     }
 }
 
-impl From<PerformanceEntry> for web_sys::PerformanceEntry {
-    fn from(value: PerformanceEntry) -> Self {
+impl From<Entry> for web_sys::PerformanceEntry {
+    fn from(value: Entry) -> Self {
         value.inner
     }
 }
 
-impl AsRef<web_sys::PerformanceEntry> for PerformanceEntry {
+impl AsRef<web_sys::PerformanceEntry> for Entry {
     fn as_ref(&self) -> &web_sys::PerformanceEntry {
         &self.inner
     }
 }
 
-impl_common_wrapper_traits!(PerformanceEntry);
+impl_common_wrapper_traits!(Entry);
 
-unchecked_cast_array!(
-    PerformanceEntry,
-    web_sys::PerformanceEntry,
-    PerformanceEntries
-);
+unchecked_cast_array!(Entry, PerformanceEntry, Entries);
 
 #[derive(Clone)]
-pub struct PerformanceMark {
+pub struct Mark {
     inner: web_sys::PerformanceMark,
 }
 
-impl PerformanceMark {
+impl Mark {
     delegate! {
         target self.inner {
             pub fn name(&self) -> String;
@@ -193,46 +180,46 @@ impl PerformanceMark {
     }
 }
 
-impl From<web_sys::PerformanceMark> for PerformanceMark {
+impl From<web_sys::PerformanceMark> for Mark {
     fn from(inner: web_sys::PerformanceMark) -> Self {
-        PerformanceMark { inner }
+        Mark { inner }
     }
 }
 
-impl TryFrom<PerformanceEntry> for PerformanceMark {
-    type Error = InvalidCast<PerformanceEntry>;
+impl TryFrom<Entry> for Mark {
+    type Error = InvalidCast<Entry, Mark>;
 
-    fn try_from(value: PerformanceEntry) -> Result<Self, Self::Error> {
+    fn try_from(value: Entry) -> Result<Self, Self::Error> {
         let e: web_sys::PerformanceEntry = value.into();
 
         e.dyn_into::<web_sys::PerformanceMark>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(e.into()))
     }
 }
 
-impl AsRef<web_sys::PerformanceMark> for PerformanceMark {
+impl AsRef<web_sys::PerformanceMark> for Mark {
     fn as_ref(&self) -> &web_sys::PerformanceMark {
         &self.inner
     }
 }
 
-impl AsRef<web_sys::PerformanceEntry> for PerformanceMark {
+impl AsRef<web_sys::PerformanceEntry> for Mark {
     fn as_ref(&self) -> &web_sys::PerformanceEntry {
         self.inner.as_ref()
     }
 }
 
-impl_common_wrapper_traits!(PerformanceMark);
+impl_common_wrapper_traits!(Mark);
 
-unchecked_cast_array!(PerformanceMark, web_sys::PerformanceMark, PerformanceMarks);
+unchecked_cast_array!(Mark, PerformanceMark, Marks);
 
 #[derive(Clone)]
-pub struct PerformanceMeasure {
+pub struct Measure {
     inner: web_sys::PerformanceMeasure,
 }
 
-impl PerformanceMeasure {
+impl Measure {
     delegate! {
         target self.inner {
             pub fn name(&self) -> String;
@@ -244,50 +231,46 @@ impl PerformanceMeasure {
     }
 }
 
-impl From<web_sys::PerformanceMeasure> for PerformanceMeasure {
+impl From<web_sys::PerformanceMeasure> for Measure {
     fn from(inner: web_sys::PerformanceMeasure) -> Self {
-        PerformanceMeasure { inner }
+        Measure { inner }
     }
 }
 
-impl TryFrom<PerformanceEntry> for PerformanceMeasure {
-    type Error = InvalidCast<PerformanceEntry>;
+impl TryFrom<Entry> for Measure {
+    type Error = InvalidCast<Entry, Measure>;
 
-    fn try_from(value: PerformanceEntry) -> Result<Self, Self::Error> {
+    fn try_from(value: Entry) -> Result<Self, Self::Error> {
         let e: web_sys::PerformanceEntry = value.into();
 
         e.dyn_into::<web_sys::PerformanceMeasure>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(e.into()))
     }
 }
 
-impl AsRef<web_sys::PerformanceMeasure> for PerformanceMeasure {
+impl AsRef<web_sys::PerformanceMeasure> for Measure {
     fn as_ref(&self) -> &web_sys::PerformanceMeasure {
         &self.inner
     }
 }
 
-impl AsRef<web_sys::PerformanceEntry> for PerformanceMeasure {
+impl AsRef<web_sys::PerformanceEntry> for Measure {
     fn as_ref(&self) -> &web_sys::PerformanceEntry {
         self.inner.as_ref()
     }
 }
 
-impl_common_wrapper_traits!(PerformanceMeasure);
+impl_common_wrapper_traits!(Measure);
 
-unchecked_cast_array!(
-    PerformanceMeasure,
-    web_sys::PerformanceMeasure,
-    PerformanceMeasures
-);
+unchecked_cast_array!(Measure, PerformanceMeasure, Measures);
 
 #[derive(Clone)]
-pub struct PerformanceResourceTiming {
+pub struct ResourceTiming {
     inner: web_sys::PerformanceResourceTiming,
 }
 
-impl PerformanceResourceTiming {
+impl ResourceTiming {
     delegate! {
         target self.inner {
             pub fn name(&self) -> String;
@@ -323,72 +306,69 @@ impl PerformanceResourceTiming {
             pub fn response_start(&self) -> f64;
 
             pub fn response_end(&self) -> f64;
-
-            // TODO: do these next 3 methods always return whole numbers? Perhaps u64 makes more
-            // sense?
-
-            pub fn transfer_size(&self) -> f64;
-
-            pub fn encoded_body_size(&self) -> f64;
-
-            pub fn decoded_body_size(&self) -> f64;
         }
+    }
+
+    pub fn transfer_size(&self) -> u64 {
+        self.inner.transfer_size() as u64
+    }
+
+    pub fn encoded_body_size(&self) -> u64 {
+        self.inner.encoded_body_size() as u64
+    }
+
+    pub fn decoded_body_size(&self) -> u64 {
+        self.inner.decoded_body_size() as u64
     }
 
     // TODO: MDN seems to indicate that this may return null/undefined/SecurityError if not on a
     // secure connection (although the Server Timings spec gives no indication of this); needs
     // investigating.
-    pub fn server_timings(&self) -> PerformanceServerTimings {
-        PerformanceServerTimings {
-            inner: self.inner.server_timing(),
-        }
+    pub fn server_timings(&self) -> ServerTimings {
+        ServerTimings::new(self.inner.server_timing())
     }
 }
 
-impl From<web_sys::PerformanceResourceTiming> for PerformanceResourceTiming {
+impl From<web_sys::PerformanceResourceTiming> for ResourceTiming {
     fn from(inner: web_sys::PerformanceResourceTiming) -> Self {
-        PerformanceResourceTiming { inner }
+        ResourceTiming { inner }
     }
 }
 
-impl TryFrom<PerformanceEntry> for PerformanceResourceTiming {
-    type Error = InvalidCast<PerformanceEntry>;
+impl TryFrom<Entry> for ResourceTiming {
+    type Error = InvalidCast<Entry, ResourceTiming>;
 
-    fn try_from(value: PerformanceEntry) -> Result<Self, Self::Error> {
+    fn try_from(value: Entry) -> Result<Self, Self::Error> {
         let e: web_sys::PerformanceEntry = value.into();
 
         e.dyn_into::<web_sys::PerformanceResourceTiming>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(e.into()))
     }
 }
 
-impl AsRef<web_sys::PerformanceResourceTiming> for PerformanceResourceTiming {
+impl AsRef<web_sys::PerformanceResourceTiming> for ResourceTiming {
     fn as_ref(&self) -> &web_sys::PerformanceResourceTiming {
         &self.inner
     }
 }
 
-impl AsRef<web_sys::PerformanceEntry> for PerformanceResourceTiming {
+impl AsRef<web_sys::PerformanceEntry> for ResourceTiming {
     fn as_ref(&self) -> &web_sys::PerformanceEntry {
         self.inner.as_ref()
     }
 }
 
-impl_common_wrapper_traits!(PerformanceResourceTiming);
+impl_common_wrapper_traits!(ResourceTiming);
 
-unchecked_cast_array!(
-    PerformanceResourceTiming,
-    web_sys::PerformanceResourceTiming,
-    PerformanceResourceTimings
-);
+unchecked_cast_array!(ResourceTiming, PerformanceResourceTiming, ResourceTimings);
 
 #[derive(Clone)]
-pub struct PerformanceServerTiming {
+pub struct ServerTiming {
     inner: web_sys::PerformanceServerTiming,
 }
 
-impl PerformanceServerTiming {
+impl ServerTiming {
     delegate! {
         target self.inner {
             pub fn name(&self) -> String;
@@ -400,22 +380,18 @@ impl PerformanceServerTiming {
     }
 }
 
-impl From<web_sys::PerformanceServerTiming> for PerformanceServerTiming {
+impl From<web_sys::PerformanceServerTiming> for ServerTiming {
     fn from(inner: web_sys::PerformanceServerTiming) -> Self {
-        PerformanceServerTiming { inner }
+        ServerTiming { inner }
     }
 }
 
-impl AsRef<web_sys::PerformanceServerTiming> for PerformanceServerTiming {
+impl AsRef<web_sys::PerformanceServerTiming> for ServerTiming {
     fn as_ref(&self) -> &web_sys::PerformanceServerTiming {
         &self.inner
     }
 }
 
-impl_common_wrapper_traits!(PerformanceServerTiming);
+impl_common_wrapper_traits!(ServerTiming);
 
-unchecked_cast_array!(
-    PerformanceServerTiming,
-    web_sys::PerformanceServerTiming,
-    PerformanceServerTimings
-);
+unchecked_cast_array!(ServerTiming, PerformanceServerTiming, ServerTimings);

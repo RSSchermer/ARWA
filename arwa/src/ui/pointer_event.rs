@@ -1,9 +1,5 @@
-use delegate::delegate;
-use wasm_bindgen::JsCast;
-
-use crate::event::on_event::FromEvent;
-use arwa::event::{Event, MouseEvent, UiEvent};
-use arwa::pointer_id::PointerId;
+use crate::event::{impl_typed_event_traits, DynamicEventTarget};
+use crate::ui::impl_mouse_event_traits;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PointerType {
@@ -21,7 +17,7 @@ pub(crate) mod pointer_event_seal {
 
 pub trait PointerEvent: pointer_event_seal::Seal {
     fn pointer_id(&self) -> i32 {
-        self.as_web_sys_pointer_event.pointer_id()
+        self.as_web_sys_pointer_event().pointer_id()
     }
 
     fn pointer_type(&self) -> PointerType {
@@ -43,7 +39,7 @@ macro_rules! pointer_event {
         #[derive(Clone)]
         pub struct $event<T> {
             inner: web_sys::PointerEvent,
-            _marker: std::marker::PhantomData<T>
+            _marker: std::marker::PhantomData<T>,
         }
 
         impl<T> AsRef<web_sys::PointerEvent> for $event<T> {
@@ -68,22 +64,23 @@ macro_rules! pointer_event {
 
         impl<T> $crate::ui::PointerContactState for $event<T> {}
 
-        impl_mouse_event_traits!($event, web_sys::PointerEvent, $name);
-    }
+        impl_typed_event_traits!($event, PointerEvent, $name);
+        impl_mouse_event_traits!($event);
+    };
 }
 
 macro_rules! pointer_button_event {
-    ($event:ident, $name:ident) => {
+    ($event:ident, $name:literal) => {
         pointer_event!($event, $name);
 
-        impl<T> $crate::ui::pointer_button_event::Seal {
+        impl<T> $crate::ui::pointer_button_event_seal::Seal for $event<T> {
             fn as_web_sys_mouse_event(&self) -> &web_sys::MouseEvent {
                 self.as_ref()
             }
         }
 
         impl<T> $crate::ui::PointerButtonEvent for $event<T> {}
-    }
+    };
 }
 
 pointer_button_event!(ClickEvent, "click");
@@ -101,11 +98,11 @@ pointer_event!(PointerMoveEvent, "pointermove");
 impl<T> PointerMoveEvent<T> {
     // TODO: get web_sys to return f64 values, see pointer_position_state.rs
 
-    fn movement_x(&self) -> f64 {
+    pub fn movement_x(&self) -> f64 {
         self.inner.movement_x() as f64
     }
 
-    fn movement_y(&self) -> f64 {
+    pub fn movement_y(&self) -> f64 {
         self.inner.movement_y() as f64
     }
 }
@@ -113,7 +110,7 @@ impl<T> PointerMoveEvent<T> {
 pointer_event!(PointerEnterEvent, "pointerenter");
 
 impl<T> PointerEnterEvent<T> {
-    fn exited_target(&self) -> Option<DynamicEventTarget> {
+    pub fn exited_target(&self) -> Option<DynamicEventTarget> {
         self.inner.related_target().map(|target| target.into())
     }
 }
@@ -121,7 +118,7 @@ impl<T> PointerEnterEvent<T> {
 pointer_event!(PointerLeaveEvent, "pointerleave");
 
 impl<T> PointerLeaveEvent<T> {
-    fn entered_target(&self) -> Option<DynamicEventTarget> {
+    pub fn entered_target(&self) -> Option<DynamicEventTarget> {
         self.inner.related_target().map(|target| target.into())
     }
 }
@@ -129,7 +126,7 @@ impl<T> PointerLeaveEvent<T> {
 pointer_event!(PointerOverEvent, "pointerover");
 
 impl<T> PointerOverEvent<T> {
-    fn exited_target(&self) -> Option<DynamicEventTarget> {
+    pub fn exited_target(&self) -> Option<DynamicEventTarget> {
         self.inner.related_target().map(|target| target.into())
     }
 }
@@ -137,7 +134,7 @@ impl<T> PointerOverEvent<T> {
 pointer_event!(PointerOutEvent, "pointerout");
 
 impl<T> PointerOutEvent<T> {
-    fn entered_target(&self) -> Option<DynamicEventTarget> {
+    pub fn entered_target(&self) -> Option<DynamicEventTarget> {
         self.inner.related_target().map(|target| target.into())
     }
 }

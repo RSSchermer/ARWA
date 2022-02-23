@@ -1,3 +1,8 @@
+use delegate::delegate;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum OrderedListType {
     Decimal,
@@ -15,7 +20,7 @@ impl Default for OrderedListType {
 
 #[derive(Clone)]
 pub struct HtmlOlElement {
-    inner: web_sys::HtmlOlElement,
+    inner: web_sys::HtmlOListElement,
 }
 
 impl HtmlOlElement {
@@ -56,7 +61,7 @@ impl HtmlOlElement {
 
 impl From<web_sys::HtmlOListElement> for HtmlOlElement {
     fn from(inner: web_sys::HtmlOListElement) -> Self {
-        HtmlOListElement { inner }
+        HtmlOlElement { inner }
     }
 }
 
@@ -67,5 +72,5 @@ impl AsRef<web_sys::HtmlOListElement> for HtmlOlElement {
 }
 
 impl_html_element_traits!(HtmlOlElement);
-impl_try_from_element!(HtmlOlElement, web_sys::HtmlOListElement);
-impl_known_element!(HtmlOListElement, "OL");
+impl_try_from_element!(HtmlOlElement, HtmlOListElement);
+impl_known_element!(HtmlOlElement, HtmlOListElement, "OL");

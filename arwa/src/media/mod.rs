@@ -7,9 +7,6 @@ pub use self::audio_tracks::*;
 mod media_stream;
 pub use self::media_stream::*;
 
-mod stream_track;
-pub use self::stream_track::*;
-
 mod text_track;
 pub use self::text_track::*;
 

@@ -1,7 +1,10 @@
-use crate::collection::{Collection, Sequence};
-use crate::html::media::VideoTrack;
-use crate::media::VideoTrack;
 use std::marker;
+
+use wasm_bindgen::JsCast;
+
+use crate::collection::{Collection, Sequence};
+use crate::event::{impl_typed_event_traits, typed_event_iterator};
+use crate::media::VideoTrack;
 
 pub struct VideoTracks {
     inner: web_sys::VideoTrackList,
@@ -25,16 +28,16 @@ impl VideoTracks {
         }
     }
 
-    pub fn on_change(&self) -> OnChangeVideoTrack {
-        OnChangeVideoTrack::new(self.inner.clone().into())
+    pub fn on_change(&self) -> OnChangeVideoTrack<Self> {
+        OnChangeVideoTrack::new(self.inner.as_ref())
     }
 
-    pub fn on_add_track(&self) -> OnAddVideoTrack {
-        OnAddVideoTrack::new(self.inner.clone().into())
+    pub fn on_add_track(&self) -> OnAddVideoTrack<Self> {
+        OnAddVideoTrack::new(self.inner.as_ref())
     }
 
-    pub fn on_remove_track(&self) -> OnRemoveVideoTrack {
-        OnRemoveVideoTrack::new(self.inner.clone().into())
+    pub fn on_remove_track(&self) -> OnRemoveVideoTrack<Self> {
+        OnRemoveVideoTrack::new(self.inner.as_ref())
     }
 }
 
@@ -63,8 +66,10 @@ pub struct AddVideoTrackEvent<T> {
 }
 
 impl<T> AddVideoTrackEvent<T> {
-    pub fn track(&self) -> VideoTrack {
-        VideoTrack::from(self.inner.track().unchecked_into())
+    pub fn track(&self) -> Option<VideoTrack> {
+        self.inner
+            .track()
+            .map(|t| VideoTrack::from(t.unchecked_into::<web_sys::VideoTrack>()))
     }
 }
 
@@ -74,7 +79,7 @@ impl<T> AsRef<web_sys::TrackEvent> for AddVideoTrackEvent<T> {
     }
 }
 
-impl_event_traits!(AddVideoTrackEvent, web_sys::TrackEvent, "addtrack");
+impl_typed_event_traits!(AddVideoTrackEvent, TrackEvent, "addtrack");
 
 #[derive(Clone)]
 pub struct RemoveVideoTrackEvent<T> {
@@ -83,8 +88,10 @@ pub struct RemoveVideoTrackEvent<T> {
 }
 
 impl<T> RemoveVideoTrackEvent<T> {
-    pub fn track(&self) -> VideoTrack {
-        VideoTrack::from(self.inner.track().unchecked_into())
+    pub fn track(&self) -> Option<VideoTrack> {
+        self.inner
+            .track()
+            .map(|t| VideoTrack::from(t.unchecked_into::<web_sys::VideoTrack>()))
     }
 }
 
@@ -94,7 +101,7 @@ impl<T> AsRef<web_sys::TrackEvent> for RemoveVideoTrackEvent<T> {
     }
 }
 
-impl_event_traits!(RemoveVideoTrackEvent, web_sys::TrackEvent, "removetrack");
+impl_typed_event_traits!(RemoveVideoTrackEvent, TrackEvent, "removetrack");
 
 #[derive(Clone)]
 pub struct ChangeVideoTrackEvent<T> {
@@ -102,27 +109,21 @@ pub struct ChangeVideoTrackEvent<T> {
     _marker: marker::PhantomData<T>,
 }
 
-impl<T> AsRef<web_sys::TrackEvent> for ChangeVideoTrackEvent<T> {
-    fn as_ref(&self) -> &web_sys::TrackEvent {
-        &self.inner
-    }
-}
+impl_typed_event_traits!(ChangeVideoTrackEvent, Event, "change");
 
-impl_event_traits!(ChangeVideoTrackEvent, web_sys::TrackEvent, "change");
-
-typed_event_stream!(
+typed_event_iterator!(
     OnAddVideoTrack,
     OnAddVideoTrackWithOptions,
     AddVideoTrackEvent,
     "addtrack"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnRemoveVideoTrack,
     OnRemoveVideoTrackWithOptions,
     RemoveVideoTrackEvent,
     "removetrack"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnChangeVideoTrack,
     OnChangeVideoTrackWithOptions,
     ChangeVideoTrackEvent,

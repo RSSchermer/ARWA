@@ -1,11 +1,30 @@
-use crate::console::{Write, Writer};
-use crate::security::SecurityError;
-use url::Url;
-use wasm_bindgen::JsValue;
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
+use crate::dom_exception_wrapper;
+use crate::impl_common_wrapper_traits;
+use crate::security::SecurityError;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ScrollRestoration {
     Auto,
     Manual,
+}
+
+impl ScrollRestoration {
+    fn from_web_sys(scroll_restoration: web_sys::ScrollRestoration) -> Self {
+        match scroll_restoration {
+            web_sys::ScrollRestoration::Auto => ScrollRestoration::Auto,
+            web_sys::ScrollRestoration::Manual => ScrollRestoration::Manual,
+            _ => unreachable!(),
+        }
+    }
+
+    fn to_web_sys(&self) -> web_sys::ScrollRestoration {
+        match self {
+            ScrollRestoration::Auto => web_sys::ScrollRestoration::Auto,
+            ScrollRestoration::Manual => web_sys::ScrollRestoration::Manual,
+        }
+    }
 }
 
 pub struct History {
@@ -16,19 +35,17 @@ impl History {
     // Note: preferring verb based method names here, as to me that tracks much better with `try_`
     // and every method here needs a fallible alternative.
 
-    fn count_entries(&self) -> u32 {
+    pub fn count_entries(&self) -> u32 {
+        self.inner.length().unwrap_throw()
+    }
+
+    pub fn try_count_entries(&self) -> Result<u32, SecurityError> {
         self.inner
             .length()
             .map_err(|e| SecurityError::new(e.unchecked_into()))
     }
 
-    fn try_count_entries(&self) -> Result<u32, SecurityError> {
-        self.inner
-            .length()
-            .map_err(|e| SecurityError::new(e.unchecked_into()))
-    }
-
-    fn get_state(&self) -> Option<JsValue> {
+    pub fn get_state(&self) -> Option<JsValue> {
         let state = self.inner.state().unwrap_throw();
 
         if state.is_null() {
@@ -38,78 +55,67 @@ impl History {
         }
     }
 
-    fn try_get_state(&self) -> Result<Option<JsValue>, SecurityError> {
+    pub fn try_get_state(&self) -> Result<Option<JsValue>, SecurityError> {
         self.inner
             .state()
             .map(|state| if state.is_null() { None } else { Some(state) })
             .map_err(|err| SecurityError::new(err.unchecked_into()))
     }
 
-    fn get_scroll_restoration(&self) -> ScrollRestoration {
-        match self.inner.scroll_restoration().unwrap_throw() {
-            web_sys::ScrollRestoration::Auto => ScrollRestoration::Auto,
-            web_sys::ScrollRestoration::Manual => ScrollRestoration::Manual,
-        }
+    pub fn get_scroll_restoration(&self) -> ScrollRestoration {
+        ScrollRestoration::from_web_sys(self.inner.scroll_restoration().unwrap_throw())
     }
 
-    fn try_get_scroll_restoration(&self) -> Result<ScrollRestoration, SecurityError> {
+    pub fn try_get_scroll_restoration(&self) -> Result<ScrollRestoration, SecurityError> {
         self.inner
             .scroll_restoration()
-            .map(|r| match r {
-                web_sys::ScrollRestoration::Auto => ScrollRestoration::Auto,
-                web_sys::ScrollRestoration::Manual => ScrollRestoration::Manual,
-            })
+            .map(|r| ScrollRestoration::from_web_sys(r))
             .map_err(|err| SecurityError::new(err.unchecked_into()))
     }
 
-    fn set_scroll_restoration(&self, scroll_restoration: ScrollRestoration) {
-        let raw = match scroll_restoration {
-            ScrollRestoration::Auto => web_sys::ScrollRestoration::Auto,
-            ScrollRestoration::Manual => web_sys::ScrollRestoration::Manual,
-        };
-
-        self.inner.set_scroll_restoration(raw).unwrap_throw()
+    pub fn set_scroll_restoration(&self, scroll_restoration: ScrollRestoration) {
+        self.inner
+            .set_scroll_restoration(scroll_restoration.to_web_sys())
+            .unwrap_throw()
     }
 
-    fn try_set_scroll_restoration(
+    pub fn try_set_scroll_restoration(
         &self,
         scroll_restoration: ScrollRestoration,
     ) -> Result<(), SecurityError> {
-        let raw = match scroll_restoration {
-            ScrollRestoration::Auto => web_sys::ScrollRestoration::Auto,
-            ScrollRestoration::Manual => web_sys::ScrollRestoration::Manual,
-        };
-
         self.inner
-            .set_scroll_restoration(raw)
+            .set_scroll_restoration(scroll_restoration.to_web_sys())
             .map_err(|err| SecurityError::new(err.unchecked_into()))
     }
 
-    fn go(&self, delta: i32) {
+    pub fn go(&self, delta: i32) {
         self.inner.go_with_delta(delta).unwrap_throw()
     }
 
-    fn try_go(&self) -> Result<(), SecurityError> {
+    pub fn try_go(&self, delta: i32) -> Result<(), SecurityError> {
+        // Note: `go` does not do bounds checking, per the spec its a no-op if the target entry is
+        // out of bounds.
+
         self.inner
             .go_with_delta(delta)
             .map_err(|e| SecurityError::new(e.unchecked_into()))
     }
 
-    fn go_back(&self) {
+    pub fn go_back(&self) {
         self.inner.back().unwrap_throw()
     }
 
-    fn try_go_back(&self) -> Result<(), SecurityError> {
+    pub fn try_go_back(&self) -> Result<(), SecurityError> {
         self.inner
             .back()
             .map_err(|e| SecurityError::new(e.unchecked_into()))
     }
 
-    fn go_forward(&self) {
+    pub fn go_forward(&self) {
         self.inner.forward().unwrap_throw()
     }
 
-    fn try_go_forward(&self) -> Result<(), SecurityError> {
+    pub fn try_go_forward(&self) -> Result<(), SecurityError> {
         self.inner
             .forward()
             .map_err(|e| SecurityError::new(e.unchecked_into()))
@@ -149,29 +155,6 @@ impl AsRef<web_sys::History> for History {
 
 impl_common_wrapper_traits!(History);
 
-#[derive(Clone)]
-pub enum StateError {
-    SerializationError(StateSerializationError),
-    SecurityError(SecurityError),
-}
+dom_exception_wrapper!(StateError);
 
-impl StateError {
-    fn new(error: web_sys::DomException) -> Self {
-        if error.code() == 18 {
-            StateError::SecurityError(SecurityError::new(error))
-        } else {
-            StateError::SerializationError(StateSerializationError::new(error))
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct StateSerializationError {
-    inner: web_sys::DomException,
-}
-
-impl StateSerializationError {
-    fn new(inner: web_sys::DomException) -> Self {
-        StateSerializationError { inner }
-    }
-}
+dom_exception_wrapper!(StateSerializationError);

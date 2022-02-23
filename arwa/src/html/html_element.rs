@@ -1,10 +1,7 @@
-use crate::cssom::{inline_style_context_seal, CssStyleDeclaration, InlineStyleContext};
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::dom::{DynamicElement, TextDirectionality};
-use crate::html::html_element_seal::Seal;
-use crate::html::HtmlDocument;
 use crate::lang::LanguageTag;
-use crate::InvalidCast;
-use std::convert::TryFrom;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ContentEditable {
@@ -22,7 +19,7 @@ pub(crate) mod html_element_seal {
 
 pub trait HtmlElement: html_element_seal::Seal {
     fn blur(&self) {
-        self.as_web_sys_html_element().blur().unwrap();
+        self.as_web_sys_html_element().blur().unwrap_throw();
     }
 
     fn click(&self) {
@@ -30,7 +27,7 @@ pub trait HtmlElement: html_element_seal::Seal {
     }
 
     fn focus(&self) {
-        self.as_web_sys_html_element().focus().unwrap();
+        self.as_web_sys_html_element().focus().unwrap_throw();
     }
 
     fn title(&self) -> String {
@@ -42,7 +39,7 @@ pub trait HtmlElement: html_element_seal::Seal {
     }
 
     fn lang(&self) -> Option<LanguageTag> {
-        LanguageTag::parse(self.as_web_sys_html_element().lang()).ok()
+        LanguageTag::parse(self.as_web_sys_html_element().lang().as_ref()).ok()
     }
 
     fn set_lang(&self, lang: Option<&LanguageTag>) {
@@ -130,7 +127,9 @@ pub trait HtmlElement: html_element_seal::Seal {
     }
 
     fn offset_parent(&self) -> Option<DynamicElement> {
-        self.as_ref().offset_parent().map(|e| e.into())
+        self.as_web_sys_html_element()
+            .offset_parent()
+            .map(|e| e.into())
     }
 
     fn offset_top(&self) -> i32 {
@@ -150,49 +149,8 @@ pub trait HtmlElement: html_element_seal::Seal {
     }
 }
 
-#[derive(Clone, PartialEq)]
-pub struct DynamicHtmlElement {
-    inner: web_sys::HtmlElement,
-}
-
-impl html_element_seal::Seal for DynamicHtmlElement {
-    fn as_web_sys_html_element(&self) -> &web_sys::HtmlElement {
-        &self.inner
-    }
-}
-
-impl HtmlElement for DynamicHtmlElement {}
-
-impl inline_style_context_seal::Seal for DynamicHtmlElement {}
-
-impl InlineStyleContext for DynamicHtmlElement {
-    fn style(&self) -> CssStyleDeclaration {
-        self.as_web_sys_html_element().style().into()
-    }
-}
-
-impl From<web_sys::HtmlElement> for DynamicHtmlElement {
-    fn from(inner: web_sys::HtmlElement) -> Self {
-        DynamicHtmlElement { inner }
-    }
-}
-
-impl From<DynamicHtmlElement> for web_sys::HtmlElement {
-    fn from(value: DynamicHtmlElement) -> Self {
-        value.inner
-    }
-}
-
-impl AsRef<web_sys::HtmlElement> for DynamicHtmlElement {
-    fn as_ref(&self) -> &web_sys::HtmlElement {
-        &self.inner
-    }
-}
-
-impl_element_traits!(DynamicHtmlElement, web_sys::HtmlElement);
-
 macro_rules! impl_html_element_traits {
-    ($tpe:ident, $web_sys_tpe:ident) => {
+    ($tpe:ident) => {
         impl $crate::html::html_element_seal::Seal for $tpe {
             fn as_web_sys_html_element(&self) -> &web_sys::HtmlElement {
                 &self.inner
@@ -201,16 +159,20 @@ macro_rules! impl_html_element_traits {
 
         impl $crate::html::HtmlElement for $tpe {}
 
-        impl $crate::cssom::inline_style_context_seal::Seal for $tpe {}
+        impl $crate::cssom::styled_inline_seal::Seal for $tpe {}
 
-        impl $crate::cssom::InlineStyleContext for $tpe {
-            fn style(&self) -> CssStyleDeclaration {
+        impl $crate::cssom::StyledInline for $tpe {
+            fn style(&self) -> $crate::cssom::CssStyleDeclaration {
+                use crate::html::html_element_seal::Seal;
+
                 self.as_web_sys_html_element().style().into()
             }
         }
 
         impl $crate::html::slot_change_event_target_seal::Seal for $tpe {
             fn as_web_sys_event_target(&self) -> &web_sys::EventTarget {
+                use crate::html::html_element_seal::Seal;
+
                 self.as_web_sys_html_element().as_ref()
             }
         }
@@ -219,14 +181,13 @@ macro_rules! impl_html_element_traits {
 
         impl AsRef<web_sys::HtmlElement> for $tpe {
             fn as_ref(&self) -> &web_sys::HtmlElement {
+                use crate::html::html_element_seal::Seal;
+
                 self.as_web_sys_html_element()
             }
         }
 
-        impl_element_traits!($tpe, $web_sys_tpe);
-    };
-    ($tpe:ident) => {
-        $crate::html::impl_html_element_traits!($tpe, $tpe);
+        $crate::dom::impl_element_traits!($tpe);
     };
 }
 

@@ -1,3 +1,5 @@
+use crate::dom::impl_character_data_traits;
+
 #[derive(Clone)]
 pub struct Comment {
     inner: web_sys::Comment,
@@ -15,4 +17,4 @@ impl From<web_sys::Comment> for Comment {
     }
 }
 
-impl_character_data_traits!(Comment, web_sys::Comment);
+impl_character_data_traits!(Comment);

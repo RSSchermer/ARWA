@@ -1,5 +1,7 @@
-use crate::event::DynamicEventTarget;
 use std::marker;
+
+use crate::event::DynamicEventTarget;
+use crate::ui::impl_ui_event_traits;
 
 pub struct FocusInEvent<T> {
     inner: web_sys::FocusEvent,
@@ -21,7 +23,7 @@ impl<T> AsRef<web_sys::FocusEvent> for FocusInEvent<T> {
     }
 }
 
-impl_ui_event_traits!(FocusInEvent);
+impl_ui_event_traits!(FocusInEvent, FocusEvent, "focusin");
 
 pub struct FocusOutEvent<T> {
     inner: web_sys::FocusEvent,
@@ -43,4 +45,4 @@ impl<T> AsRef<web_sys::FocusEvent> for FocusOutEvent<T> {
     }
 }
 
-impl_ui_event_traits!(FocusOutEvent);
+impl_ui_event_traits!(FocusOutEvent, FocusEvent, "focusout");

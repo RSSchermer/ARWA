@@ -1,10 +1,8 @@
-use crate::message::message_event_target::message_event_target_seal;
+use crate::event::impl_event_target_traits;
 use crate::message::{
-    message_sender_seal, MessageEventTarget, MessageSender, OnMessage, OnMessageError,
+    message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
-use crate::transferable::transferable_seal;
-use crate::Transferable;
-use wasm_bindgen::JsValue;
+use crate::{transferable_seal, Transferable};
 
 pub struct MessagePort {
     pub(crate) inner: web_sys::MessagePort,
@@ -36,5 +34,4 @@ impl From<web_sys::MessagePort> for MessagePort {
     }
 }
 
-impl_common_event_target_traits!(MessagePort);
-impl_common_wrapper_traits!(MessagePort);
+impl_event_target_traits!(MessagePort);

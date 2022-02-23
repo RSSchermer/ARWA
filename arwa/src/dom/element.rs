@@ -1,21 +1,25 @@
-use std::convert::TryFrom;
 use std::fmt;
 
 use delegate::delegate;
-use wasm_bindgen::JsCast;
+use js_sys::JsString;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::collection::{Collection, Sequence};
-use crate::console::{Write, Writer};
-use crate::dom::attribute::Attribute;
-use crate::dom::selector::{CompiledSelector, Selector};
-use crate::dom::{InvalidName, Name, NonColonName, Token};
-use crate::error::SyntaxError;
-use crate::event::GenericEventTarget;
-use crate::{
-    DynamicNode, GlobalEventHandlers, InvalidCast, InvalidPointerId, Node, PointerId,
-    QuerySelectorAll, ScrollByOptions, ScrollIntoViewOptions, ScrollToOptions,
+use crate::cssom::{
+    impl_animation_event_target_for_element, impl_transition_event_target_for_element,
 };
-use std::fmt::Formatter;
+use crate::dom::{
+    impl_child_node_for_element, impl_node_traits, impl_owned_node, impl_parent_node_for_element,
+    impl_try_from_node, range_bound_container_seal, Attribute, Name, NonColonName,
+    RangeBoundContainer, Selector, Token,
+};
+use crate::dom_exception_wrapper;
+use crate::impl_common_wrapper_traits;
+use crate::scroll::{impl_scroll_into_view_for_element, impl_scrollable_for_element};
+use crate::ui::impl_ui_event_target_for_element;
+use crate::unchecked_cast_array::unchecked_cast_array;
+
+dom_exception_wrapper!(InvalidPointerId);
 
 pub(crate) mod element_seal {
     pub trait Seal {
@@ -29,34 +33,45 @@ pub trait Element: element_seal::Seal {
 
     // TODO: implement `request_full_screen` as a future.
 
-    fn matches(&self, selector: &CompiledSelector) -> bool {
+    fn matches(&self, selector: &Selector) -> bool {
         self.as_web_sys_element()
             .matches(selector.as_ref())
             .unwrap_throw()
     }
 
-    fn closest<T>(&self, selector: &CompiledSelector) -> Option<DynamicElement> {
+    fn closest<T>(&self, selector: &Selector) -> Option<DynamicElement> {
         self.as_web_sys_element()
-            .closest(selector)
+            .closest(selector.as_ref())
             .unwrap_throw()
-            .into()
+            .map(|e| e.into())
     }
 
-    fn set_pointer_capture(&self, pointer_id: PointerId) -> Result<(), InvalidPointerId> {
+    fn set_pointer_capture(&self, pointer_id: i32) {
         self.as_web_sys_element()
-            .set_pointer_capture(pointer_id.into())
-            .map_err(|_| InvalidPointerId(pointer_id))
+            .set_pointer_capture(pointer_id)
+            .unwrap_throw()
     }
 
-    fn has_pointer_capture(&self, pointer_id: PointerId) -> bool {
+    fn try_set_pointer_capture(&self, pointer_id: i32) -> Result<(), InvalidPointerId> {
         self.as_web_sys_element()
-            .has_pointer_capture(pointer_id.into())
+            .set_pointer_capture(pointer_id)
+            .map_err(|err| InvalidPointerId::new(err.unchecked_into()))
     }
 
-    fn release_pointer_capture(&self, pointer_id: PointerId) -> Result<(), InvalidPointerId> {
+    fn has_pointer_capture(&self, pointer_id: i32) -> bool {
+        self.as_web_sys_element().has_pointer_capture(pointer_id)
+    }
+
+    fn release_pointer_capture(&self, pointer_id: i32) {
         self.as_web_sys_element()
-            .release_pointer_capture(pointer_id.into())
-            .map_err(|_| InvalidPointerId(pointer_id))
+            .release_pointer_capture(pointer_id)
+            .unwrap_throw()
+    }
+
+    fn try_release_pointer_capture(&self, pointer_id: i32) -> Result<(), InvalidPointerId> {
+        self.as_web_sys_element()
+            .release_pointer_capture(pointer_id)
+            .map_err(|err| InvalidPointerId::new(err.unchecked_into()))
     }
 
     fn request_pointer_lock(&self) {
@@ -77,7 +92,7 @@ pub trait Element: element_seal::Seal {
 
     fn attributes(&self) -> Attributes {
         Attributes {
-            element: self.as_web_sys_element(),
+            element: self.as_web_sys_element().clone(),
             attributes: self.as_web_sys_element().attributes(),
         }
     }
@@ -101,7 +116,7 @@ pub trait Element: element_seal::Seal {
     }
 
     fn local_name(&self) -> Option<NonColonName> {
-        NonColonName::from_str(self.as_web_sys_element().local_name()).ok()
+        NonColonName::parse(self.as_web_sys_element().local_name().as_ref()).ok()
     }
 
     fn prefix(&self) -> Option<NonColonName> {
@@ -173,31 +188,29 @@ pub struct Attributes {
 }
 
 impl Attributes {
-    pub fn lookup(&self, qualified_name: Name) -> Option<Attribute> {
+    pub fn lookup(&self, qualified_name: &Name) -> Option<Attribute> {
         self.attributes
             .get_named_item(qualified_name.as_ref())
             .map(|a| Attribute::new(a))
     }
 
-    pub fn lookup_namespaced(&self, local_name: Name, namespace: &str) -> Option<Attribute> {
+    pub fn lookup_namespaced(&self, local_name: &Name, namespace: &str) -> Option<Attribute> {
         self.attributes
             .get_named_item_ns(Some(namespace), local_name.as_ref())
             .map(|a| Attribute::new(a))
     }
 
-    pub fn contains(&self, qualified_name: Name) -> bool {
+    pub fn contains(&self, qualified_name: &Name) -> bool {
         self.element.has_attribute(qualified_name.as_ref())
     }
 
-    pub fn contains_namespaced(&self, local_name: Name, namespace: &str) -> bool {
+    pub fn contains_namespaced(&self, local_name: &Name, namespace: &str) -> bool {
         self.element
             .has_attribute_ns(Some(namespace), local_name.as_ref())
     }
 
     pub fn names(&self) -> AttributeNames {
-        AttributeNames {
-            inner: self.element.get_attribute_names(),
-        }
+        AttributeNames::new(self.element.get_attribute_names())
     }
 
     pub fn insert(&self, attribute: &Attribute) -> Option<Attribute> {
@@ -210,38 +223,38 @@ impl Attributes {
     pub fn try_insert(&self, attribute: &Attribute) -> Result<Option<Attribute>, InUseAttribute> {
         self.attributes
             .set_named_item(attribute.as_ref())
-            .map_ok(|ok| ok.map(|attr| attr.into()))
+            .map(|ok| ok.map(|attr| attr.into()))
             .map_err(|err| InUseAttribute::new(err.unchecked_into()))
     }
 
-    pub fn toggle(&self, qualified_name: Name) -> bool {
+    pub fn toggle(&self, qualified_name: &Name) -> bool {
         self.element
             .toggle_attribute(qualified_name.as_ref())
             .unwrap_throw()
     }
 
-    pub fn toggle_on(&self, qualified_name: Name) {
+    pub fn toggle_on(&self, qualified_name: &Name) {
         self.element
-            .toggle_attribute_with_force(qualified_name, true)
+            .toggle_attribute_with_force(qualified_name.as_ref(), true)
             .unwrap_throw();
     }
 
-    pub fn toggle_off(&self, qualified_name: Name) {
+    pub fn toggle_off(&self, qualified_name: &Name) {
         self.element
-            .toggle_attribute_with_force(qualified_name, false)
+            .toggle_attribute_with_force(qualified_name.as_ref(), false)
             .unwrap_throw();
     }
 
-    pub fn remove(&self, qualified_name: Name) -> Option<Attribute> {
+    pub fn remove(&self, qualified_name: &Name) -> Option<Attribute> {
         self.attributes
-            .remove_named_item(qualified_name)
+            .remove_named_item(qualified_name.as_ref())
             .ok()
             .map(|attr| Attribute::new(attr))
     }
 
-    pub fn remove_namespaced(&self, local_name: Name, namespace: &str) -> Option<Attribute> {
+    pub fn remove_namespaced(&self, local_name: &Name, namespace: &str) -> Option<Attribute> {
         self.attributes
-            .remove_named_item_ns(Some(namespace), local_name)
+            .remove_named_item_ns(Some(namespace), local_name.as_ref())
             .ok()
             .map(|attr| Attribute::new(attr))
     }
@@ -265,7 +278,7 @@ impl Sequence for Attributes {
     }
 }
 
-unchecked_cast_array_wrapper!(String, js_sys::JsString, AttributeNames, AttributeNamesIter);
+unchecked_cast_array!(String, JsString, AttributeNames);
 
 pub struct Class {
     inner: web_sys::DomTokenList,
@@ -273,12 +286,14 @@ pub struct Class {
 
 impl Class {
     pub fn contains(&self, class: &Token) -> bool {
-        self.inner.contains(class)
+        self.inner.contains(class.as_ref())
     }
 
     pub fn insert(&self, class: &Token) -> bool {
         if !self.contains(class) {
-            self.inner.toggle_with_force(class, true).unwrap_throw();
+            self.inner
+                .toggle_with_force(class.as_ref(), true)
+                .unwrap_throw();
 
             true
         } else {
@@ -288,7 +303,7 @@ impl Class {
 
     pub fn remove(&self, class: &Token) -> bool {
         if self.contains(class) {
-            self.inner.remove_1(class).unwrap_throw();
+            self.inner.remove_1(class.as_ref()).unwrap_throw();
 
             true
         } else {
@@ -297,14 +312,16 @@ impl Class {
     }
 
     pub fn toggle(&self, class: &Token) -> bool {
-        self.inner.toggle(class).unwrap_throw()
+        self.inner.toggle(class.as_ref()).unwrap_throw()
     }
 
     pub fn replace(&self, old: &Token, new: &Token) -> bool {
         // It seems the error case covers old browser returning void instead of a bool, but I don't
         // believe there's any overlap between browsers that support WASM and browsers that still
         // return void, so this should never cause an error.
-        self.inner.replace(old, new).unwrap_throw()
+        self.inner
+            .replace(old.as_ref(), new.as_ref())
+            .unwrap_throw()
     }
 
     pub fn serialize(&self) -> String {
@@ -323,10 +340,10 @@ impl Collection for Class {
 }
 
 impl Sequence for Class {
-    type Item = String;
+    type Item = Token;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.item(index)
+        self.inner.item(index).map(|t| Token::trusted(t))
     }
 
     fn to_host_array(&self) -> js_sys::Array {
@@ -365,6 +382,20 @@ impl ClientRect {
         }
     }
 }
+
+impl From<web_sys::DomRect> for ClientRect {
+    fn from(inner: web_sys::DomRect) -> Self {
+        ClientRect { inner }
+    }
+}
+
+impl AsRef<web_sys::DomRect> for ClientRect {
+    fn as_ref(&self) -> &web_sys::DomRect {
+        &self.inner
+    }
+}
+
+impl_common_wrapper_traits!(ClientRect);
 
 pub struct ClientRects {
     inner: web_sys::DomRectList,
@@ -425,8 +456,16 @@ impl element_seal::Seal for DynamicElement {
 
 impl Element for DynamicElement {}
 
+impl range_bound_container_seal::Seal for DynamicElement {
+    fn as_web_sys_node(&self) -> &web_sys::Node {
+        self.inner.as_ref()
+    }
+}
+
+impl RangeBoundContainer for DynamicElement {}
+
 impl_node_traits!(DynamicElement);
-impl_try_from_node!(DynamicElement, web_sys::Element);
+impl_try_from_node!(DynamicElement, Element);
 impl_parent_node_for_element!(DynamicElement);
 impl_child_node_for_element!(DynamicElement);
 impl_owned_node!(DynamicElement);
@@ -436,42 +475,10 @@ impl_ui_event_target_for_element!(DynamicElement);
 impl_animation_event_target_for_element!(DynamicElement);
 impl_transition_event_target_for_element!(DynamicElement);
 
-#[derive(Clone)]
-pub struct InUseAttribute {
-    inner: web_sys::DomException,
-}
-
-impl InUseAttribute {
-    pub(crate) fn new(inner: web_sys::DomException) -> Self {
-        InUseAttribute { inner }
-    }
-}
-
-impl fmt::Debug for InUseAttribute {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "InUseAttributeError: {}", self.inner.message())
-    }
-}
-
-#[derive(Clone)]
-pub struct InvalidToken {
-    inner: web_sys::DomException,
-}
-
-impl InvalidToken {
-    pub(crate) fn new(inner: web_sys::DomException) -> Self {
-        InvalidToken { inner }
-    }
-}
-
-impl fmt::Debug for InvalidToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "InvalidClassName: {}", self.inner.message())
-    }
-}
+dom_exception_wrapper!(InUseAttribute);
 
 macro_rules! impl_element_traits {
-    ($tpe:ident, $web_sys_tpe:ident) => {
+    ($tpe:ident) => {
         impl $crate::dom::element_seal::Seal for $tpe {
             fn as_web_sys_element(&self) -> &web_sys::Element {
                 &self.inner
@@ -481,41 +488,58 @@ macro_rules! impl_element_traits {
 
         impl AsRef<web_sys::Element> for $tpe {
             fn as_ref(&self) -> &web_sys::Element {
+                use crate::dom::element_seal::Seal;
+
                 self.as_web_sys_element()
             }
         }
+
+        impl $crate::dom::range_bound_container_seal::Seal for $tpe {
+            fn as_web_sys_node(&self) -> &web_sys::Node {
+                use crate::dom::element_seal::Seal;
+
+                self.as_web_sys_element().as_ref()
+            }
+        }
+
+        impl $crate::dom::RangeBoundContainer for $tpe {}
 
         $crate::dom::impl_node_traits!($tpe);
         $crate::dom::impl_parent_node_for_element!($tpe);
         $crate::dom::impl_child_node_for_element!($tpe);
         $crate::dom::impl_owned_node!($tpe);
+        $crate::dom::impl_element_sibling_for_element!($tpe);
         $crate::scroll::impl_scrollable_for_element!($tpe);
         $crate::scroll::impl_scroll_into_view_for_element!($tpe);
         $crate::ui::impl_ui_event_target_for_element!($tpe);
-        $crate::ccsom::impl_animation_event_target_for_element!($tpe);
-        $crate::ccsom::impl_transition_event_target_for_element!($tpe);
+        $crate::cssom::impl_animation_event_target_for_element!($tpe);
+        $crate::cssom::impl_transition_event_target_for_element!($tpe);
     };
 }
 
+pub(crate) use impl_element_traits;
+
 macro_rules! impl_try_from_element {
     ($tpe:ident, $web_sys_tpe:ident) => {
-        impl TryFrom<$crate::dom::DynamicElement> for $tpe {
-            type Error = $crate::InvalidCast<$tpe>;
+        impl std::convert::TryFrom<$crate::dom::DynamicElement> for $tpe {
+            type Error = $crate::InvalidCast<$crate::dom::DynamicElement, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicElement) -> Result<Self, Self::Error> {
+                use wasm_bindgen::JsCast;
+
                 let value: web_sys::Element = value.into();
 
                 value
                     .dyn_into::<web_sys::$web_sys_tpe>()
                     .map(|e| e.into())
-                    .map_err(|e| $crate::InvalidCast(e.into()))
+                    .map_err(|e| $crate::InvalidCast::new(e.into()))
             }
         }
 
-        impl_try_from_node!($tpe, $web_sys_tpe);
+        $crate::dom::impl_try_from_node!($tpe, $web_sys_tpe);
     };
     ($tpe:ident) => {
-        $crate::dom::impl_try_from_element($tpe, $tpe)
+        $crate::dom::impl_try_from_element!($tpe, $tpe);
     };
 }
 
@@ -523,56 +547,72 @@ pub(crate) use impl_try_from_element;
 
 macro_rules! impl_try_from_element_with_tag_check {
     ($tpe:ident, $web_sys_tpe:ident, $tag_name:literal) => {
-        impl TryFrom<$crate::dom::DynamicElement> for $tpe {
-            type Error = $crate::InvalidCast<$tpe>;
+        impl std::convert::TryFrom<$crate::dom::DynamicElement> for $tpe {
+            type Error = $crate::InvalidCast<$crate::dom::DynamicElement, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicElement) -> Result<Self, Self::Error> {
+                use wasm_bindgen::JsCast;
+
                 let value: web_sys::Element = value.into();
 
-                if &value.tag_name() != $tag_name {
-                    return $crate::InvalidCast(e.into());
+                if value.tag_name().as_str() != $tag_name {
+                    return Err($crate::InvalidCast::new($crate::dom::DynamicElement::from(
+                        value,
+                    )));
                 }
 
                 value
                     .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
-                    .map_err(|e| $crate::InvalidCast(e.into()))
+                    .map(|inner| $tpe { inner })
+                    .map_err(|e| $crate::InvalidCast::new($crate::dom::DynamicElement::from(e)))
             }
         }
 
-        impl TryFrom<$crate::dom::DynamicNode> for $tpe {
-            type Error = $crate::InvalidCast<$tpe>;
+        impl std::convert::TryFrom<$crate::dom::DynamicNode> for $tpe {
+            type Error = $crate::InvalidCast<$crate::dom::DynamicNode, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicNode) -> Result<Self, Self::Error> {
+                use wasm_bindgen::JsCast;
+
                 let value: web_sys::Node = value.into();
 
                 value
                     .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map_err(|e| $crate::InvalidCast(e.into()))
-                    .map(|e| {
-                        if e.tag_name() == $tag_name {
-                            Ok(e.into())
+                    .map_err(|e| $crate::InvalidCast::new($crate::dom::DynamicNode::from(e)))
+                    .and_then(|inner| {
+                        if inner.tag_name().as_str() == $tag_name {
+                            Ok($tpe { inner })
                         } else {
-                            Err($crate::InvalidCast(e.into()))
+                            Err($crate::InvalidCast::new($crate::dom::DynamicNode::from(
+                                inner.unchecked_into::<web_sys::Node>(),
+                            )))
                         }
                     })
             }
         }
 
-        impl TryFrom<$crate::dom::DynamicEventTarget> for $tpe {
-            type Error = $crate::InvalidCast<$tpe>;
+        impl std::convert::TryFrom<$crate::event::DynamicEventTarget> for $tpe {
+            type Error = $crate::InvalidCast<$crate::event::DynamicEventTarget, $tpe>;
 
-            fn try_from(value: $crate::dom::DynamicEventTarget) -> Result<Self, Self::Error> {
+            fn try_from(value: $crate::event::DynamicEventTarget) -> Result<Self, Self::Error> {
+                use wasm_bindgen::JsCast;
+
                 let value: web_sys::EventTarget = value.into();
 
                 value
                     .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map_err(|e| $crate::InvalidCast(e.into()))
-                    .map(|e| {
-                        if e.tag_name() == $tag_name {
-                            Ok(e.into())
+                    .map_err(|e| {
+                        $crate::InvalidCast::new($crate::event::DynamicEventTarget::from(e))
+                    })
+                    .and_then(|inner| {
+                        if inner.tag_name().as_str() == $tag_name {
+                            Ok($tpe { inner })
                         } else {
-                            Err($crate::InvalidCast(e.into()))
+                            Err($crate::InvalidCast::new(
+                                $crate::event::DynamicEventTarget::from(
+                                    inner.unchecked_into::<web_sys::EventTarget>(),
+                                ),
+                            ))
                         }
                     })
             }

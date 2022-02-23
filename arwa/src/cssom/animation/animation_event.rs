@@ -1,3 +1,5 @@
+use delegate::delegate;
+
 mod animation_event_seal {
     pub trait Seal {}
 }
@@ -13,7 +15,7 @@ macro_rules! animation_event {
         #[derive(Clone)]
         pub struct $event<T> {
             inner: web_sys::AnimationEvent,
-            _marker: marker::PhantomData<T>,
+            _marker: std::marker::PhantomData<T>,
         }
 
         impl<T> animation_event_seal::Seal for $event<T> {}
@@ -28,17 +30,17 @@ macro_rules! animation_event {
             }
         }
 
-        impl AsRef<web_sys::AnimationEvent> for $event {
-            fn as_ref(&self) -> web_sys::AnimationEvent {
+        impl<T> AsRef<web_sys::AnimationEvent> for $event<T> {
+            fn as_ref(&self) -> &web_sys::AnimationEvent {
                 &self.inner
             }
         }
 
-        impl_event_traits!($event, web_sys::AnimationEvent, $name);
+        $crate::event::impl_typed_event_traits!($event, AnimationEvent, $name);
     };
 }
 
-animation_event!(AnimationStart, "animationstart");
-animation_event!(AnimationEnd, "animationend");
-animation_event!(AnimationIteration, "animationiteration");
-animation_event!(AnimationCancel, "animationcancel");
+animation_event!(AnimationStartEvent, "animationstart");
+animation_event!(AnimationEndEvent, "animationend");
+animation_event!(AnimationIterationEvent, "animationiteration");
+animation_event!(AnimationCancelEvent, "animationcancel");

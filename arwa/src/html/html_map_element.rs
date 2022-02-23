@@ -1,5 +1,9 @@
-use crate::collection::{Collection, Sequence};
+use wasm_bindgen::JsCast;
 use web_sys::HtmlAreaElement;
+
+use crate::collection::{Collection, Sequence};
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlMapElement {
@@ -46,7 +50,7 @@ impl Sequence for MapAreas {
     fn get(&self, index: u32) -> Option<Self::Item> {
         self.inner
             .item(index)
-            .map(|e| HtmlAreaElement::from(e.unchecked_into()))
+            .map(|e| HtmlAreaElement::from(e.unchecked_into::<web_sys::HtmlAreaElement>()))
     }
 
     fn to_host_array(&self) -> js_sys::Array {

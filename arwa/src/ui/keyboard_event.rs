@@ -1,8 +1,6 @@
 use delegate::delegate;
-use wasm_bindgen::JsCast;
 
-use crate::event::on_event::FromEvent;
-use arwa::event::{Event, UiEvent};
+use crate::ui::{impl_ui_event_traits, modifier_state_seal, ModifierState};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum KeyLocation {
@@ -12,7 +10,7 @@ pub enum KeyLocation {
     Numpad = 3,
 }
 
-mod keyboard_event_seal {
+pub(crate) mod keyboard_event_seal {
     pub trait Seal {
         #[doc(hidden)]
         fn as_web_sys_keyboard_event(&self) -> &web_sys::KeyboardEvent;
@@ -50,22 +48,24 @@ pub trait KeyboardEvent: keyboard_event_seal::Seal {
 }
 
 macro_rules! keyboard_event {
-    ($event:ident) => {
+    ($event:ident, $name:literal) => {
         #[derive(Clone)]
         pub struct $event<T> {
             inner: web_sys::KeyboardEvent,
             _marker: std::marker::PhantomData<T>,
         }
 
-        impl keyboard_event_seal::Seal for $event {
-            fn as_web_sys_keyboard_event(&self) -> web_sys::KeyboardEvent {
+        impl<T> keyboard_event_seal::Seal for $event<T> {
+            fn as_web_sys_keyboard_event(&self) -> &web_sys::KeyboardEvent {
                 &self.inner
             }
         }
 
-        impl KeyboardEvent for $event {}
+        impl<T> KeyboardEvent for $event<T> {}
 
-        impl ModifierState for KeyboardEvent {
+        impl<T> modifier_state_seal::Seal for $event<T> {}
+
+        impl<T> ModifierState for $event<T> {
             delegate! {
                 target self.inner {
                     fn get_modifier_state(&self, key: &str) -> bool;
@@ -81,18 +81,18 @@ macro_rules! keyboard_event {
             }
         }
 
-        impl AsRef<web_sys::KeyboardEvent> for $event {
+        impl<T> AsRef<web_sys::KeyboardEvent> for $event<T> {
             fn as_ref(&self) -> &web_sys::KeyboardEvent {
+                use crate::ui::keyboard_event_seal::Seal;
+
                 self.as_web_sys_keyboard_event()
             }
         }
 
-        impl_common_ui_event_traits!(KeyboardEvent);
+        impl_ui_event_traits!($event, KeyboardEvent, $name);
     };
 }
 
-/// Event fired when a keyboard key is pressed.
-keyboard_event!(KeyDownEvent);
+keyboard_event!(KeyDownEvent, "keydown");
 
-/// Event fired when a keyboard key is released.
-keyboard_event!(KeyUpEvent);
+keyboard_event!(KeyUpEvent, "keyup");

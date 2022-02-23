@@ -1,5 +1,5 @@
 use crate::cssom::{
-    css_grouping_rule_seal, css_rule_seal, CssGroupingRule, CssRule, CssStyleDeclaration,
+    css_grouping_rule_seal, impl_css_rule_traits, CssGroupingRule, CssStyleDeclaration,
 };
 
 #[derive(Clone)]
@@ -12,7 +12,7 @@ impl CssPageRule {
         todo!("Missing in web-sys")
     }
 
-    pub fn set_selector_text(&self, value: &str) {
+    pub fn set_selector_text(&self, _value: &str) {
         todo!("Missing in web-sys")
     }
 
@@ -20,14 +20,6 @@ impl CssPageRule {
         self.inner.style().into()
     }
 }
-
-impl css_rule_seal::Seal for CssPageRule {
-    fn as_web_sys_css_rule(&self) -> &web_sys::CssRule {
-        self.inner.as_ref()
-    }
-}
-
-impl CssRule for CssPageRule {}
 
 impl css_grouping_rule_seal::Seal for CssPageRule {
     fn as_web_sys_css_grouping_rule(&self) -> &web_sys::CssGroupingRule {
@@ -49,4 +41,4 @@ impl AsRef<web_sys::CssPageRule> for CssPageRule {
     }
 }
 
-impl_css_rule_traits!(CssPageRule, web_sys::CssPageRule);
+impl_css_rule_traits!(CssPageRule, CssPageRule);

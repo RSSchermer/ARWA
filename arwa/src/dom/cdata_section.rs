@@ -1,23 +1,17 @@
+use crate::dom::impl_text_data_traits;
+use crate::dom_exception_wrapper;
+
 #[derive(Clone)]
-pub struct CDATASection {
+pub struct CDataSection {
     inner: web_sys::CdataSection,
 }
 
-impl From<web_sys::CdataSection> for CDATASection {
+impl From<web_sys::CdataSection> for CDataSection {
     fn from(inner: web_sys::CdataSection) -> Self {
-        CDATASection { inner }
+        CDataSection { inner }
     }
 }
 
-impl_text_data_traits!(CDATASection, web_sys::CdataSection);
+impl_text_data_traits!(CDataSection, CdataSection);
 
-#[derive(Clone)]
-pub struct CDATAError {
-    inner: web_sys::DomException,
-}
-
-impl CDATAError {
-    pub(crate) fn new(inner: web_sys::DomException) -> Self {
-        CDATAError { inner }
-    }
-}
+dom_exception_wrapper!(CDATAError);

@@ -1,6 +1,8 @@
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::dom::DynamicDocument;
 
-mod owned_node_seal {
+pub(crate) mod owned_node_seal {
     pub trait Seal {
         #[doc(hidden)]
         fn as_web_sys_node(&self) -> &web_sys::Node;
@@ -9,7 +11,10 @@ mod owned_node_seal {
 
 pub trait OwnedNode: owned_node_seal::Seal {
     fn owner_document(&self) -> DynamicDocument {
-        self.as_web_sys_node().owner_document().unwrap()
+        self.as_web_sys_node()
+            .owner_document()
+            .unwrap_throw()
+            .into()
     }
 }
 

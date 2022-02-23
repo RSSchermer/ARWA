@@ -2,9 +2,9 @@
 members = [
     "arwa",
     "arwa_parse",
-    "examples/animation_frame",
-    "examples/console",
-    "examples/events",
-    "examples/geolocation",
-    "examples/media_element",
+#    "examples/animation_frame",
+#    "examples/console",
+#    "examples/events",
+#    "examples/geolocation",
+#    "examples/media_element",
 ]

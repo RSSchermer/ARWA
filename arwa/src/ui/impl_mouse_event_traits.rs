@@ -1,5 +1,5 @@
 macro_rules! impl_mouse_event_traits {
-    ($event:ident, $web_sys_event:ident, $name:ident) => {
+    ($event:ident) => {
         impl<T> AsRef<web_sys::MouseEvent> for $event<T> {
             fn as_ref(&self) -> &web_sys::MouseEvent {
                 self.inner.as_ref()
@@ -10,27 +10,37 @@ macro_rules! impl_mouse_event_traits {
 
         impl<T> $crate::ui::ModifierState for $event<T> {
             fn get_modifier_state(&self, key: &str) -> bool {
-                self.as_ref().get_modifier_state(key)
+                let mouse_event: &web_sys::MouseEvent = self.as_ref();
+
+                mouse_event.get_modifier_state(key)
             }
 
             fn alt_key(&self) -> bool {
-                self.as_ref().alt_key()
+                let mouse_event: &web_sys::MouseEvent = self.as_ref();
+
+                mouse_event.alt_key()
             }
 
             fn ctrl_key(&self) -> bool {
-                self.as_ref().ctrl_key()
+                let mouse_event: &web_sys::MouseEvent = self.as_ref();
+
+                mouse_event.ctrl_key()
             }
 
             fn shift_key(&self) -> bool {
-                self.as_ref().shift_key()
+                let mouse_event: &web_sys::MouseEvent = self.as_ref();
+
+                mouse_event.shift_key()
             }
 
             fn meta_key(&self) -> bool {
-                self.as_ref().meta_key()
+                let mouse_event: &web_sys::MouseEvent = self.as_ref();
+
+                mouse_event.meta_key()
             }
         }
 
-        impl<T> $crate::ui::pointer_button_state::Seal {
+        impl<T> $crate::ui::pointer_button_state_seal::Seal for $event<T> {
             fn as_web_sys_mouse_event(&self) -> &web_sys::MouseEvent {
                 self.as_ref()
             }
@@ -38,7 +48,7 @@ macro_rules! impl_mouse_event_traits {
 
         impl<T> $crate::ui::PointerButtonState for $event<T> {}
 
-        impl<T> $crate::ui::pointer_position_state::Seal {
+        impl<T> $crate::ui::pointer_position_state_seal::Seal for $event<T> {
             fn as_web_sys_mouse_event(&self) -> &web_sys::MouseEvent {
                 self.as_ref()
             }

@@ -1,4 +1,6 @@
-mod text_data_seal {
+use wasm_bindgen::UnwrapThrowExt;
+
+pub(crate) mod text_data_seal {
     pub trait Seal {
         #[doc(hidden)]
         fn as_web_sys_text(&self) -> &web_sys::Text;
@@ -28,25 +30,30 @@ impl From<web_sys::Text> for Text {
     }
 }
 
-impl_text_data_traits!(Text, web_sys::Text);
+impl_text_data_traits!(Text);
 
 macro_rules! impl_text_data_traits {
     ($tpe:ident, $web_sys_tpe:ident) => {
-        impl text_data_seal::Seal for $tpe {
+        impl $crate::dom::text_data_seal::Seal for $tpe {
             fn as_web_sys_text(&self) -> &web_sys::Text {
                 &self.inner
             }
         }
 
-        impl TextData for $tpe {}
+        impl $crate::dom::TextData for $tpe {}
 
         impl AsRef<web_sys::Text> for $tpe {
             fn as_ref(&self) -> &web_sys::Text {
+                use $crate::dom::text_data_seal::Seal;
+
                 self.as_web_sys_text()
             }
         }
 
-        impl_character_data_traits!($tpe, $web_sys_tpe);
+        $crate::dom::impl_character_data_traits!($tpe, $web_sys_tpe);
+    };
+    ($tpe:ident) => {
+        $crate::dom::impl_text_data_traits!($tpe, $tpe);
     };
 }
 

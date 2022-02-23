@@ -11,13 +11,9 @@ macro_rules! heading_element {
             }
         }
 
-        $crate::html::impl_html_element_traits!(HtmlHeadingElement);
-        $crate::dom::impl_try_from_element_with_tag_check!(
-            $element,
-            web_sys::HtmlHeadingElement,
-            $tag_name
-        );
-        $crate::html::impl_known_element!($element, $tag_name);
+        $crate::html::impl_html_element_traits!($element);
+        $crate::dom::impl_try_from_element_with_tag_check!($element, HtmlHeadingElement, $tag_name);
+        $crate::html::impl_known_element!($element, HtmlHeadingElement, $tag_name);
         $crate::dom::impl_shadow_host_for_element!($element);
     };
 }

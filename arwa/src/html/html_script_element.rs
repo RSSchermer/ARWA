@@ -1,3 +1,8 @@
+use delegate::delegate;
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::media_type::MediaType;
 use crate::security::CORS;
 use crate::url::{AbsoluteOrRelativeUrl, Url};
@@ -25,7 +30,7 @@ impl HtmlScriptElement {
     }
 
     pub fn src(&self) -> Option<Url> {
-        Url::parse(self.inner.src()).ok()
+        Url::parse(self.inner.src().as_ref()).ok()
     }
 
     pub fn set_src<T>(&self, src: T)
@@ -54,12 +59,12 @@ impl HtmlScriptElement {
 
     pub fn text(&self) -> String {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.text().unwrap()
+        self.inner.text().unwrap_throw()
     }
 
     pub fn set_text(&self, text: &str) {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.set_text(text).unwrap();
+        self.inner.set_text(text).unwrap_throw();
     }
 
     pub fn cross_origin(&self) -> CORS {

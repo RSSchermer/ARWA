@@ -1,6 +1,6 @@
 use crate::cssom::{
-    css_condition_rule_seal, css_grouping_rule_seal, css_rule_seal, CssConditionRule,
-    CssGroupingRule, CssRule, CssStyleSheet, Media,
+    css_condition_rule_seal, css_grouping_rule_seal, impl_css_rule_traits, CssConditionRule,
+    CssGroupingRule,
 };
 
 #[derive(Clone)]
@@ -9,19 +9,8 @@ pub struct CssMediaRule {
 }
 
 impl CssMediaRule {
-    pub fn media(&self) -> Media {
-        // Spec does not indicate this is nullable.
-        Media::new(self.inner.media().unwrap())
-    }
+    // TODO: media
 }
-
-impl css_rule_seal::Seal for CssMediaRule {
-    fn as_web_sys_css_rule(&self) -> &web_sys::CssRule {
-        self.inner.as_ref()
-    }
-}
-
-impl CssRule for CssMediaRule {}
 
 impl css_grouping_rule_seal::Seal for CssMediaRule {
     fn as_web_sys_css_grouping_rule(&self) -> &web_sys::CssGroupingRule {
@@ -51,4 +40,4 @@ impl AsRef<web_sys::CssMediaRule> for CssMediaRule {
     }
 }
 
-impl_css_rule_traits!(CssMediaRule, web_sys::CssMediaRule);
+impl_css_rule_traits!(CssMediaRule, CssMediaRule);

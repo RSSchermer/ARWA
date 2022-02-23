@@ -1,14 +1,20 @@
+use std::convert::TryFrom;
+use std::str::FromStr;
+
+use delegate::delegate;
+use wasm_bindgen::JsCast;
+
+use crate::dom::impl_try_from_element;
 use crate::dom::DynamicDocument;
 use crate::html::{
-    constraint_validation_target_seal, form_listed_element_seal, ConstraintValidationTarget,
-    DynamicFormListedElement, FormListedElement, HtmlFormElement, ValidityState,
+    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
+    impl_known_element, ConstraintValidationTarget, DynamicFormListedElement, FormListedElement,
+    HtmlFormElement, ValidityState,
 };
 use crate::media_type::MediaType;
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 use crate::window::Window;
 use crate::InvalidCast;
-use std::convert::TryFrom;
-use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct HtmlObjectElement {
@@ -25,7 +31,7 @@ impl HtmlObjectElement {
     }
 
     pub fn data(&self) -> Option<Url> {
-        Url::parse(self.inner.data()).ok()
+        Url::parse(self.inner.data().as_ref()).ok()
     }
 
     pub fn set_data<T>(&self, data: T)
@@ -75,7 +81,7 @@ impl form_listed_element_seal::Seal for HtmlObjectElement {}
 
 impl FormListedElement for HtmlObjectElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -88,7 +94,7 @@ impl FormListedElement for HtmlObjectElement {
 }
 
 impl TryFrom<DynamicFormListedElement> for HtmlObjectElement {
-    type Error = InvalidCast<DynamicFormListedElement>;
+    type Error = InvalidCast<DynamicFormListedElement, HtmlObjectElement>;
 
     fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
         let value: web_sys::HtmlElement = value.into();
@@ -96,7 +102,7 @@ impl TryFrom<DynamicFormListedElement> for HtmlObjectElement {
         value
             .dyn_into::<web_sys::HtmlObjectElement>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(DynamicFormListedElement::new(e)))
     }
 }
 
@@ -104,7 +110,7 @@ impl constraint_validation_target_seal::Seal for HtmlObjectElement {}
 
 impl ConstraintValidationTarget for HtmlObjectElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

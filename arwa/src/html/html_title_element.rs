@@ -1,3 +1,8 @@
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
+
 #[derive(Clone)]
 pub struct HtmlTitleElement {
     inner: web_sys::HtmlTitleElement,
@@ -10,12 +15,12 @@ impl HtmlTitleElement {
 
     pub fn text(&self) -> String {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.text().unwrap()
+        self.inner.text().unwrap_throw()
     }
 
     pub fn set_text(&self, text: &str) {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.set_text(text).unwrap();
+        self.inner.set_text(text).unwrap_throw();
     }
 }
 

@@ -43,11 +43,11 @@ pub use self::css_style_declaration::*;
 mod css_style_rule;
 pub use self::css_style_rule::*;
 
+mod css_style_sheet;
+pub use self::css_style_sheet::*;
+
 mod css_supports_rule;
 pub use self::css_supports_rule::*;
-
-mod inline_style_context;
-pub use self::inline_style_context::*;
 
 mod insert_rule_error;
 pub use self::insert_rule_error::*;
@@ -55,17 +55,17 @@ pub use self::insert_rule_error::*;
 mod link_style;
 pub use self::link_style::*;
 
-mod media;
-pub use self::media::*;
+mod remove_rule_error;
+pub use self::remove_rule_error::*;
 
 mod screen;
 pub use self::screen::*;
 
-mod style_context;
-pub use self::style_context::*;
+mod styled;
+pub use self::styled::*;
 
-mod style_sheet;
-pub use self::style_sheet::*;
+mod styled_inline;
+pub use self::styled_inline::*;
 
 mod text_wrap;
 pub use self::text_wrap::*;

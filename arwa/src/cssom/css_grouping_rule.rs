@@ -1,9 +1,12 @@
-use crate::cssom::{DynamicCssRule, InsertRuleError};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::collection::{Collection, Sequence};
+use crate::cssom::{DynamicCssRule, InsertRuleError, RemoveRuleError};
 
 pub(crate) mod css_grouping_rule_seal {
     pub trait Seal {
         #[doc(hidden)]
-        fn as_web_sys_css_grouping_rule(&self) -> web_sys::CssGroupingRule;
+        fn as_web_sys_css_grouping_rule(&self) -> &web_sys::CssGroupingRule;
     }
 }
 
@@ -25,39 +28,13 @@ pub struct CssGroupedRules {
 }
 
 impl CssGroupedRules {
-    pub fn get(&self, index: u32) -> Option<DynamicCssRule> {
-        self.rules.get(index).map(|r| r.into())
-    }
-
-    pub fn len(&self) -> u32 {
-        self.rules.length()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    pub fn first(&self) -> Option<DynamicCssRule> {
-        self.get(0)
-    }
-
-    pub fn last(&self) -> Option<DynamicCssRule> {
-        let len = self.len();
-
-        if len > 0 {
-            self.get(len - 1)
-        } else {
-            None
-        }
-    }
-
-    pub fn insert(&self, index: u32, rule: &str) {
+    pub fn insert(&self, index: u32, rule: &str) -> u32 {
         self.grouping_rule
             .insert_rule_with_index(rule, index)
-            .unwrap_throw();
+            .unwrap_throw()
     }
 
-    pub fn try_insert(&self, index: u32, rule: &str) -> Result<(), InsertRuleError> {
+    pub fn try_insert(&self, index: u32, rule: &str) -> Result<u32, InsertRuleError> {
         self.grouping_rule
             .insert_rule_with_index(rule, index)
             .map_err(|err| InsertRuleError::new(err.unchecked_into()))
@@ -67,14 +44,27 @@ impl CssGroupedRules {
         self.grouping_rule.delete_rule(index).unwrap_throw();
     }
 
-    pub fn snapshot(&self) -> CssGroupedRulesSnapshot {
-        CssGroupedRulesSnapshot::new(js_sys::Array::from(self.rules.as_ref()))
+    pub fn try_remove(&self, index: u32) -> Result<(), RemoveRuleError> {
+        self.grouping_rule
+            .delete_rule(index)
+            .map_err(|err| RemoveRuleError::new(err.unchecked_into()))
     }
 }
 
-unchecked_cast_array_wrapper!(
-    DynamicCssRule,
-    web_sys::DynamicCssRule,
-    CssGroupedRulesSnapshot,
-    CssGroupedRulesSnapshotIter
-);
+impl Collection for CssGroupedRules {
+    fn len(&self) -> u32 {
+        self.rules.length()
+    }
+}
+
+impl Sequence for CssGroupedRules {
+    type Item = DynamicCssRule;
+
+    fn get(&self, index: u32) -> Option<Self::Item> {
+        self.rules.get(index).map(|r| r.into())
+    }
+
+    fn to_host_array(&self) -> js_sys::Array {
+        js_sys::Array::from(self.rules.as_ref())
+    }
+}

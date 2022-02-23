@@ -1,4 +1,8 @@
-use crate::html::{DynamicHtmlElement, HtmlFormElement};
+use delegate::delegate;
+use wasm_bindgen::JsCast;
+
+use crate::dom::{impl_try_from_element, DynamicElement};
+use crate::html::{impl_html_element_traits, impl_known_element, HtmlFormElement};
 
 #[derive(Clone)]
 pub struct HtmlLabelElement {
@@ -18,8 +22,10 @@ impl HtmlLabelElement {
         self.inner.form().map(|form| form.into())
     }
 
-    pub fn control(&self) -> Option<DynamicHtmlElement> {
-        self.inner.control().map(|e| e.into())
+    pub fn control(&self) -> Option<DynamicElement> {
+        self.inner
+            .control()
+            .map(|e| DynamicElement::from(e.unchecked_into::<web_sys::Element>()))
     }
 }
 

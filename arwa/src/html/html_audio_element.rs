@@ -1,3 +1,5 @@
+use crate::html::{impl_html_media_element_traits, impl_known_element};
+
 #[derive(Clone)]
 pub struct HtmlAudioElement {
     inner: web_sys::HtmlAudioElement,

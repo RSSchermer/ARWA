@@ -1,9 +1,11 @@
-use crate::geolocation::{Position, PositionError};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
+
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+
+use crate::geolocation::{Position, PositionError};
 
 struct CallbackState {
     result: Option<Result<Position, PositionError>>,
@@ -45,15 +47,13 @@ impl CurrentPosition {
 impl Future for CurrentPosition {
     type Output = Result<Position, PositionError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let current_position = self.get_mut();
-
-        if let Some(current) = current_position.callback_state.result.take() {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if let Some(current) = self.callback_state.result.take() {
             Poll::Ready(current)
         } else {
             // Initialize if we haven't already
-            if let Some(options) = current_position.options.take() {
-                let state_ptr = &mut current_position.callback_state as *mut CallbackState;
+            if let Some(options) = self.options.take() {
+                let state_ptr = &mut self.callback_state as *mut CallbackState;
 
                 let success = Closure::wrap(Box::new(move |value: JsValue| {
                     // Safe because of Pin
@@ -79,22 +79,21 @@ impl Future for CurrentPosition {
                     }
                 }) as Box<dyn FnMut(JsValue)>);
 
-                current_position.callback_state.waker = Some(cx.waker().clone());
+                self.callback_state.waker = Some(cx.waker().clone());
 
                 // No indication in the spec that this can fail, unwrap for now.
-                current_position
-                    .geolocation
+                self.geolocation
                     .get_current_position_with_error_callback_and_options(
                         success.as_ref().unchecked_ref(),
                         Some(error.as_ref().unchecked_ref()),
                         &options,
                     )
-                    .unwrap();
+                    .unwrap_throw();
 
                 // Hang on to callbacks for the lifetime of the stream so they won't be dropped
                 // while they may still get called.
-                current_position.success = Some(success);
-                current_position.error = Some(error);
+                self.success = Some(success);
+                self.error = Some(error);
             }
 
             Poll::Pending

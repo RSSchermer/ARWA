@@ -1,5 +1,4 @@
 use std::fmt;
-use std::fmt::Formatter;
 
 #[derive(Clone)]
 pub struct InvalidName {
@@ -211,8 +210,8 @@ impl QualifiedName {
         } else {
             Err(InvalidQualifiedName {
                 name: name.to_string(),
-                invalid_char: Some(c),
-                invalid_pos: i
+                invalid_char: None,
+                invalid_pos: 0
             })
         }
     }
@@ -240,7 +239,7 @@ impl AsRef<str> for QualifiedName {
     }
 }
 
-const fn valid_first_char(c: &char) -> bool {
+fn valid_first_char(c: &char) -> bool {
     c == &'_'
         || c == &':'
         || ('a'..='z').contains(c)
@@ -259,11 +258,11 @@ const fn valid_first_char(c: &char) -> bool {
         || ('\u{10000}'..='\u{EFFFF}').contains(c)
 }
 
-const fn valid_tail_char(c: &char) -> bool {
+fn valid_tail_char(c: &char) -> bool {
     valid_first_char(c)
         || c == &'-'
         || c == &'.'
-        || c == '\u{00B7}'
+        || c == &'\u{00B7}'
         || ('0'..='9').contains(c)
         || ('\u{0300}'..='\u{036F}').contains(c)
         || ('\u{203F}'..='\u{2040}').contains(c)

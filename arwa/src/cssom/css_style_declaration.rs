@@ -1,5 +1,7 @@
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::cssom::DynamicCssRule;
-use arwa::console::{Write, Writer};
+use crate::impl_common_wrapper_traits;
 
 mod css_style_declaration_read_seal {
     pub trait Seal {
@@ -24,13 +26,30 @@ pub trait CssStyleDeclarationRead: css_style_declaration_read_seal::Seal {
     }
 
     fn property_value(&self, property_name: &str) -> Option<String> {
-        self.as_web_sys_css_style_declaration()
+        if let Ok(value) = self
+            .as_web_sys_css_style_declaration()
             .get_property_value(property_name)
+        {
+            if value.is_empty() {
+                None
+            } else {
+                Some(value)
+            }
+        } else {
+            None
+        }
     }
 
     fn property_priority(&self, property_name: &str) -> Option<String> {
-        self.as_web_sys_css_style_declaration()
-            .get_property_priority(property_name)
+        let priority = self
+            .as_web_sys_css_style_declaration()
+            .get_property_priority(property_name);
+
+        if priority.is_empty() {
+            None
+        } else {
+            Some(priority)
+        }
     }
 }
 

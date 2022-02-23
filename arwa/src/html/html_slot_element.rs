@@ -1,13 +1,12 @@
-use std::convert::TryFrom;
+use std::marker;
 
 use delegate::delegate;
-use wasm_bindgen::JsCast;
+use web_sys::Node;
 
-use crate::console::{Write, Writer};
-use crate::event::{GenericEventTarget, OnSlotChange};
-use crate::html::{DynamicHtmlElement, HtmlElement};
-use crate::{DynamicElement, DynamicNode, Element, GlobalEventHandlers, InvalidCast, Node};
-use std::marker;
+use crate::dom::{impl_try_from_element, DynamicNode};
+use crate::event::{impl_typed_event_traits, typed_event_iterator};
+use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::unchecked_cast_array::unchecked_cast_array;
 
 #[derive(Clone)]
 pub struct HtmlSlotElement {
@@ -26,9 +25,7 @@ impl HtmlSlotElement {
     // TODO: web_sys is missing `assigned_elements` at this time.
 
     pub fn assigned_nodes(&self) -> SlotAssignedNodes {
-        SlotAssignedNodes {
-            inner: self.inner.assigned_nodes(),
-        }
+        SlotAssignedNodes::new(self.inner.assigned_nodes())
     }
 
     pub fn assigned_nodes_flattened(&self) -> SlotAssignedNodes {
@@ -36,9 +33,7 @@ impl HtmlSlotElement {
 
         options.flatten(true);
 
-        SlotAssignedNodes {
-            inner: self.inner.assigned_nodes_with_options(&options),
-        }
+        SlotAssignedNodes::new(self.inner.assigned_nodes_with_options(&options))
     }
 }
 
@@ -58,7 +53,7 @@ impl_html_element_traits!(HtmlSlotElement);
 impl_try_from_element!(HtmlSlotElement);
 impl_known_element!(HtmlSlotElement, "SLOT");
 
-unchecked_cast_array!(DynamicNode, web_sys::Node, SlotAssignedNodes);
+unchecked_cast_array!(DynamicNode, Node, SlotAssignedNodes);
 
 pub(crate) mod slot_change_event_target_seal {
     pub trait Seal {
@@ -67,9 +62,9 @@ pub(crate) mod slot_change_event_target_seal {
     }
 }
 
-pub trait SlotChangeEventTarget: slot_change_event_target_seal::Seal {
+pub trait SlotChangeEventTarget: slot_change_event_target_seal::Seal + Sized {
     fn on_slot_change(&self) -> OnSlotChange<Self> {
-        OnSlotChange::new(self.as_web_sys_event_target().clone().into())
+        OnSlotChange::new(self.as_web_sys_event_target())
     }
 }
 
@@ -78,9 +73,9 @@ pub struct SlotChangeEvent<T> {
     _marker: marker::PhantomData<T>,
 }
 
-impl_event_traits!(SlotChangeEvent, web_sys::Event);
+impl_typed_event_traits!(SlotChangeEvent, Event, "slotchange");
 
-typed_event_stream!(
+typed_event_iterator!(
     OnSlotChange,
     OnSlotChangeWithOptions,
     SlotChangeEvent,

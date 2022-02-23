@@ -1,28 +1,19 @@
-use crate::security::SecurityError;
+use crate::dom_exception_wrapper;
 
-#[derive(Clone)]
-pub enum CreateWorkerError {
-    SecurityError(SecurityError),
-    NetworkError(CreateWorkerNetworkError),
+dom_exception_wrapper!(CreateWorkerError);
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum CreateWorkerErrorKind {
+    Security,
+    Network,
 }
 
 impl CreateWorkerError {
-    pub(crate) fn new(inner: web_sys::DomException) -> Self {
-        if inner.code() == 18 {
-            CreateWorkerError::SecurityError(SecurityError::new(inner))
-        } else {
-            CreateWorkerError::NetworkError(CreateWorkerNetworkError::new(inner))
+    pub fn kind(&self) -> CreateWorkerErrorKind {
+        match self.inner.name().as_str() {
+            "SecurityError" => CreateWorkerErrorKind::Security,
+            "NetworkError" => CreateWorkerErrorKind::Network,
+            _ => unreachable!(),
         }
-    }
-}
-
-#[derive(Clone)]
-pub struct CreateWorkerNetworkError {
-    inner: web_sys::DomException,
-}
-
-impl CreateWorkerNetworkError {
-    fn new(inner: web_sys::DomException) -> Self {
-        CreateWorkerNetworkError { inner }
     }
 }

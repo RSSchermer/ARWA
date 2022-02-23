@@ -1,5 +1,6 @@
-use crate::cssom::{css_rule_seal, CssRule};
 use web_sys::CssStyleDeclaration;
+
+use crate::cssom::impl_css_rule_traits;
 
 #[derive(Clone)]
 pub struct CssFontFaceRule {
@@ -11,14 +12,6 @@ impl CssFontFaceRule {
         self.inner.style().into()
     }
 }
-
-impl css_rule_seal::Seal for CssFontFaceRule {
-    fn as_web_sys_css_rule(&self) -> &web_sys::CssRule {
-        self.inner.as_ref()
-    }
-}
-
-impl CssRule for CssFontFaceRule {}
 
 impl From<web_sys::CssFontFaceRule> for CssFontFaceRule {
     fn from(inner: web_sys::CssFontFaceRule) -> Self {
@@ -32,4 +25,4 @@ impl AsRef<web_sys::CssFontFaceRule> for CssFontFaceRule {
     }
 }
 
-impl_css_rule_traits!(CssFontFaceRule, web_sys::CssFontFaceRule);
+impl_css_rule_traits!(CssFontFaceRule, CssFontFaceRule);

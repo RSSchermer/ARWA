@@ -1,4 +1,5 @@
-use crate::dom::GenericDocumentFragment;
+use crate::dom::{impl_try_from_element, GenericDocumentFragment};
+use crate::html::{impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlTemplateElement {

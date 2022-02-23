@@ -1,8 +1,11 @@
+use std::marker;
+
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::collection::{Collection, Sequence};
 use crate::dom::TextDirectionality;
 use crate::file::File;
-use std::marker;
-use url::Url;
+use crate::url::Url;
 
 pub enum InputType {
     /// String describing the type of a non-standardized input event.
@@ -361,14 +364,14 @@ pub enum InputType {
     FormatFontName,
 }
 
-mod user_input_event_seal {
+pub(crate) mod user_input_event_seal {
     pub trait Seal {
         #[doc(hidden)]
         fn as_web_sys_input_event(&self) -> &web_sys::InputEvent;
     }
 }
 
-pub trait UserInputEvent {
+pub trait UserInputEvent: user_input_event_seal::Seal {
     fn input_type(&self) -> InputType {
         let input_type = self.as_web_sys_input_event().input_type();
 
@@ -438,20 +441,20 @@ pub trait UserInputEvent {
 
         if let Some(inner) = self.as_web_sys_input_event().data_transfer() {
             InputEventData::Transfer(InputEventDataTransfer { inner })
-        } else if let Some(data) = self.as_web_sys_input_event().data().as_ref() {
+        } else if let Some(data) = self.as_web_sys_input_event().data() {
             match self.input_type() {
                 InputType::FormatSetInlineTextDirection => {
-                    InputEventData::TextDirectionChange(resolve_dir(data))
+                    InputEventData::TextDirectionChange(resolve_dir(&data))
                 }
                 InputType::FormatSetBlockTextDirection => {
-                    InputEventData::TextDirectionChange(resolve_dir(data))
+                    InputEventData::TextDirectionChange(resolve_dir(&data))
                 }
                 InputType::FormatBackColor => InputEventData::Color(data),
                 InputType::FormatFontColor => InputEventData::Color(data),
                 // TODO: can an inserted link be a malformed URL? Assume its always a correction
                 // URL for now. If this assumption turns out the be wrong, maybe add a
                 // `MalformedUrl`, variant to InputEventData.
-                InputType::InsertLink => InputEventData::Url(Url::parse(data).unwrap()),
+                InputType::InsertLink => InputEventData::Url(Url::parse(&data).unwrap_throw()),
                 _ => InputEventData::PlainText(data),
             }
         } else {
@@ -459,9 +462,10 @@ pub trait UserInputEvent {
         }
     }
 
-    fn target_ranges(&self) -> InputEventRanges {
-        InputEventRanges::new(self.as_web_sys_input_event().get_target_ranges())
-    }
+    // TODO:
+    // fn target_ranges(&self) -> InputEventRanges {
+    //     InputEventRanges::new(self.as_web_sys_input_event().get_target_ranges())
+    // }
 }
 
 pub enum InputEventData {
@@ -480,21 +484,21 @@ pub struct InputEventDataTransfer {
 }
 
 impl InputEventDataTransfer {
-    fn text_plain(&self) -> Option<String> {
+    pub fn text_plain(&self) -> Option<String> {
         self.inner.get_data("text/plain").ok()
     }
 
-    fn text_html(&self) -> Option<String> {
+    pub fn text_html(&self) -> Option<String> {
         self.inner.get_data("text/html").ok()
     }
 
-    fn text_uri_list(&self) -> Option<String> {
+    pub fn text_uri_list(&self) -> Option<String> {
         self.inner.get_data("text/uri-list").ok()
     }
 
-    fn files(&self) -> InputEventFiles {
+    pub fn files(&self) -> InputEventFiles {
         InputEventFiles {
-            inner: self.inner.files().unwrap(),
+            inner: self.inner.files().unwrap_throw(),
         }
     }
 }
@@ -514,7 +518,7 @@ impl Sequence for InputEventFiles {
     type Item = File;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.get(index).map(|inner| File { inner })
+        self.inner.get(index).map(|f| File::from(f))
     }
 
     fn to_host_array(&self) -> js_sys::Array {
@@ -522,7 +526,8 @@ impl Sequence for InputEventFiles {
     }
 }
 
-unchecked_cast_array!(StaticRange, js_sys::Object, InputEventRanges);
+// TODO:
+// unchecked_cast_array!(StaticRange, Object, InputEventRanges);
 
 macro_rules! input_event {
     ($event:ident, $name:literal) => {
@@ -542,11 +547,13 @@ macro_rules! input_event {
 
         impl<T> AsRef<web_sys::InputEvent> for $event<T> {
             fn as_ref(&self) -> &web_sys::InputEvent {
+                use crate::ui::user_input_event_seal::Seal;
+
                 self.as_web_sys_input_event()
             }
         }
 
-        impl_event_traits!($event, web_sys::InputEvent, $name)
+        $crate::event::impl_typed_event_traits!($event, InputEvent, $name);
     };
 }
 

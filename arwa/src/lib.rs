@@ -1,4 +1,4 @@
-#![feature(iter_intersperse)]
+#![feature(async_iterator, get_mut_unchecked, iter_intersperse)]
 
 pub mod collection;
 pub mod connection;
@@ -30,13 +30,16 @@ pub mod url;
 pub mod window;
 pub mod worker;
 
+mod exception_wrapper;
+pub(crate) use self::exception_wrapper::*;
+
 mod impl_common_wrapper_traits;
-pub(crate) use impl_common_wrapper_traits::impl_common_wrapper_traits;
+pub(crate) use self::impl_common_wrapper_traits::*;
+
+mod invalid_cast;
+pub use self::invalid_cast::*;
 
 mod transferable;
-pub use transferable::Transferable;
+pub use self::transferable::*;
 
 mod unchecked_cast_array;
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct InvalidCast<T>(pub T);

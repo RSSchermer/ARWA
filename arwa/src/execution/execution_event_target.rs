@@ -1,3 +1,6 @@
+use crate::event::typed_event_iterator;
+use crate::execution::{ErrorEvent, RejectionHandledEvent, UnhandledRejectionEvent};
+
 pub(crate) mod execution_event_target_seal {
     pub trait Seal {
         #[doc(hidden)]
@@ -5,7 +8,7 @@ pub(crate) mod execution_event_target_seal {
     }
 }
 
-pub trait ExecutionEventTarget {
+pub trait ExecutionEventTarget: execution_event_target_seal::Seal + Sized {
     // Note: the `error` event is overloaded in the spec for both load errors and execution errors
     // with a different event type (generic Event, ErrorEvent respectively). Though I cant find any
     // conclusive information in the spec, it seems that the only type that triggers on execution
@@ -25,14 +28,14 @@ pub trait ExecutionEventTarget {
     }
 }
 
-typed_event_stream!(OnError, OnErrorWithOptions, ErrorEvent, "error");
-typed_event_stream!(
+typed_event_iterator!(OnError, OnErrorWithOptions, ErrorEvent, "error");
+typed_event_iterator!(
     OnRejectionHandled,
     OnRejectionHandledWithOptions,
     RejectionHandledEvent,
     "rejectionhandled"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnUnhandledRejection,
     OnUnhandledRejectionWithOptions,
     UnhandledRejectionEvent,

@@ -1,5 +1,4 @@
 use crate::lang::LanguageTag;
-use crate::worker::service::ServiceWorkerContainer;
 
 pub(crate) mod navigator_seal {
     pub trait Seal {}

@@ -1,5 +1,7 @@
 use std::marker;
 
+use crate::event::impl_typed_event_traits;
+
 mod page_transition_event_seal {
     pub trait Seal {
         #[doc(hidden)]
@@ -27,7 +29,7 @@ impl<T> page_transition_event_seal::Seal for PageShowEvent<T> {
 
 impl<T> PageTransitionEvent for PageShowEvent<T> {}
 
-impl_event_traits!(PageShowEvent, web_sys::PageTransitionEvent, "pageshow");
+impl_typed_event_traits!(PageShowEvent, PageTransitionEvent, "pageshow");
 
 #[derive(Clone)]
 pub struct PageHideEvent<T> {
@@ -43,4 +45,4 @@ impl<T> page_transition_event_seal::Seal for PageHideEvent<T> {
 
 impl<T> PageTransitionEvent for PageHideEvent<T> {}
 
-impl_event_traits!(PageHideEvent, web_sys::PageTransitionEvent, "pagehide");
+impl_typed_event_traits!(PageHideEvent, PageTransitionEvent, "pagehide");

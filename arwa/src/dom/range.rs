@@ -1,5 +1,6 @@
-use crate::dom::node::{DynamicNode, GenericDocumentFragment, HierarchyRequestError, Node};
-use crate::dom::{GenericDocumentFragment, HierarchyRequestError};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::dom::{DynamicNode, GenericDocumentFragment, HierarchyRequestError};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum RangeBoundaryCompare {
@@ -9,7 +10,7 @@ pub enum RangeBoundaryCompare {
 }
 
 impl RangeBoundaryCompare {
-    fn from_int(int: i32) -> Self {
+    fn from_int(int: i16) -> Self {
         match int {
             -1 => RangeBoundaryCompare::Before,
             0 => RangeBoundaryCompare::Same,
@@ -69,7 +70,14 @@ impl Range for StaticRange {
     }
 }
 
-pub trait RangeBoundContainer: Node {}
+pub(crate) mod range_bound_container_seal {
+    pub trait Seal {
+        #[doc(hidden)]
+        fn as_web_sys_node(&self) -> &web_sys::Node;
+    }
+}
+
+pub trait RangeBoundContainer: range_bound_container_seal::Seal {}
 
 #[derive(Clone)]
 pub struct LiveRange {
@@ -130,6 +138,10 @@ impl LiveRange {
     pub fn delete_contents(&self) {
         // No indication in the spec that this can fail.
         self.inner.delete_contents().unwrap_throw()
+    }
+
+    pub fn duplicate_contents(&self) -> GenericDocumentFragment {
+        self.inner.clone_contents().unwrap_throw().into()
     }
 
     pub fn try_duplicate_contents(&self) -> Result<GenericDocumentFragment, HierarchyRequestError> {
@@ -203,7 +215,7 @@ impl Range for LiveRange {
         // No indication in the spec that this can fail, and some testing indicates that this will
         // always return a node, even if one e.g. disconnects the current start container node (it
         // will change the startContainer to its parent node it seems)
-        self.inner.start_container().unwrap_throw()
+        self.inner.start_container().unwrap_throw().into()
     }
 
     fn start_offset(&self) -> u32 {
@@ -212,7 +224,7 @@ impl Range for LiveRange {
 
     fn end_container(&self) -> DynamicNode {
         // No indication in the spec that this can fail, see start_container
-        self.inner.end_container().unwrap_throw()
+        self.inner.end_container().unwrap_throw().into()
     }
 
     fn end_offset(&self) -> u32 {
@@ -238,6 +250,6 @@ impl AsRef<web_sys::Range> for LiveRange {
 
 impl ToString for LiveRange {
     fn to_string(&self) -> String {
-        self.to_string().into()
+        js_sys::Object::to_string(self.as_ref()).into()
     }
 }

@@ -1,7 +1,8 @@
+use std::fmt;
+
 use arwa_parse::xml_name;
 
 pub use arwa_parse::xml_name::InvalidNonColonName;
-use std::fmt;
 
 #[doc(hidden)]
 pub struct StaticallyParsedNonColonName {

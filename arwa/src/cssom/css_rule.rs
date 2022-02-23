@@ -1,5 +1,5 @@
-use crate::cssom::css_rule_seal::Seal;
-use crate::cssom::CssStyleSheet;
+use crate::cssom::{css_rule_seal::Seal, CssStyleSheet};
+use crate::impl_common_wrapper_traits;
 
 pub(crate) mod css_rule_seal {
     pub trait Seal {
@@ -8,7 +8,7 @@ pub(crate) mod css_rule_seal {
     }
 }
 
-pub trait CssRule {
+pub trait CssRule: css_rule_seal::Seal {
     fn css_text(&self) -> String {
         self.as_web_sys_css_rule().css_text()
     }
@@ -71,24 +71,28 @@ macro_rules! impl_css_rule_traits {
 
         impl AsRef<web_sys::CssRule> for $rule {
             fn as_ref(&self) -> &web_sys::CssRule {
+                use crate::cssom::css_rule_seal::Seal;
+
                 self.as_web_sys_css_rule()
             }
         }
 
-        impl TryFrom<$crate::cssom::DynamicCssRule> for $tpe {
-            type Error = $crate::InvalidCast<$tpe>;
+        impl std::convert::TryFrom<$crate::cssom::DynamicCssRule> for $rule {
+            type Error = $crate::InvalidCast<$crate::cssom::DynamicCssRule, $rule>;
 
             fn try_from(value: $crate::cssom::DynamicCssRule) -> Result<Self, Self::Error> {
-                let value: web_sys::Node = value.into();
+                use wasm_bindgen::JsCast;
+
+                let value: web_sys::CssRule = value.into();
 
                 value
                     .dyn_into::<web_sys::$web_sys_tpe>()
                     .map(|e| e.into())
-                    .map_err(|e| $crate::InvalidCast(e.into()))
+                    .map_err(|e| $crate::InvalidCast::new(e.into()))
             }
         }
 
-        impl_common_wrapper_traits!($rule);
+        $crate::impl_common_wrapper_traits!($rule);
     };
 }
 

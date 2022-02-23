@@ -1,6 +1,15 @@
-use crate::html::{AutoComplete, form_listed_element_seal, FormListedElement, HtmlFormElement, labelable_element_seal, LabelableElement, Labels, constraint_validation_target_seal, ConstraintValidationTarget, ValidityState};
+use std::ops::{Bound, Range, RangeBounds};
+
+use delegate::delegate;
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::cssom::TextWrap;
-use std::ops::{RangeBounds, Bound};
+use crate::dom::{impl_try_from_element, SelectionDirection};
+use crate::html::{
+    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
+    impl_known_element, labelable_element_seal, AutoComplete, ConstraintValidationTarget,
+    FormListedElement, HtmlFormElement, LabelableElement, Labels, ValidityState,
+};
 
 #[derive(Clone)]
 pub struct HtmlTextareaElement {
@@ -50,12 +59,12 @@ impl HtmlTextareaElement {
 
     pub fn default_value(&self) -> String {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.default_value().unwrap()
+        self.inner.default_value().unwrap_throw()
     }
 
     pub fn set_default_value(&self, default_value: &str) {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.set_default_value(default_value).unwrap();
+        self.inner.set_default_value(default_value).unwrap_throw();
     }
 
     pub fn autocomplete(&self) -> AutoComplete {
@@ -106,12 +115,14 @@ impl HtmlTextareaElement {
         self.inner.set_min_length(min_length as i32);
     }
 
-    pub fn selection_start(&self) -> Option<u32> {
-        self.inner.selection_start().ok().flatten()
-    }
+    pub fn selection_range(&self) -> Option<Range<u32>> {
+        let start = self.inner.selection_start().ok().flatten();
+        let end = self.inner.selection_end().ok().flatten();
 
-    pub fn selection_end(&self) -> Option<u32> {
-        self.inner.selection_end().ok().flatten()
+        match (start, end) {
+            (Some(start), Some(end)) => Some(start..end),
+            _ => None,
+        }
     }
 
     pub fn selection_direction(&self) -> Option<SelectionDirection> {
@@ -126,54 +137,20 @@ impl HtmlTextareaElement {
             })
     }
 
-    pub fn set_text_range<R>(&self, range: R, text: &str) -> Result<(), SetTextRangeError>
+    pub fn set_selection<R>(&self, range: R, direction: SelectionDirection)
     where
         R: RangeBounds<u32>,
     {
         let start = match range.start_bound() {
             Bound::Included(start) => *start,
             Bound::Excluded(start) => *start + 1,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
+            Bound::Unbounded => self.inner.selection_start().ok().flatten().unwrap_or(0),
         };
 
         let end = match range.end_bound() {
             Bound::Included(end) => *end + 1,
             Bound::Excluded(end) => *end,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
-        };
-
-        self.inner
-            .set_range_text_with_start_and_end(text, start, end)
-            .map_err(|err| {
-                let err: web_sys::DomException = err.unchecked_into();
-
-                match &*err.name() {
-                    "IndexSizeError" => RangeError::new(err).into(),
-                    "RangeError" => RangeError::new(err).into(),
-                    "InvalidStateError" => InvalidStateError::new(err).into(),
-                    _ => unreachable!(),
-                }
-            })
-    }
-
-    pub fn set_selection_range<R>(
-        &self,
-        range: R,
-        direction: SelectionDirection,
-    ) -> Result<(), InvalidStateError>
-    where
-        R: RangeBounds<u32>,
-    {
-        let start = match range.start_bound() {
-            Bound::Included(start) => *start,
-            Bound::Excluded(start) => *start + 1,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
-        };
-
-        let end = match range.end_bound() {
-            Bound::Included(end) => *end + 1,
-            Bound::Excluded(end) => *end,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
+            Bound::Unbounded => self.inner.selection_end().ok().flatten().unwrap_or(0),
         };
 
         let direction = match direction {
@@ -184,7 +161,11 @@ impl HtmlTextareaElement {
 
         self.inner
             .set_selection_range_with_direction(start, end, direction)
-            .map_err(|err| InvalidStateError::new(err.unchecked_into()))
+            .unwrap_throw()
+    }
+
+    pub fn set_selection_text(&self, text: &str) {
+        self.inner.set_range_text(text).unwrap_throw()
     }
 }
 
@@ -192,7 +173,7 @@ impl form_listed_element_seal::Seal for HtmlTextareaElement {}
 
 impl FormListedElement for HtmlTextareaElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -208,7 +189,7 @@ impl labelable_element_seal::Seal for HtmlTextareaElement {}
 
 impl LabelableElement for HtmlTextareaElement {
     fn labels(&self) -> Labels {
-        Labels::new(self.inner.labels())
+        Labels::new(Some(self.inner.labels()))
     }
 }
 
@@ -216,7 +197,7 @@ impl constraint_validation_target_seal::Seal for HtmlTextareaElement {}
 
 impl ConstraintValidationTarget for HtmlTextareaElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;
@@ -249,5 +230,5 @@ impl AsRef<web_sys::HtmlTextAreaElement> for HtmlTextareaElement {
 }
 
 impl_html_element_traits!(HtmlTextareaElement);
-impl_try_from_element!(HtmlTextareaElement, web_sys::HtmlTextAreaElement);
-impl_known_element!(HtmlTextareaElement, web_sys::HtmlTextAreaElement, "TEXTAREA");
+impl_try_from_element!(HtmlTextareaElement, HtmlTextAreaElement);
+impl_known_element!(HtmlTextareaElement, HtmlTextAreaElement, "TEXTAREA");

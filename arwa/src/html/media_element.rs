@@ -1,23 +1,62 @@
-use crate::collection::{Collection, Sequence};
-use crate::html::media::{AudioTracks, MediaStream, TextTrack, TextTracks, VideoTracks};
-use crate::html::{AudioTrack, MediaStream, TextTrack};
-use crate::lang::LanguageTag;
-use crate::media::{AudioTracks, MediaStream, TextTrack, TextTracks, VideoTracks};
-use crate::security::CORS;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
 use std::future::Future;
 use std::ops::Range;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use url::Url;
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{TextTrackKind, VideoTrack};
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen_futures::JsFuture;
+use web_sys::TextTrackKind;
+
+use crate::collection::{Collection, Sequence};
+use crate::event::typed_event_iterator;
+use crate::lang::LanguageTag;
+use crate::media::{AudioTracks, MediaStream, TextTrack, TextTracks, VideoTracks};
+use crate::security::CORS;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::{dom_exception_wrapper, normalize_exception_message};
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum MediaErrorKind {
+    Aborted,
+    Network,
+    Decode,
+    SrcNotSupported,
+}
+
+#[derive(Clone)]
 pub struct MediaError {
     inner: web_sys::MediaError,
 }
+
+impl MediaError {
+    pub fn kind(&self) -> MediaErrorKind {
+        match self.inner.code() {
+            1 => MediaErrorKind::Aborted,
+            2 => MediaErrorKind::Network,
+            3 => MediaErrorKind::Decode,
+            4 => MediaErrorKind::SrcNotSupported,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl fmt::Display for MediaError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        let mut message = self.inner.message();
+
+        normalize_exception_message(&mut message);
+
+        fmt::Display::fmt(&message, f)
+    }
+}
+
+impl fmt::Debug for MediaError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for MediaError {}
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum MediaNetworkState {
@@ -62,16 +101,7 @@ pub enum CanPlayMediaType {
     No,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct MediaPlayError {
-    inner: web_sys::DomException,
-}
-
-impl MediaPlayError {
-    fn new(inner: web_sys::DomException) -> Self {
-        MediaPlayError { inner }
-    }
-}
+dom_exception_wrapper!(MediaPlayError);
 
 pub(crate) mod media_element_seal {
     pub trait Seal {
@@ -80,9 +110,9 @@ pub(crate) mod media_element_seal {
     }
 }
 
-pub trait MediaElement: AsRef<web_sys::HtmlMediaElement> {
+pub trait MediaElement: media_element_seal::Seal + Sized {
     fn src(&self) -> Option<Url> {
-        Url::parse(self.as_web_sys_html_media_element().src()).ok()
+        Url::parse(self.as_web_sys_html_media_element().src().as_ref()).ok()
     }
 
     fn set_src<T>(&self, src: T)
@@ -92,8 +122,8 @@ pub trait MediaElement: AsRef<web_sys::HtmlMediaElement> {
         self.as_web_sys_html_media_element().set_src(src.as_str());
     }
 
-    fn current_src(&self) -> Url {
-        Url::new(self.as_web_sys_html_media_element().current_src())
+    fn current_src(&self) -> Option<Url> {
+        Url::parse(self.as_web_sys_html_media_element().current_src().as_ref()).ok()
     }
 
     fn src_object(&self) -> Option<MediaStream> {
@@ -103,8 +133,8 @@ pub trait MediaElement: AsRef<web_sys::HtmlMediaElement> {
     }
 
     fn set_src_object(&self, src_object: Option<&MediaStream>) {
-        self.as_ref()
-            .set_src_object(src_object.map(|s| s.as_web_sys_html_media_element()))
+        self.as_web_sys_html_media_element()
+            .set_src_object(src_object.map(|s| s.as_ref()))
     }
 
     fn cross_origin(&self) -> CORS {
@@ -293,7 +323,7 @@ pub trait MediaElement: AsRef<web_sys::HtmlMediaElement> {
         // There's no indication in the spec that this can actually fail, unwrap for now.
         self.as_web_sys_html_media_element()
             .fast_seek(time)
-            .unwrap();
+            .unwrap_throw();
     }
 
     fn load(&self) {
@@ -302,7 +332,7 @@ pub trait MediaElement: AsRef<web_sys::HtmlMediaElement> {
 
     fn pause(&self) {
         // There's no indication in the spec that this can actually fail, unwrap for now.
-        self.as_web_sys_html_media_element().pause().unwrap();
+        self.as_web_sys_html_media_element().pause().unwrap_throw();
     }
 
     fn play(&self) -> MediaPlay {
@@ -323,7 +353,11 @@ pub trait MediaElement: AsRef<web_sys::HtmlMediaElement> {
     fn text_tracks(&self) -> TextTracks {
         // For some reason web_sys returns an Option here. `textTracks` is not specced to be
         // nullable so we just unwrap.
-        TextTracks::new(self.as_web_sys_html_media_element().text_tracks().unwrap())
+        TextTracks::new(
+            self.as_web_sys_html_media_element()
+                .text_tracks()
+                .unwrap_throw(),
+        )
     }
 
     fn add_text_track(&self, descriptor: TextTrackDescriptor) -> TextTrack {
@@ -334,109 +368,117 @@ pub trait MediaElement: AsRef<web_sys::HtmlMediaElement> {
         } = descriptor;
 
         self.as_web_sys_html_media_element()
-            .add_text_track_with_label_and_language(kind, Some(label), language.map(|l| l.as_ref()))
+            .add_text_track_with_label_and_language(
+                kind,
+                label,
+                language.map(|l| l.as_ref()).unwrap_or(""),
+            )
             .into()
     }
 
     fn on_abort(&self) -> OnAbort<Self> {
-        OnAbort::new(self.as_web_sys_event_target().clone().into())
+        OnAbort::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_can_play(&self) -> OnCanPlay<Self> {
-        OnCanPlay::new(self.as_web_sys_event_target().clone().into())
+        OnCanPlay::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_can_play_through(&self) -> OnCanPlayThrough<Self> {
-        OnCanPlayThrough::new(self.as_web_sys_event_target().clone().into())
+        OnCanPlayThrough::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_duration_change(&self) -> OnDurationChange<Self> {
-        OnDurationChange::new(self.as_web_sys_event_target().clone().into())
+        OnDurationChange::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_emptied(&self) -> OnEmptied<Self> {
-        OnEmptied::new(self.as_web_sys_event_target().clone().into())
+        OnEmptied::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_ended(&self) -> OnEnded<Self> {
-        OnEnded::new(self.as_web_sys_event_target().clone().into())
+        OnEnded::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_error(&self) -> OnError<Self> {
-        OnError::new(self.as_web_sys_event_target().clone().into())
+        OnError::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_loaded_metadata(&self) -> OnLoadedMetadata<Self> {
-        OnLoadedMetadata::new(self.as_web_sys_event_target().clone().into())
+        OnLoadedMetadata::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_load_start(&self) -> OnLoadStart<Self> {
-        OnLoadStart::new(self.as_web_sys_event_target().clone().into())
+        OnLoadStart::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_pause(&self) -> OnPause<Self> {
-        OnPause::new(self.as_web_sys_event_target().clone().into())
+        OnPause::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_play(&self) -> OnPlay<Self> {
-        OnPlay::new(self.as_web_sys_event_target().clone().into())
+        OnPlay::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_playing(&self) -> OnPlaying<Self> {
-        OnPlaying::new(self.as_web_sys_event_target().clone().into())
+        OnPlaying::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_progress(&self) -> OnProgress<Self> {
-        OnProgress::new(self.as_web_sys_event_target().clone().into())
+        OnProgress::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_rate_change(&self) -> OnRateChange<Self> {
-        OnRateChange::new(self.as_web_sys_event_target().clone().into())
+        OnRateChange::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_seeked(&self) -> OnSeeked<Self> {
-        OnSeeked::new(self.as_web_sys_event_target().clone().into())
+        OnSeeked::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_seeking(&self) -> OnSeeking<Self> {
-        OnSeeking::new(self.as_web_sys_event_target().clone().into())
+        OnSeeking::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_stalled(&self) -> OnStalled<Self> {
-        OnStalled::new(self.as_web_sys_event_target().clone().into())
+        OnStalled::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_suspend(&self) -> OnSuspend<Self> {
-        OnSuspend::new(self.as_web_sys_event_target().clone().into())
+        OnSuspend::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_time_update(&self) -> OnTimeUpdate<Self> {
-        OnTimeUpdate::new(self.as_web_sys_event_target().clone().into())
+        OnTimeUpdate::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_volume_change(&self) -> OnVolumeChange<Self> {
-        OnVolumeChange::new(self.as_web_sys_event_target().clone().into())
+        OnVolumeChange::new(self.as_web_sys_html_media_element().as_ref())
     }
 
     fn on_waiting(&self) -> OnWaiting<Self> {
-        OnWaiting::new(self.as_web_sys_event_target().clone().into())
+        OnWaiting::new(self.as_web_sys_html_media_element().as_ref())
     }
 }
 
 macro_rules! impl_html_media_element_traits {
     ($tpe:ident) => {
-        impl $crate::html::html_media_element_seal::Seal for $tpe {
+        impl $crate::html::media_element_seal::Seal for $tpe {
             fn as_web_sys_html_media_element(&self) -> &web_sys::HtmlMediaElement {
                 &self.inner
             }
         }
 
-        impl $crate::html::HtmlMediaElement for $tpe {}
+        impl $crate::html::MediaElement for $tpe {}
 
-        $crate::html::impl_html_element_traits($tpe);
-        $crate::dom::impl_try_from_element($tpe);
+        $crate::html::impl_html_element_traits!($tpe);
+        $crate::dom::impl_try_from_element!($tpe);
     };
 }
+
+pub(crate) use impl_html_media_element_traits;
+use std::error::Error;
+use std::fmt;
 
 #[must_use = "futures do nothing unless polled or spawned"]
 pub struct MediaPlay {
@@ -447,15 +489,15 @@ pub struct MediaPlay {
 impl Future for MediaPlay {
     type Output = Result<(), MediaPlayError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(element) = self.element.take() {
             // No indication this is fallible in the spec (though the promise can reject).
-            self.inner = Some(element.play().unwrap());
+            self.inner = Some(element.play().unwrap_throw().into());
         }
 
-        self.inner
-            .as_mut()
-            .unwrap()
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner
             .poll(cx)
             .map_ok(|_| ())
             .map_err(|err| MediaPlayError::new(err.unchecked_into()))
@@ -477,7 +519,7 @@ impl Sequence for TimeRanges {
 
     fn get(&self, index: u32) -> Option<Self::Item> {
         if let Some(start) = self.inner.start(index).ok() {
-            let end = self.inner.end(index).unwrap();
+            let end = self.inner.end(index).unwrap_throw();
 
             Some(start..end)
         } else {
@@ -498,7 +540,7 @@ macro_rules! media_event {
             _marker: std::marker::PhantomData<T>,
         }
 
-        impl_event_traits!($tpe, web_sys::Event, $name);
+        $crate::event::impl_typed_event_traits!($tpe, Event, $name);
     };
 }
 
@@ -525,59 +567,59 @@ media_event!(TimeUpdateEvent, "timeupdate");
 media_event!(VolumeChangeEvent, "volumechange");
 media_event!(WaitingEvent, "waiting");
 
-typed_event_stream!(OnAbort, OnAbortWithOptions, AbortEvent, "abort");
-typed_event_stream!(OnCanPlay, OnCanPlayWithOptions, CanPlayEvent, "canplay");
-typed_event_stream!(
+typed_event_iterator!(OnAbort, OnAbortWithOptions, AbortEvent, "abort");
+typed_event_iterator!(OnCanPlay, OnCanPlayWithOptions, CanPlayEvent, "canplay");
+typed_event_iterator!(
     OnCanPlayThrough,
     OnCanPlayThroughWithOptions,
     CanPlayThroughEvent,
     "canplaythrough"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnDurationChange,
     OnDurationChangeWithOptions,
     DurationChangeEvent,
     "durationchange"
 );
-typed_event_stream!(OnEmptied, OnEmptiedWithOptions, EmptiedEvent, "emptied");
-typed_event_stream!(OnEnded, OnEndedWithOptions, EndedEvent, "ended");
-typed_event_stream!(OnError, OnErrorWithOptions, ErrorEvent, "error");
-typed_event_stream!(
+typed_event_iterator!(OnEmptied, OnEmptiedWithOptions, EmptiedEvent, "emptied");
+typed_event_iterator!(OnEnded, OnEndedWithOptions, EndedEvent, "ended");
+typed_event_iterator!(OnError, OnErrorWithOptions, ErrorEvent, "error");
+typed_event_iterator!(
     OnLoadedMetadata,
     OnLoadedMetadataWithOptions,
     LoadedMetadataEvent,
     "loadedmetadata"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnLoadStart,
     OnLoadStartWithOptions,
     LoadStartEvent,
     "loadstart"
 );
-typed_event_stream!(OnPause, OnPauseWithOptions, PauseEvent, "pause");
-typed_event_stream!(OnPlay, OnPlayWithOptions, PlayEvent, "play");
-typed_event_stream!(OnPlaying, OnPlayingWithOptions, PlayingEvent, "playing");
-typed_event_stream!(OnProgress, OnProgressWithOptions, ProgressEvent, "progress");
-typed_event_stream!(
+typed_event_iterator!(OnPause, OnPauseWithOptions, PauseEvent, "pause");
+typed_event_iterator!(OnPlay, OnPlayWithOptions, PlayEvent, "play");
+typed_event_iterator!(OnPlaying, OnPlayingWithOptions, PlayingEvent, "playing");
+typed_event_iterator!(OnProgress, OnProgressWithOptions, ProgressEvent, "progress");
+typed_event_iterator!(
     OnRateChange,
     OnRateChangeWithOptions,
     RateChangeEvent,
     "ratechange"
 );
-typed_event_stream!(OnSeeked, OnSeekedWithOptions, SeekedEvent, "seeked");
-typed_event_stream!(OnSeeking, OnSeekingWithOptions, SeekingEvent, "seeking");
-typed_event_stream!(OnStalled, OnStalledWithOptions, StalledEvent, "stalled");
-typed_event_stream!(OnSuspend, OnSuspendWithOptions, SuspendEvent, "suspend");
-typed_event_stream!(
+typed_event_iterator!(OnSeeked, OnSeekedWithOptions, SeekedEvent, "seeked");
+typed_event_iterator!(OnSeeking, OnSeekingWithOptions, SeekingEvent, "seeking");
+typed_event_iterator!(OnStalled, OnStalledWithOptions, StalledEvent, "stalled");
+typed_event_iterator!(OnSuspend, OnSuspendWithOptions, SuspendEvent, "suspend");
+typed_event_iterator!(
     OnTimeUpdate,
     OnTimeUpdateWithOptions,
     TimeUpdateEvent,
     "timeupdate"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnVolumeChange,
     OnVolumeChangeWithOptions,
     VolumeChangeEvent,
     "volumechange"
 );
-typed_event_stream!(OnWaiting, OnWaitingWithOptions, WaitingEvent, "waiting");
+typed_event_iterator!(OnWaiting, OnWaitingWithOptions, WaitingEvent, "waiting");

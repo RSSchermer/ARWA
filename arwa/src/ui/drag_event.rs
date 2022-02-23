@@ -1,12 +1,14 @@
+use std::marker;
+
+use js_sys::JsString;
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::collection::{Collection, Sequence};
-use crate::dom::element::Element;
+use crate::dom::Element;
 use crate::file::File;
 use crate::html::{input_files_source_seal, InputFilesSource};
-use crate::DynamicEventTarget;
-use std::convert::TryFrom;
-use std::iter::FusedIterator;
-use std::marker;
-use std::ops::Range;
+use crate::ui::{impl_mouse_event_traits, impl_ui_event_traits};
+use crate::unchecked_cast_array::unchecked_cast_array;
 
 // I've experimented some with the behaviour of the DataTransfer and DataTransferItemList objects
 // at various stages of a drag events life. During the `dragstart` event's macrotask and any
@@ -57,7 +59,9 @@ pub trait DragDropEvent: drag_drop_event_seal::Seal {
         match self
             .as_web_sys_drag_event()
             .data_transfer()
+            .unwrap_throw()
             .effect_allowed()
+            .as_str()
         {
             "none" => DropEffectAllowed::None,
             "all" => DropEffectAllowed::All,
@@ -72,7 +76,13 @@ pub trait DragDropEvent: drag_drop_event_seal::Seal {
     }
 
     fn drop_effect(&self) -> DropEffect {
-        match self.as_web_sys_drag_event().data_transfer().drop_effect() {
+        match self
+            .as_web_sys_drag_event()
+            .data_transfer()
+            .unwrap_throw()
+            .drop_effect()
+            .as_str()
+        {
             "copy" => DropEffect::Copy,
             "move" => DropEffect::Move,
             "link" => DropEffect::Link,
@@ -90,15 +100,21 @@ pub trait DragDropEvent: drag_drop_event_seal::Seal {
 
         self.as_web_sys_drag_event()
             .data_transfer()
+            .unwrap_throw()
             .set_drop_effect(val);
     }
 
     fn types(&self) -> DragEventTypes {
-        DragEventTypes::new(self.as_web_sys_drag_event().data_transfer().types())
+        DragEventTypes::new(
+            self.as_web_sys_drag_event()
+                .data_transfer()
+                .unwrap_throw()
+                .types(),
+        )
     }
 }
 
-unchecked_cast_array_wrapper!(String, js_sys::JsString, DragEventTypes, DragEventTypesIter);
+unchecked_cast_array!(String, JsString, DragEventTypes);
 
 mod drag_drop_read_seal {
     pub trait Seal {
@@ -111,6 +127,7 @@ pub trait DragDropRead: drag_drop_read_seal::Seal {
     fn get_data(&self, format_type: &str) -> Option<String> {
         self.as_web_sys_drag_event()
             .data_transfer()
+            .unwrap_throw()
             .get_data(format_type)
             .ok()
     }
@@ -120,8 +137,9 @@ pub trait DragDropRead: drag_drop_read_seal::Seal {
             inner: self
                 .as_web_sys_drag_event()
                 .data_transfer()
+                .unwrap_throw()
                 .files()
-                .unwrap(),
+                .unwrap_throw(),
         }
     }
 }
@@ -141,7 +159,7 @@ impl Sequence for DragEventFiles {
     type Item = File;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.get(index).map(|inner| File { inner })
+        self.inner.get(index).map(|f| File::from(f))
     }
 
     fn to_host_array(&self) -> js_sys::Array {
@@ -167,6 +185,7 @@ impl<T> DragStartEvent<T> {
     pub fn set_data(&self, format_type: &str, data: &str) {
         self.inner
             .data_transfer()
+            .unwrap_throw()
             .set_data(format_type, data)
             .unwrap_throw();
     }
@@ -184,16 +203,21 @@ impl<T> DragStartEvent<T> {
             DropEffectAllowed::Uninitialized => "uninitialized",
         };
 
-        self.inner.data_transfer().set_effect_allowed(value);
-    }
-
-    pub fn set_drag_image<T>(&self, element: T, offset_x: i32, offset_y: i32)
-    where
-        T: Element,
-    {
         self.inner
             .data_transfer()
-            .set_drag_image(element.as_web_sys_element(), offset_x, offset_y);
+            .unwrap_throw()
+            .set_effect_allowed(value);
+    }
+
+    pub fn set_drag_image<I>(&self, element: I, offset_x: i32, offset_y: i32)
+    where
+        I: Element,
+    {
+        self.inner.data_transfer().unwrap_throw().set_drag_image(
+            element.as_web_sys_element(),
+            offset_x,
+            offset_y,
+        );
     }
 }
 
@@ -219,8 +243,8 @@ impl<T> AsRef<web_sys::DragEvent> for DragStartEvent<T> {
     }
 }
 
-impl_ui_event_traits!(DragStartEvent, web_sys::DragEvent, "dragstart");
-impl_mouse_event_traits!(DragStartEvent, web_sys::DragEvent, "dragstart");
+impl_ui_event_traits!(DragStartEvent, DragEvent, "dragstart");
+impl_mouse_event_traits!(DragStartEvent);
 
 #[derive(Clone)]
 pub struct DropEvent<T> {
@@ -250,8 +274,8 @@ impl<T> AsRef<web_sys::DragEvent> for DropEvent<T> {
     }
 }
 
-impl_ui_event_traits!(DropEvent, web_sys::DragEvent, "drop");
-impl_mouse_event_traits!(DropEvent, web_sys::DragEvent, "drop");
+impl_ui_event_traits!(DropEvent, DragEvent, "drop");
+impl_mouse_event_traits!(DropEvent);
 
 macro_rules! protected_mode_drag_event {
     ($event:ident, $name:literal) => {
@@ -275,13 +299,13 @@ macro_rules! protected_mode_drag_event {
             }
         }
 
-        impl_ui_event_traits!($event, web_sys::DragEvent, $name);
-        impl_mouse_event_traits!($event, web_sys::DragEvent, $name);
+        $crate::ui::impl_ui_event_traits!($event, DragEvent, $name);
+        $crate::ui::impl_mouse_event_traits!($event);
     };
 }
 
-protected_mode_drag_event!(Drag, "drag");
-protected_mode_drag_event!(DragEnter, "dragenter");
-protected_mode_drag_event!(DragLeave, "dragleave");
-protected_mode_drag_event!(DragOver, "dragover");
-protected_mode_drag_event!(DragEnd, "dragend");
+protected_mode_drag_event!(DragEvent, "drag");
+protected_mode_drag_event!(DragEnterEvent, "dragenter");
+protected_mode_drag_event!(DragLeaveEvent, "dragleave");
+protected_mode_drag_event!(DragOverEvent, "dragover");
+protected_mode_drag_event!(DragEndEvent, "dragend");

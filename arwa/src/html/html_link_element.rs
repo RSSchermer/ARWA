@@ -1,13 +1,15 @@
-use crate::collection::{Collection, Sequence};
-use crate::cssom::{link_style_seal, CssStyleSheet, LinkStyle, StyleSheet};
-use crate::dom::{InvalidToken, Token};
-use crate::html::LinkTypes;
+use std::fmt::Write;
+use std::str::FromStr;
+
+use delegate::delegate;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::cssom::{link_style_seal, CssStyleSheet, LinkStyle};
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element, LinkRelationshipTypes};
 use crate::lang::LanguageTag;
 use crate::media_type::MediaType;
 use crate::url::{AbsoluteOrRelativeUrl, Url};
-use std::cell::{RefCell, RefMut};
-use std::str::FromStr;
-use crate::ui::DeltaMode::Line;
 
 pub enum PotentialRequestDestination {
     Fetch,
@@ -48,7 +50,7 @@ impl HtmlLinkElement {
     }
 
     pub fn href(&self) -> Option<Url> {
-        Url::parse(self.inner.href()).ok()
+        Url::parse(self.inner.href().as_ref()).ok()
     }
 
     pub fn set_href<T>(&self, href: T)
@@ -59,7 +61,7 @@ impl HtmlLinkElement {
     }
 
     pub fn href_lang(&self) -> Option<LanguageTag> {
-        LanguageTag::parse(self.inner.hreflang).ok()
+        LanguageTag::parse(self.inner.hreflang().as_ref()).ok()
     }
 
     pub fn set_href_lang(&self, hreflang: Option<&LanguageTag>) {
@@ -125,7 +127,7 @@ impl LinkStyle for HtmlLinkElement {
     fn sheet(&self) -> Option<CssStyleSheet> {
         self.inner
             .sheet()
-            .map(|s| CssStyleSheet::from(s.unchecked_into()))
+            .map(|s| CssStyleSheet::from(s.unchecked_into::<web_sys::CssStyleSheet>()))
     }
 }
 
@@ -147,13 +149,14 @@ impl_known_element!(HtmlLinkElement, "LINK");
 
 pub enum LinkIconSizes {
     Any,
-    Listed(Vec<LinkIconSize>)
+    Listed(Vec<LinkIconSize>),
 }
 
 impl LinkIconSizes {
     fn from_serialized(mut serialized: String) -> Self {
         serialized.make_ascii_lowercase();
-        serialized.trim();
+
+        let serialized = serialized.trim();
 
         if serialized == "any" {
             LinkIconSizes::Any
@@ -177,8 +180,10 @@ impl LinkIconSizes {
                 let mut result = String::new();
 
                 for LinkIconSize(width, height) in listed {
-                    write!(&mut result, "{}x{}", width, height);
+                    write!(&mut result, "{}x{}", width, height).unwrap_throw();
                 }
+
+                result
             }
         }
     }
@@ -197,7 +202,7 @@ impl LinkIconSize {
 
                 match (maybe_width, maybe_height) {
                     (Ok(width), Ok(height)) => Some(LinkIconSize(width, height)),
-                    _ => None
+                    _ => None,
                 }
             }
         })

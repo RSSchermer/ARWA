@@ -1,5 +1,11 @@
+use delegate::delegate;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
 use crate::collection::{Collection, Sequence};
-use crate::html::{AutoComplete, DynamicFormListedElement};
+use crate::dom::impl_try_from_element;
+use crate::html::{
+    impl_html_element_traits, impl_known_element, AutoComplete, DynamicFormListedElement,
+};
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -65,7 +71,7 @@ impl HtmlFormElement {
     }
 
     pub fn action(&self) -> Option<Url> {
-        Url::parse(self.inner.action()).ok()
+        Url::parse(self.inner.action().as_ref()).ok()
     }
 
     pub fn set_action<T>(&self, action: T)
@@ -131,7 +137,7 @@ impl HtmlFormElement {
     pub fn submit(&self) {
         // Despite the web_sys return type, I can find no indication in the spec that `submit` can
         // actually error, so just unwrap for now.
-        self.inner.submit().unwrap();
+        self.inner.submit().unwrap_throw();
     }
 }
 
@@ -156,7 +162,7 @@ pub struct FormElements {
 }
 
 impl FormElements {
-    fn radio(&self, name: &str) -> Option<Radio> {
+    pub fn radio(&self, name: &str) -> Option<Radio> {
         self.inner
             .named_item(name)
             .and_then(|o| o.dyn_into::<web_sys::RadioNodeList>().ok())

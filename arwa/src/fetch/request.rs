@@ -1,10 +1,9 @@
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+
 use crate::fetch::{Body, BodySource, Headers, RequestMethod};
 use crate::security::ReferrerPolicy;
 use crate::url::{AbsoluteOrRelativeUrl, Url};
-use std::borrow::Cow;
-use std::convert::TryFrom;
-use std::fmt;
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use crate::{impl_common_wrapper_traits, type_error_wrapper};
 
 // Note: decided to duplicate the various web_sys enums, because though at first glance they seem
 // identical, it allows us to implement Default and it gives us the ability to attach documentation.
@@ -19,6 +18,31 @@ pub enum RequestCache {
     OnlyIfCached,
 }
 
+impl RequestCache {
+    fn from_web_sys(cache: web_sys::RequestCache) -> Self {
+        match cache {
+            web_sys::RequestCache::Default => RequestCache::Default,
+            web_sys::RequestCache::NoStore => RequestCache::NoStore,
+            web_sys::RequestCache::Reload => RequestCache::Reload,
+            web_sys::RequestCache::NoCache => RequestCache::NoCache,
+            web_sys::RequestCache::ForceCache => RequestCache::ForceCache,
+            web_sys::RequestCache::OnlyIfCached => RequestCache::OnlyIfCached,
+            _ => unreachable!(),
+        }
+    }
+
+    fn to_web_sys(&self) -> web_sys::RequestCache {
+        match self {
+            RequestCache::Default => web_sys::RequestCache::Default,
+            RequestCache::NoStore => web_sys::RequestCache::NoStore,
+            RequestCache::Reload => web_sys::RequestCache::Reload,
+            RequestCache::NoCache => web_sys::RequestCache::NoCache,
+            RequestCache::ForceCache => web_sys::RequestCache::ForceCache,
+            RequestCache::OnlyIfCached => web_sys::RequestCache::OnlyIfCached,
+        }
+    }
+}
+
 impl Default for RequestCache {
     fn default() -> Self {
         RequestCache::Default
@@ -30,6 +54,25 @@ pub enum RequestCredentials {
     SameOrigin,
     Omit,
     Include,
+}
+
+impl RequestCredentials {
+    fn from_web_sys(credentials: web_sys::RequestCredentials) -> Self {
+        match credentials {
+            web_sys::RequestCredentials::SameOrigin => RequestCredentials::SameOrigin,
+            web_sys::RequestCredentials::Omit => RequestCredentials::Omit,
+            web_sys::RequestCredentials::Include => RequestCredentials::Include,
+            _ => unreachable!(),
+        }
+    }
+
+    pub(crate) fn to_web_sys(&self) -> web_sys::RequestCredentials {
+        match self {
+            RequestCredentials::SameOrigin => web_sys::RequestCredentials::SameOrigin,
+            RequestCredentials::Omit => web_sys::RequestCredentials::Omit,
+            RequestCredentials::Include => web_sys::RequestCredentials::Include,
+        }
+    }
 }
 
 impl Default for RequestCredentials {
@@ -60,6 +103,32 @@ pub enum RequestDestination {
     Xslt,
 }
 
+impl RequestDestination {
+    fn from_web_sys(destination: web_sys::RequestDestination) -> Self {
+        match destination {
+            web_sys::RequestDestination::None => RequestDestination::Unspecified,
+            web_sys::RequestDestination::Audio => RequestDestination::Audio,
+            web_sys::RequestDestination::Audioworklet => RequestDestination::AudioWorklet,
+            web_sys::RequestDestination::Document => RequestDestination::Document,
+            web_sys::RequestDestination::Embed => RequestDestination::Embed,
+            web_sys::RequestDestination::Font => RequestDestination::Font,
+            web_sys::RequestDestination::Image => RequestDestination::Image,
+            web_sys::RequestDestination::Manifest => RequestDestination::Manifest,
+            web_sys::RequestDestination::Object => RequestDestination::Object,
+            web_sys::RequestDestination::Paintworklet => RequestDestination::PaintWorklet,
+            web_sys::RequestDestination::Report => RequestDestination::Report,
+            web_sys::RequestDestination::Script => RequestDestination::Script,
+            web_sys::RequestDestination::Sharedworker => RequestDestination::SharedWorker,
+            web_sys::RequestDestination::Style => RequestDestination::Style,
+            web_sys::RequestDestination::Track => RequestDestination::Track,
+            web_sys::RequestDestination::Video => RequestDestination::Video,
+            web_sys::RequestDestination::Worker => RequestDestination::Worker,
+            web_sys::RequestDestination::Xslt => RequestDestination::Xslt,
+            _ => unreachable!(),
+        }
+    }
+}
+
 impl Default for RequestDestination {
     fn default() -> Self {
         RequestDestination::Unspecified
@@ -72,6 +141,27 @@ pub enum RequestMode {
     NoCors,
     Cors,
     Navigate,
+}
+
+impl RequestMode {
+    fn from_web_sys(mode: web_sys::RequestMode) -> Self {
+        match mode {
+            web_sys::RequestMode::SameOrigin => RequestMode::SameOrigin,
+            web_sys::RequestMode::NoCors => RequestMode::NoCors,
+            web_sys::RequestMode::Cors => RequestMode::Cors,
+            web_sys::RequestMode::Navigate => RequestMode::Navigate,
+            _ => unreachable!(),
+        }
+    }
+
+    fn to_web_sys(&self) -> web_sys::RequestMode {
+        match self {
+            RequestMode::SameOrigin => web_sys::RequestMode::SameOrigin,
+            RequestMode::NoCors => web_sys::RequestMode::NoCors,
+            RequestMode::Cors => web_sys::RequestMode::Cors,
+            RequestMode::Navigate => web_sys::RequestMode::Navigate,
+        }
+    }
 }
 
 impl Default for RequestMode {
@@ -87,6 +177,25 @@ pub enum RequestRedirect {
     Manual,
 }
 
+impl RequestRedirect {
+    fn from_web_sys(redirect: web_sys::RequestRedirect) -> Self {
+        match redirect {
+            web_sys::RequestRedirect::Follow => RequestRedirect::Follow,
+            web_sys::RequestRedirect::Error => RequestRedirect::Error,
+            web_sys::RequestRedirect::Manual => RequestRedirect::Manual,
+            _ => unreachable!(),
+        }
+    }
+
+    fn to_web_sys(&self) -> web_sys::RequestRedirect {
+        match self {
+            RequestRedirect::Follow => web_sys::RequestRedirect::Follow,
+            RequestRedirect::Error => web_sys::RequestRedirect::Error,
+            RequestRedirect::Manual => web_sys::RequestRedirect::Manual,
+        }
+    }
+}
+
 impl Default for RequestRedirect {
     fn default() -> Self {
         RequestRedirect::Follow
@@ -99,6 +208,24 @@ pub enum RequestReferrer {
     Url(Url),
 }
 
+impl RequestReferrer {
+    fn from_str(referrer: &str) -> Self {
+        match referrer {
+            "" => RequestReferrer::NoReferrer,
+            "about:client" => RequestReferrer::Client,
+            url => RequestReferrer::Url(Url::parse(url).unwrap_throw()),
+        }
+    }
+
+    fn as_str(&self) -> &str {
+        match self {
+            RequestReferrer::NoReferrer => "",
+            RequestReferrer::Client => "about:client",
+            RequestReferrer::Url(url) => url.as_ref(),
+        }
+    }
+}
+
 impl Default for RequestReferrer {
     fn default() -> Self {
         RequestReferrer::Client
@@ -106,7 +233,7 @@ impl Default for RequestReferrer {
 }
 
 pub struct RequestDescriptor<'a> {
-    pub method: RequestMethod<'a>,
+    pub method: RequestMethod,
     pub headers: Option<&'a Headers>,
     pub body: Option<BodySource<'a>>,
     pub mode: RequestMode,
@@ -118,7 +245,7 @@ pub struct RequestDescriptor<'a> {
     pub integrity: Option<&'a str>,
 }
 
-impl Default for RequestDescriptor {
+impl Default for RequestDescriptor<'static> {
     fn default() -> Self {
         RequestDescriptor {
             method: RequestMethod::default(),
@@ -135,16 +262,7 @@ impl Default for RequestDescriptor {
     }
 }
 
-#[derive(Clone)]
-pub struct RequestInitError {
-    inner: js_sys::TypeError,
-}
-
-impl RequestInitError {
-    fn new(inner: js_sys::TypeError) -> Self {
-        RequestInitError { inner }
-    }
-}
+type_error_wrapper!(RequestInitError);
 
 #[derive(Clone)]
 pub struct Request {
@@ -164,15 +282,15 @@ impl Request {
         T: AbsoluteOrRelativeUrl,
     {
         create_request_internal(url.as_str(), descriptor)
-            .map_err(|err| CreateRequestError::new(err.unchecked_into()))
+            .map_err(|err| RequestInitError::new(err.unchecked_into()))
     }
 
-    pub fn method(&self) -> RequestMethod<'static> {
-        RequestMethod::from_string_unchecked(self.inner.method())
+    pub fn method(&self) -> RequestMethod {
+        RequestMethod::trusted(self.inner.method())
     }
 
     pub fn url(&self) -> Url {
-        Url::parse(self.inner.url().as_ref()).unwrap()
+        Url::parse(self.inner.url().as_ref()).unwrap_throw()
     }
 
     pub fn headers(&self) -> Headers {
@@ -180,49 +298,19 @@ impl Request {
     }
 
     pub fn body(&self) -> Body {
-        Body::request(self.inner.clone())
+        Body::request(Clone::clone(&self.inner))
     }
 
     pub fn cache(&self) -> RequestCache {
-        match self.inner.cache() {
-            web_sys::RequestCache::Default => RequestCache::Default,
-            web_sys::RequestCache::NoStore => RequestCache::NoStore,
-            web_sys::RequestCache::Reload => RequestCache::Reload,
-            web_sys::RequestCache::NoCache => RequestCache::NoCache,
-            web_sys::RequestCache::ForceCache => RequestCache::ForceCache,
-            web_sys::RequestCache::OnlyIfCached => RequestCache::OnlyIfCached,
-        }
+        RequestCache::from_web_sys(self.inner.cache())
     }
 
     pub fn credentials(&self) -> RequestCredentials {
-        match self.inner.credentials() {
-            web_sys::RequestCredentials::SameOrigin => RequestCredentials::SameOrigin,
-            web_sys::RequestCredentials::Omit => RequestCredentials::Omit,
-            web_sys::RequestCredentials::Include => RequestCredentials::Include,
-        }
+        RequestCredentials::from_web_sys(self.inner.credentials())
     }
 
     pub fn destination(&self) -> RequestDestination {
-        match self.inner.destination() {
-            web_sys::RequestDestination::None => RequestDestination::Unspecified,
-            web_sys::RequestDestination::Audio => RequestDestination::Audio,
-            web_sys::RequestDestination::Audioworklet => RequestDestination::AudioWorklet,
-            web_sys::RequestDestination::Document => RequestDestination::Document,
-            web_sys::RequestDestination::Embed => RequestDestination::Embed,
-            web_sys::RequestDestination::Font => RequestDestination::Font,
-            web_sys::RequestDestination::Image => RequestDestination::Image,
-            web_sys::RequestDestination::Manifest => RequestDestination::Manifest,
-            web_sys::RequestDestination::Object => RequestDestination::Object,
-            web_sys::RequestDestination::Paintworklet => RequestDestination::PaintWorklet,
-            web_sys::RequestDestination::Report => RequestDestination::Report,
-            web_sys::RequestDestination::Script => RequestDestination::Script,
-            web_sys::RequestDestination::Sharedworker => RequestDestination::SharedWorker,
-            web_sys::RequestDestination::Style => RequestDestination::Style,
-            web_sys::RequestDestination::Track => RequestDestination::Track,
-            web_sys::RequestDestination::Video => RequestDestination::Video,
-            web_sys::RequestDestination::Worker => RequestDestination::Worker,
-            web_sys::RequestDestination::Xslt => RequestDestination::Xslt,
-        }
+        RequestDestination::from_web_sys(self.inner.destination())
     }
 
     pub fn integrity(&self) -> Option<String> {
@@ -236,46 +324,19 @@ impl Request {
     }
 
     pub fn mode(&self) -> RequestMode {
-        match self.inner.mode() {
-            web_sys::RequestMode::SameOrigin => RequestMode::SameOrigin,
-            web_sys::RequestMode::NoCors => RequestMode::NoCors,
-            web_sys::RequestMode::Cors => RequestMode::Cors,
-            web_sys::RequestMode::Navigate => RequestMode::Navigate,
-        }
+        RequestMode::from_web_sys(self.inner.mode())
     }
 
     pub fn redirect(&self) -> RequestRedirect {
-        match self.inner.redirect() {
-            web_sys::RequestRedirect::Follow => RequestRedirect::Follow,
-            web_sys::RequestRedirect::Error => RequestRedirect::Error,
-            web_sys::RequestRedirect::Manual => RequestRedirect::Manual,
-        }
+        RequestRedirect::from_web_sys(self.inner.redirect())
     }
 
     pub fn referrer(&self) -> RequestReferrer {
-        match self.inner.referrer().as_ref() {
-            "" => RequestReferrer::NoReferrer,
-            "about:client" => RequestReferrer::Client,
-            url => RequestReferrer::Url(Url::parse(url).unwrap()),
-        }
+        RequestReferrer::from_str(self.inner.referrer().as_ref())
     }
 
     pub fn referrer_policy(&self) -> ReferrerPolicy {
-        match self.inner.referror_policy() {
-            web_sys::ReferrerPolicy::None => ReferrerPolicy::Default,
-            web_sys::ReferrerPolicy::v => ReferrerPolicy::NoReferrer,
-            web_sys::ReferrerPolicy::NoReferrerWhenDowngrade => {
-                ReferrerPolicy::NoReferrerWhenDowngrade
-            }
-            web_sys::ReferrerPolicy::Origin => ReferrerPolicy::Origin,
-            web_sys::ReferrerPolicy::OriginWhenCrossOrigin => ReferrerPolicy::OriginWhenCrossOrigin,
-            web_sys::ReferrerPolicy::UnsafeUrl => ReferrerPolicy::UnsafeUrl,
-            web_sys::ReferrerPolicy::SameOrigin => ReferrerPolicy::SameOrigin,
-            web_sys::ReferrerPolicy::StrictOrigin => ReferrerPolicy::StrictOrigin,
-            web_sys::ReferrerPolicy::StrictOriginWhenCrossOrigin => {
-                ReferrerPolicy::StrictOriginWhenCrossOrigin
-            }
-        }
+        ReferrerPolicy::from_web_sys(self.inner.referrer_policy())
     }
 }
 
@@ -318,70 +379,28 @@ fn create_request_internal(url: &str, descriptor: RequestDescriptor) -> Result<R
     init.method(method.as_ref());
 
     if let Some(headers) = headers {
-        init.headers(headers.as_ref())
+        init.headers(headers.as_ref());
     }
 
-    // TODO: test when bytes drop, might have to wrap body in ManuallyDrop to ensure it happens
-    // after the Request is created (which will make a copy of the byte slice).
     if let Some(body) = body {
         match body {
             BodySource::String(string) => init.body(Some(&JsValue::from_str(&string))),
             BodySource::Blob(blob) => init.body(Some(blob.as_ref())),
-            BodySource::Bytes(bytes) => init.body(Some(js_sys::Uint8Array::view(bytes).as_ref())),
-        }
+            BodySource::Bytes(bytes) => unsafe {
+                // TODO: test when bytes drop, might have to wrap body in ManuallyDrop to ensure it
+                // happens after the Request is created (which per the spec will make a copy of the
+                // byte slice).
+                init.body(Some(js_sys::Uint8Array::view(bytes).as_ref()))
+            },
+        };
     }
 
-    match mode {
-        RequestMode::SameOrigin => init.mode(web_sys::RequestMode::SameOrigin),
-        RequestMode::NoCors => init.mode(web_sys::RequestMode::NoCors),
-        RequestMode::Cors => init.mode(web_sys::RequestMode::Cors),
-        RequestMode::Navigate => init.mode(web_sys::RequestMode::Navigate),
-    }
-
-    match credentials {
-        RequestCredentials::SameOrigin => init.credentials(web_sys::RequestCredentials::SameOrigin),
-        RequestCredentials::Omit => init.credentials(web_sys::RequestCredentials::Omit),
-        RequestCredentials::Include => init.credentials(web_sys::RequestCredentials::Include),
-    }
-
-    match cache {
-        RequestCache::Default => init.credentials(web_sys::RequestCache::Default),
-        RequestCache::NoStore => init.credentials(web_sys::RequestCache::NoStore),
-        RequestCache::Reload => init.credentials(web_sys::RequestCache::Reload),
-        RequestCache::NoCache => init.credentials(web_sys::RequestCache::NoCache),
-        RequestCache::ForceCache => init.credentials(web_sys::RequestCache::ForceCache),
-        RequestCache::OnlyIfCached => init.credentials(web_sys::RequestCache::OnlyIfCached),
-    }
-
-    match redirect {
-        RequestRedirect::Follow => init.redirect(web_sys::RequestRedirect::Follow),
-        RequestRedirect::Error => init.redirect(web_sys::RequestRedirect::Error),
-        RequestRedirect::Manual => init.redirect(web_sys::RequestRedirect::Manual),
-    }
-
-    match referrer {
-        RequestReferrer::NoReferrer => init.referrer(""),
-        RequestReferrer::Client => init.referrer("about:client"),
-        RequestReferrer::Url(url) => init.referrer(url.as_ref()),
-    }
-
-    match referrer_policy {
-        ReferrerPolicy::Default => init.referrer_policy(web_sys::ReferrerPolicy::None),
-        ReferrerPolicy::NoReferrer => init.referrer_policy(web_sys::ReferrerPolicy::NoReferrer),
-        ReferrerPolicy::NoReferrerWhenDowngrade => {
-            init.referrer_policy(web_sys::ReferrerPolicy::NoReferrerWhenDowngrade)
-        }
-        ReferrerPolicy::SameOrigin => init.referrer_policy(web_sys::ReferrerPolicy::SameOrigin),
-        ReferrerPolicy::Origin => init.referrer_policy(web_sys::ReferrerPolicy::Origin),
-        ReferrerPolicy::StrictOrigin => init.referrer_policy(web_sys::ReferrerPolicy::StrictOrigin),
-        ReferrerPolicy::OriginWhenCrossOrigin => {
-            init.referrer_policy(web_sys::ReferrerPolicy::OriginWhenCrossOrigin)
-        }
-        ReferrerPolicy::StrictOriginWhenCrossOrigin => {
-            init.referrer_policy(web_sys::ReferrerPolicy::StrictOriginWhenCrossOrigin)
-        }
-        ReferrerPolicy::UnsafeUrl => init.referrer_policy(web_sys::ReferrerPolicy::UnsafeUrl),
-    }
+    init.mode(mode.to_web_sys());
+    init.credentials(credentials.to_web_sys());
+    init.cache(cache.to_web_sys());
+    init.redirect(redirect.to_web_sys());
+    init.referrer(referrer.as_str());
+    init.referrer_policy(referrer_policy.to_web_sys());
 
     if let Some(integrity) = integrity {
         init.integrity(integrity);

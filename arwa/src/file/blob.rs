@@ -1,5 +1,9 @@
-use crate::media_type::MediaType;
 use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
+
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::impl_common_wrapper_traits;
+use crate::media_type::MediaType;
 
 #[derive(Clone)]
 pub struct Blob {
@@ -16,27 +20,34 @@ impl Blob {
                 options.type_(media_type.as_ref());
             }
 
+            // Note for the version of the Blob constructor that takes a buffer source, there is no
+            // indication in the spec that it can fail, so we unwrap.
             Blob {
                 inner: web_sys::Blob::new_with_buffer_source_sequence_and_options(
-                    array_buffer.into(),
+                    &array_buffer.into(),
                     &options,
-                ),
+                )
+                .unwrap_throw(),
             }
         }
     }
 
     pub fn view(blob: &Blob, media_type: Option<&MediaType>) -> Self {
+        // No indication in the spec that this can fail, unwrap.
         Blob {
-            inner: blob.inner.slice_with_f64_and_f64_and_content_type(
-                0,
-                blob.inner.size(),
-                media_type.map(|m| m.as_ref()).unwrap_or(""),
-            ),
+            inner: blob
+                .inner
+                .slice_with_i32_and_f64_and_content_type(
+                    0,
+                    blob.inner.size(),
+                    media_type.map(|m| m.as_ref()).unwrap_or(""),
+                )
+                .unwrap_throw(),
         }
     }
 
     pub fn media_type(&self) -> Option<MediaType> {
-        MediaType::parse(self.inner.type_()).ok()
+        MediaType::parse(self.inner.type_().as_ref()).ok()
     }
 
     // Note: std seems to prefer `len` to refer to a file size in bytes (e.g.
@@ -127,7 +138,7 @@ impl BlobRange for RangeInclusive<u64> {
             Some(Blob {
                 inner: blob
                     .inner
-                    .slice_with_f64_and_f64(self.start() as f64, (self.end() + 1) as f64)
+                    .slice_with_f64_and_f64(*self.start() as f64, (*self.end() + 1) as f64)
                     .unwrap_throw(),
             })
         } else {

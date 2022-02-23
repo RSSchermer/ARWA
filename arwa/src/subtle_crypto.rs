@@ -1,4 +1,4 @@
-use crate::console::{Write, Writer};
+use crate::impl_common_wrapper_traits;
 
 pub struct SubtleCrypto {
     inner: web_sys::SubtleCrypto,
@@ -18,8 +18,4 @@ impl AsRef<web_sys::SubtleCrypto> for SubtleCrypto {
     }
 }
 
-impl Write for SubtleCrypto {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
+impl_common_wrapper_traits!(SubtleCrypto);

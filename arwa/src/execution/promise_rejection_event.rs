@@ -1,9 +1,10 @@
+use std::marker;
+
 use delegate::delegate;
 use js_sys::Promise;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsValue;
 
-use crate::event::{Event, FromEvent};
-use std::marker;
+use crate::event::impl_typed_event_traits;
 
 mod promise_rejection_event_seal {
     pub trait Seal {}
@@ -32,9 +33,9 @@ impl<T> PromiseRejectionEvent for RejectionHandledEvent<T> {
     }
 }
 
-impl_event_traits!(
+impl_typed_event_traits!(
     RejectionHandledEvent,
-    web_sys::PromiseRejectionEvent,
+    PromiseRejectionEvent,
     "rejectionhandled"
 );
 
@@ -55,8 +56,8 @@ impl<T> PromiseRejectionEvent for UnhandledRejectionEvent<T> {
     }
 }
 
-impl_event_traits!(
+impl_typed_event_traits!(
     UnhandledRejectionEvent,
-    web_sys::PromiseRejectionEvent,
+    PromiseRejectionEvent,
     "unhandledrejection"
 );

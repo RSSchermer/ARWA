@@ -1,3 +1,5 @@
+use bitflags::bitflags;
+
 bitflags! {
     pub struct PointerButtons: u16 {
         const PRIMARY =   0b00000001;

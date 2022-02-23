@@ -1,10 +1,15 @@
+use std::convert::TryFrom;
+
+use delegate::delegate;
+use wasm_bindgen::JsCast;
+
 use crate::collection::{Collection, Sequence};
+use crate::dom::impl_try_from_element;
 use crate::html::{
-    form_listed_element_seal, DynamicFormListedElement, DynamicHtmlElement, FormListedElement,
-    HtmlFormElement, ValidityState,
+    form_listed_element_seal, impl_html_element_traits, impl_known_element,
+    DynamicFormListedElement, FormListedElement, HtmlFormElement,
 };
 use crate::InvalidCast;
-use std::convert::TryFrom;
 
 #[derive(Clone)]
 pub struct HtmlFieldsetElement {
@@ -34,7 +39,7 @@ impl form_listed_element_seal::Seal for HtmlFieldsetElement {}
 
 impl FormListedElement for HtmlFieldsetElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -47,7 +52,7 @@ impl FormListedElement for HtmlFieldsetElement {
 }
 
 impl TryFrom<DynamicFormListedElement> for HtmlFieldsetElement {
-    type Error = InvalidCast<DynamicFormListedElement>;
+    type Error = InvalidCast<DynamicFormListedElement, HtmlFieldsetElement>;
 
     fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
         let value: web_sys::HtmlElement = value.into();
@@ -55,7 +60,7 @@ impl TryFrom<DynamicFormListedElement> for HtmlFieldsetElement {
         value
             .dyn_into::<web_sys::HtmlFieldSetElement>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(DynamicFormListedElement::new(e)))
     }
 }
 
@@ -72,8 +77,8 @@ impl AsRef<web_sys::HtmlFieldSetElement> for HtmlFieldsetElement {
 }
 
 impl_html_element_traits!(HtmlFieldsetElement);
-impl_try_from_element!(HtmlFieldsetElement, web_sys::HtmlFieldSetElement);
-impl_known_element!(HtmlFieldsetElement, web_sys::HtmlFieldSetElement, "FIELDSET");
+impl_try_from_element!(HtmlFieldsetElement, HtmlFieldSetElement);
+impl_known_element!(HtmlFieldsetElement, HtmlFieldSetElement, "FIELDSET");
 
 pub struct FieldsetElements {
     inner: web_sys::HtmlCollection,
@@ -91,7 +96,7 @@ impl Sequence for FieldsetElements {
     fn get(&self, index: u32) -> Option<Self::Item> {
         self.inner
             .get_with_index(index)
-            .map(|e| DynamicFormListedElement::from(e.unchecked_into()))
+            .map(|e| DynamicFormListedElement::new(e.unchecked_into()))
     }
 
     fn to_host_array(&self) -> js_sys::Array {

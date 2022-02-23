@@ -1,9 +1,13 @@
+use std::cell::{RefCell, RefMut};
+use std::str::FromStr;
+
+use delegate::delegate;
+
 use crate::collection::{Collection, Sequence};
-use crate::dom::{DynamicDocument, InvalidToken, Token};
+use crate::dom::{impl_try_from_element, DynamicDocument};
+use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 use crate::window::Window;
-use std::str::FromStr;
-use std::cell::{RefCell, RefMut};
 
 #[derive(Clone)]
 pub struct HtmlIframeElement {
@@ -28,7 +32,7 @@ impl HtmlIframeElement {
     }
 
     pub fn src(&self) -> Option<Url> {
-        Url::parse(self.inner.src()).ok()
+        Url::parse(self.inner.src().as_ref()).ok()
     }
 
     pub fn set_src<T>(&self, src: T)
@@ -57,7 +61,7 @@ impl HtmlIframeElement {
     }
 
     pub fn sandbox(&self) -> IframeSandbox {
-        IframeSandbox::new(self.inner.clone())
+        IframeSandbox::new(self.inner.sandbox())
     }
 
     pub fn content_document(&self) -> Option<DynamicDocument> {
@@ -71,12 +75,24 @@ impl HtmlIframeElement {
     }
 }
 
+impl From<web_sys::HtmlIFrameElement> for HtmlIframeElement {
+    fn from(inner: web_sys::HtmlIFrameElement) -> Self {
+        HtmlIframeElement { inner }
+    }
+}
+
+impl AsRef<web_sys::HtmlIFrameElement> for HtmlIframeElement {
+    fn as_ref(&self) -> &web_sys::HtmlIFrameElement {
+        &self.inner
+    }
+}
+
 impl_html_element_traits!(HtmlIframeElement);
-impl_try_from_element!(HtmlIframeElement, web_sys::HtmlIFrameElement);
-impl_known_element!(HtmlIframeElement, web_sys::HtmlIFrameElement, "IFRAME");
+impl_try_from_element!(HtmlIframeElement, HtmlIFrameElement);
+impl_known_element!(HtmlIframeElement, HtmlIFrameElement, "IFRAME");
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum IframeSandboxRule {
+pub enum IframeSandboxRule {
     AllowForms,
     AllowModals,
     AllowOrientationLock,
@@ -88,7 +104,7 @@ enum IframeSandboxRule {
     AllowScripts,
     AllowTopNavigation,
     AllowTopNavigationByUserActivation,
-    AllowDownloads
+    AllowDownloads,
 }
 
 impl IframeSandboxRule {
@@ -104,9 +120,11 @@ impl IframeSandboxRule {
             "allow-same-origin" => Some(IframeSandboxRule::AllowSameOrigin),
             "allow-scripts" => Some(IframeSandboxRule::AllowScripts),
             "allow-top-navigation" => Some(IframeSandboxRule::AllowTopNavigation),
-            "allow-top-navigation-by-user-activation" => Some(IframeSandboxRule::AllowTopNavigationByUserActivation),
+            "allow-top-navigation-by-user-activation" => {
+                Some(IframeSandboxRule::AllowTopNavigationByUserActivation)
+            }
             "allow-downloads" => Some(IframeSandboxRule::AllowDownloads),
-            _ => None
+            _ => None,
         }
     }
 
@@ -122,7 +140,9 @@ impl IframeSandboxRule {
             IframeSandboxRule::AllowSameOrigin => "allow-same-origin",
             IframeSandboxRule::AllowScripts => "allow-scripts",
             IframeSandboxRule::AllowTopNavigation => "allow-top-navigation",
-            IframeSandboxRule::AllowTopNavigationByUserActivation => "allow-top-navigation-by-user-activation",
+            IframeSandboxRule::AllowTopNavigationByUserActivation => {
+                "allow-top-navigation-by-user-activation"
+            }
             IframeSandboxRule::AllowDownloads => "allow-downloads",
         }
     }
@@ -142,7 +162,7 @@ impl IframeSandboxCache {
 
             for token in sandbox_string.split_ascii_whitespace() {
                 if let Some(rule) = IframeSandboxRule::from_token(token) {
-                    if !parsed_new.iter().any(|r| r == rule) {
+                    if !parsed_new.iter().any(|r| r == &rule) {
                         parsed_new.push(rule);
                     }
                 }
@@ -154,31 +174,38 @@ impl IframeSandboxCache {
     }
 
     fn contains(&self, rule: IframeSandboxRule) -> bool {
-        self.parsed.iter().any(|r| r == rule)
+        self.parsed.iter().any(|r| r == &rule)
     }
 
     fn serialize(&self) -> String {
-        self.parsed.iter().map(|r| r.serialize()).join(" ").collect()
+        self.parsed
+            .iter()
+            .map(|r| r.serialize())
+            .intersperse(" ")
+            .collect()
     }
 }
 
 pub struct IframeSandbox {
-    iframe: web_sys::HtmlIFrameElement,
+    sandbox: web_sys::DomTokenList,
     cached: RefCell<IframeSandboxCache>,
 }
 
 impl IframeSandbox {
-    fn new(iframe: web_sys::HtmlIFrameElement) -> Self {
+    fn new(sandbox: web_sys::DomTokenList) -> Self {
         IframeSandbox {
-            iframe,
-            cached: RefCell::new(IframeSandboxCache { raw: String::new(), parsed: Vec::new() })
+            sandbox,
+            cached: RefCell::new(IframeSandboxCache {
+                raw: String::new(),
+                parsed: Vec::new(),
+            }),
         }
     }
 
     fn refresh(&self) -> RefMut<IframeSandboxCache> {
         let mut cached = self.cached.borrow_mut();
 
-        cached.refresh(self.iframe.sandbox());
+        cached.refresh(self.sandbox.value());
 
         cached
     }
@@ -195,7 +222,7 @@ impl IframeSandbox {
 
             let new_sandbox = cached.serialize();
 
-            self.iframe.set_sandbox(&new_sandbox);
+            self.sandbox.set_value(&new_sandbox);
 
             cached.raw = new_sandbox;
 
@@ -213,7 +240,7 @@ impl IframeSandbox {
 
             let new_sandbox = cached.serialize();
 
-            self.iframe.set_sandbox(&new_sandbox);
+            self.sandbox.set_value(&new_sandbox);
 
             cached.raw = new_sandbox;
 
@@ -238,7 +265,7 @@ impl IframeSandbox {
 
         let new_sandbox = cached.serialize();
 
-        self.iframe.set_sandbox(&new_sandbox);
+        self.sandbox.set_value(&new_sandbox);
 
         cached.raw = new_sandbox;
 
@@ -263,7 +290,7 @@ impl IframeSandbox {
         if did_replace {
             let new_sandbox = cached.serialize();
 
-            self.iframe.set_sandbox(&new_sandbox);
+            self.sandbox.set_value(&new_sandbox);
 
             cached.raw = new_sandbox;
 
@@ -284,7 +311,7 @@ impl IframeSandbox {
 
         cached.refresh(serialized);
 
-        self.iframe.set_sandbox(cached.serialize());
+        self.sandbox.set_value(cached.serialize().as_ref());
     }
 }
 

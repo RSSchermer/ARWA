@@ -1,5 +1,11 @@
-use crate::html::{HtmlCaptionElement, HtmlTableRowElement, HtmlTableHeadElement, HtmlTableFootElement};
+use wasm_bindgen::JsCast;
+
 use crate::collection::{Collection, Sequence};
+use crate::dom::impl_try_from_element;
+use crate::html::{
+    impl_html_element_traits, impl_known_element, HtmlCaptionElement, HtmlTbodyElement,
+    HtmlTfootElement, HtmlTheadElement, HtmlTrElement,
+};
 
 #[derive(Clone)]
 pub struct HtmlTableElement {
@@ -11,12 +17,12 @@ impl HtmlTableElement {
         self.inner.caption().map(|c| c.into())
     }
 
-    pub fn table_head(&self) -> Option<HtmlTHeadElement> {
-        self.inner.t_head().map(|s| s.into())
+    pub fn table_head(&self) -> Option<HtmlTheadElement> {
+        self.inner.t_head().map(|s| HtmlTheadElement::new(s))
     }
 
-    pub fn table_foot(&self) -> Option<HtmlTFootElement> {
-        self.inner.t_foot().map(|s| s.into())
+    pub fn table_foot(&self) -> Option<HtmlTfootElement> {
+        self.inner.t_foot().map(|s| HtmlTfootElement::new(s))
     }
 
     pub fn table_bodies(&self) -> TableBodies {
@@ -110,10 +116,12 @@ impl Collection for TableBodies {
 }
 
 impl Sequence for TableBodies {
-    type Item = HtmlTableBodyElement;
+    type Item = HtmlTbodyElement;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.get_with_index(index).map(|e| HtmlTableBodyElement::from(e.unchecked_into()))
+        self.inner
+            .get_with_index(index)
+            .map(|e| HtmlTbodyElement::new(e.unchecked_into()))
     }
 
     fn to_host_array(&self) -> js_sys::Array {
@@ -132,10 +140,12 @@ impl Collection for TableRows {
 }
 
 impl Sequence for TableRows {
-    type Item = HtmlTableRowElement;
+    type Item = HtmlTrElement;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.get_with_index(index).map(|e| HtmlTableRowElement::from(e.unchecked_into()))
+        self.inner
+            .get_with_index(index)
+            .map(|e| HtmlTrElement::from(e.unchecked_into::<web_sys::HtmlTableRowElement>()))
     }
 
     fn to_host_array(&self) -> js_sys::Array {

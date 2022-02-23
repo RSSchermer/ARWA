@@ -1,3 +1,7 @@
+use delegate::delegate;
+
+use crate::impl_common_wrapper_traits;
+
 pub(crate) mod constraint_validation_target_seal {
     pub trait Seal {}
 }
@@ -22,7 +26,7 @@ pub struct ValidityState {
 
 impl ValidityState {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn value_missing(&self) -> bool;
 
             pub fn type_mismatch(&self) -> bool;

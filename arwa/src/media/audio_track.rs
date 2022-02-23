@@ -1,6 +1,7 @@
-use crate::lang::LanguageTag;
-use arwa::console::{Write, Writer};
 use delegate::delegate;
+
+use crate::impl_common_wrapper_traits;
+use crate::lang::LanguageTag;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AudioTrackKind {
@@ -23,8 +24,6 @@ impl AudioTrack {
 
             pub fn label(&self) -> String;
 
-            pub fn language(&self) -> String;
-
             pub fn enabled(&self) -> bool;
 
             pub fn set_enabled(&self, enabled: bool);
@@ -32,7 +31,7 @@ impl AudioTrack {
     }
 
     pub fn language(&self) -> Option<LanguageTag> {
-        LanguageTag::parse(self.inner.language()).ok()
+        LanguageTag::parse(self.inner.language().as_ref()).ok()
     }
 
     pub fn kind(&self) -> Option<AudioTrackKind> {
@@ -60,4 +59,4 @@ impl AsRef<web_sys::AudioTrack> for AudioTrack {
     }
 }
 
-impl_common_wrapper_traits!(AudioTrack, web_sys::AudioTrack);
+impl_common_wrapper_traits!(AudioTrack);

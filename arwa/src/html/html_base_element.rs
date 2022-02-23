@@ -1,3 +1,7 @@
+use delegate::delegate;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 
 #[derive(Clone)]
@@ -15,7 +19,7 @@ impl HtmlBaseElement {
     }
 
     pub fn href(&self) -> Option<Url> {
-        Url::parse(self.inner.href()).ok()
+        Url::parse(self.inner.href().as_ref()).ok()
     }
 
     pub fn set_href<T>(&self, href: T)

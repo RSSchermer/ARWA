@@ -22,6 +22,9 @@ pub use self::pointer_button_state::*;
 mod pointer_contact_state;
 pub use self::pointer_contact_state::*;
 
+mod pointer_event;
+pub use self::pointer_event::*;
+
 mod pointer_position_state;
 pub use self::pointer_position_state::*;
 
@@ -35,3 +38,4 @@ mod wheel_event;
 pub use self::wheel_event::*;
 
 mod impl_mouse_event_traits;
+pub(crate) use self::impl_mouse_event_traits::*;

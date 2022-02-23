@@ -1,3 +1,8 @@
+use delegate::delegate;
+
+use crate::dom::impl_character_data_traits;
+use crate::dom_exception_wrapper;
+
 #[derive(Clone)]
 pub struct ProcessingInstruction {
     inner: web_sys::ProcessingInstruction,
@@ -5,7 +10,7 @@ pub struct ProcessingInstruction {
 
 impl ProcessingInstruction {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn target(&self) -> String;
         }
     }
@@ -23,15 +28,6 @@ impl From<web_sys::ProcessingInstruction> for ProcessingInstruction {
     }
 }
 
-impl_character_data_traits!(ProcessingInstruction, web_sys::ProcessingInstruction);
+impl_character_data_traits!(ProcessingInstruction);
 
-#[derive(Clone)]
-pub struct ProcessingInstructionError {
-    inner: web_sys::DomException,
-}
-
-impl ProcessingInstructionError {
-    pub(crate) fn new(inner: web_sys::DomException) -> Self {
-        ProcessingInstructionError { inner }
-    }
-}
+dom_exception_wrapper!(ProcessingInstructionError);

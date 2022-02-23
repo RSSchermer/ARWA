@@ -47,6 +47,8 @@ macro_rules! impl_worker_global_scope_traits {
 
         impl $crate::timer::TimerContext for $tpe {
             fn interval(&self, duration: $crate::timer::Duration) -> $crate::timer::Interval {
+                use crate::worker::worker_global_scope_seal::Seal;
+
                 $crate::timer::Interval::worker_context(
                     self.as_web_sys_worker_global_scope().clone(),
                     duration,
@@ -54,6 +56,8 @@ macro_rules! impl_worker_global_scope_traits {
             }
 
             fn timeout(&self, duration: $crate::timer::Duration) -> $crate::timer::Timeout {
+                use crate::worker::worker_global_scope_seal::Seal;
+
                 $crate::timer::Timeout::worker_context(
                     self.as_web_sys_worker_global_scope().clone(),
                     duration,
@@ -65,10 +69,14 @@ macro_rules! impl_worker_global_scope_traits {
 
         impl $crate::security::SecurityContext for $tpe {
             fn is_secure_context(&self) -> bool {
+                use crate::worker::worker_global_scope_seal::Seal;
+
                 self.as_web_sys_worker_global_scope().is_secure_context()
             }
 
             fn origin(&self) -> String {
+                use crate::worker::worker_global_scope_seal::Seal;
+
                 self.as_web_sys_worker_global_scope().origin()
             }
         }
@@ -77,15 +85,17 @@ macro_rules! impl_worker_global_scope_traits {
 
         impl $crate::fetch::FetchContext for $tpe {
             fn fetch(&self, request: &$crate::fetch::Request) -> $crate::fetch::Fetch {
-                Fetch::worker_context(
+                use crate::worker::worker_global_scope_seal::Seal;
+
+                $crate::fetch::Fetch::worker_context(
                     self.as_web_sys_worker_global_scope().clone(),
-                    request.as_ref().clone(),
+                    Clone::clone(request.as_ref()),
                 )
             }
         }
 
-        impl_event_target_traits!($tpe);
-        impl_try_from_event_targets!($tpe, $web_sys_tpe);
+        $crate::event::impl_event_target_traits!($tpe);
+        $crate::event::impl_try_from_event_target!($tpe, $web_sys_tpe);
     };
 }
 

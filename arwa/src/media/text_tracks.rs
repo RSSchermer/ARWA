@@ -1,7 +1,10 @@
-use crate::collection::{Collection, Sequence};
-use crate::html::media::TextTrack;
-use crate::media::TextTrack;
 use std::marker;
+
+use wasm_bindgen::JsCast;
+
+use crate::collection::{Collection, Sequence};
+use crate::event::{impl_typed_event_traits, typed_event_iterator};
+use crate::media::TextTrack;
 
 pub struct TextTracks {
     inner: web_sys::TextTrackList,
@@ -16,16 +19,16 @@ impl TextTracks {
         self.inner.get_track_by_id(id).map(|t| t.into())
     }
 
-    pub fn on_change(&self) -> OnChangeTextTrack {
-        OnChangeTextTrack::new(self.inner.clone().into())
+    pub fn on_change(&self) -> OnChangeTextTrack<Self> {
+        OnChangeTextTrack::new(self.inner.as_ref())
     }
 
-    pub fn on_add_track(&self) -> OnAddTextTrack {
-        OnAddTextTrack::new(self.inner.clone().into())
+    pub fn on_add_track(&self) -> OnAddTextTrack<Self> {
+        OnAddTextTrack::new(self.inner.as_ref())
     }
 
-    pub fn on_remove_track(&self) -> OnRemoveTextTrack {
-        OnRemoveTextTrack::new(self.inner.clone().into())
+    pub fn on_remove_track(&self) -> OnRemoveTextTrack<Self> {
+        OnRemoveTextTrack::new(self.inner.as_ref())
     }
 }
 
@@ -54,8 +57,10 @@ pub struct AddTextTrackEvent<T> {
 }
 
 impl<T> AddTextTrackEvent<T> {
-    pub fn track(&self) -> TextTrack {
-        TextTrack::from(self.inner.track().unchecked_into())
+    pub fn track(&self) -> Option<TextTrack> {
+        self.inner
+            .track()
+            .map(|t| TextTrack::from(t.unchecked_into::<web_sys::TextTrack>()))
     }
 }
 
@@ -65,7 +70,7 @@ impl<T> AsRef<web_sys::TrackEvent> for AddTextTrackEvent<T> {
     }
 }
 
-impl_event_traits!(AddTextTrackEvent, web_sys::TrackEvent, "addtrack");
+impl_typed_event_traits!(AddTextTrackEvent, TrackEvent, "addtrack");
 
 #[derive(Clone)]
 pub struct RemoveTextTrackEvent<T> {
@@ -74,8 +79,10 @@ pub struct RemoveTextTrackEvent<T> {
 }
 
 impl<T> RemoveTextTrackEvent<T> {
-    pub fn track(&self) -> TextTrack {
-        TextTrack::from(self.inner.track().unchecked_into())
+    pub fn track(&self) -> Option<TextTrack> {
+        self.inner
+            .track()
+            .map(|t| TextTrack::from(t.unchecked_into::<web_sys::TextTrack>()))
     }
 }
 
@@ -85,7 +92,7 @@ impl<T> AsRef<web_sys::TrackEvent> for RemoveTextTrackEvent<T> {
     }
 }
 
-impl_event_traits!(RemoveTextTrackEvent, web_sys::TrackEvent, "removetrack");
+impl_typed_event_traits!(RemoveTextTrackEvent, TrackEvent, "removetrack");
 
 #[derive(Clone)]
 pub struct ChangeTextTrackEvent<T> {
@@ -93,27 +100,21 @@ pub struct ChangeTextTrackEvent<T> {
     _marker: marker::PhantomData<T>,
 }
 
-impl<T> AsRef<web_sys::TrackEvent> for ChangeTextTrackEvent<T> {
-    fn as_ref(&self) -> &web_sys::TrackEvent {
-        &self.inner
-    }
-}
+impl_typed_event_traits!(ChangeTextTrackEvent, Event, "change");
 
-impl_event_traits!(ChangeTextTrackEvent, web_sys::TrackEvent, "change");
-
-typed_event_stream!(
+typed_event_iterator!(
     OnAddTextTrack,
     OnAddTextTrackWithOptions,
     AddTextTrackEvent,
     "addtrack"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnRemoveTextTrack,
     OnRemoveTextTrackWithOptions,
     RemoveTextTrackEvent,
     "removetrack"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnChangeTextTrack,
     OnChangeTextTrackWithOptions,
     ChangeTextTrackEvent,

@@ -1,3 +1,5 @@
+use delegate::delegate;
+
 mod transition_event_seal {
     pub trait Seal {}
 }
@@ -13,7 +15,7 @@ macro_rules! transition_event {
         #[derive(Clone)]
         pub struct $event<T> {
             inner: web_sys::TransitionEvent,
-            _marker: marker::PhantomData<T>,
+            _marker: std::marker::PhantomData<T>,
         }
 
         impl<T> transition_event_seal::Seal for $event<T> {}
@@ -28,17 +30,17 @@ macro_rules! transition_event {
             }
         }
 
-        impl AsRef<web_sys::TransitionEvent> for $event {
-            fn as_ref(&self) -> web_sys::TransitionEvent {
+        impl<T> AsRef<web_sys::TransitionEvent> for $event<T> {
+            fn as_ref(&self) -> &web_sys::TransitionEvent {
                 &self.inner
             }
         }
 
-        impl_event_traits!($event, web_sys::TransitionEvent, $name);
+        $crate::event::impl_typed_event_traits!($event, TransitionEvent, $name);
     };
 }
 
-transition_event!(TransitionStart, "transitionstart");
-transition_event!(TransitionEnd, "transitionend");
-transition_event!(TransitionRun, "transitionrun");
-transition_event!(TransitionCancel, "transitioncancel");
+transition_event!(TransitionStartEvent, "transitionstart");
+transition_event!(TransitionEndEvent, "transitionend");
+transition_event!(TransitionRunEvent, "transitionrun");
+transition_event!(TransitionCancelEvent, "transitioncancel");

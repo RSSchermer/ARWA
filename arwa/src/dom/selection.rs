@@ -1,3 +1,6 @@
+use delegate::delegate;
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::dom::{DynamicNode, LiveRange};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -5,6 +8,19 @@ pub enum SelectionType {
     None,
     Caret,
     Range,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SelectionDirection {
+    Forward,
+    Backward,
+    None,
+}
+
+impl Default for SelectionDirection {
+    fn default() -> Self {
+        SelectionDirection::None
+    }
 }
 
 #[derive(Clone)]
@@ -20,7 +36,7 @@ impl Selection {
     // manipulating the selection.
 
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn anchor_offset(&self) -> u32;
 
             pub fn focus_offset(&self) -> u32;
@@ -36,7 +52,7 @@ impl Selection {
     }
 
     pub fn selection_type(&self) -> SelectionType {
-        match self.inner.type_() {
+        match self.inner.type_().as_ref() {
             "None" => SelectionType::None,
             "Caret" => SelectionType::Caret,
             "Range" => SelectionType::Range,

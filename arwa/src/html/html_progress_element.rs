@@ -1,4 +1,9 @@
-use crate::html::{labelable_element_seal, LabelableElement, Labels};
+use delegate::delegate;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{
+    impl_html_element_traits, impl_known_element, labelable_element_seal, LabelableElement, Labels,
+};
 
 #[derive(Clone)]
 pub struct HtmlProgressElement {
@@ -33,7 +38,7 @@ impl labelable_element_seal::Seal for HtmlProgressElement {}
 
 impl LabelableElement for HtmlProgressElement {
     fn labels(&self) -> Labels {
-        Labels::new(self.inner.labels())
+        Labels::new(Some(self.inner.labels()))
     }
 }
 

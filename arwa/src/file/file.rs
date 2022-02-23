@@ -1,7 +1,10 @@
-use crate::file::blob::Blob;
-use std::iter::FusedIterator;
 use std::mem;
-use std::ops::{Deref, Range};
+use std::ops::Deref;
+
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::file::Blob;
+use crate::impl_common_wrapper_traits;
 
 #[derive(Clone)]
 pub struct File {

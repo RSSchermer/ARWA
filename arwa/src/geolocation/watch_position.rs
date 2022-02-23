@@ -1,9 +1,11 @@
-use crate::geolocation::{Position, PositionError};
-use futures::Stream;
+use std::async_iter::AsyncIterator;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
+
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+
+use crate::geolocation::{Position, PositionError};
 
 struct CallbackState {
     next: Option<Result<Position, PositionError>>,
@@ -44,15 +46,13 @@ impl WatchPosition {
     }
 }
 
-impl Stream for WatchPosition {
+impl AsyncIterator for WatchPosition {
     type Item = Result<Position, PositionError>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let watch_position = self.get_mut();
-
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Initialize if we haven't already
-        if let Some(options) = watch_position.options.take() {
-            let state_ptr = &mut current_position.callback_state as *mut CallbackState;
+        if let Some(options) = self.options.take() {
+            let state_ptr = &mut self.callback_state as *mut CallbackState;
 
             let success = Closure::wrap(Box::new(move |value: JsValue| {
                 // Safe because of Pin
@@ -79,27 +79,27 @@ impl Stream for WatchPosition {
             }) as Box<dyn FnMut(JsValue)>);
 
             // No indication in the spec that this can fail, unwrap for now.
-            let watch_id = watch_position
+            let watch_id = self
                 .geolocation
                 .watch_position_with_error_callback_and_options(
                     success.as_ref().unchecked_ref(),
                     Some(error.as_ref().unchecked_ref()),
                     &options,
                 )
-                .unwrap();
+                .unwrap_throw();
 
-            watch_position.watch_id = Some(watch_id);
+            self.watch_id = Some(watch_id);
 
             // Hang on to callbacks for the lifetime of the stream so they won't be dropped
             // while they may still get called.
-            watch_position.success = Some(success);
-            watch_position.error = Some(error);
+            self.success = Some(success);
+            self.error = Some(error);
         }
 
         // Refresh waker
         self.callback_state.waker = Some(cx.waker().clone());
 
-        if let Some(current) = watch_position.callback_state.next.take() {
+        if let Some(current) = self.callback_state.next.take() {
             Poll::Ready(Some(current))
         } else {
             Poll::Pending

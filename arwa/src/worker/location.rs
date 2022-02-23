@@ -1,4 +1,5 @@
-use url::Url;
+use crate::impl_common_wrapper_traits;
+use crate::url::Url;
 
 #[derive(Clone)]
 pub struct WorkerLocation {

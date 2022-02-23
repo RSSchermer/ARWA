@@ -1,20 +1,12 @@
 use crate::cssom::{
-    css_condition_rule_seal, css_grouping_rule_seal, css_rule_seal, CssConditionRule,
-    CssGroupingRule, CssRule, CssStyleSheet,
+    css_condition_rule_seal, css_grouping_rule_seal, impl_css_rule_traits, CssConditionRule,
+    CssGroupingRule,
 };
 
 #[derive(Clone)]
 pub struct CssSupportsRule {
     inner: web_sys::CssSupportsRule,
 }
-
-impl css_rule_seal::Seal for CssSupportsRule {
-    fn as_web_sys_css_rule(&self) -> &web_sys::CssRule {
-        self.inner.as_ref()
-    }
-}
-
-impl CssRule for CssSupportsRule {}
 
 impl css_grouping_rule_seal::Seal for CssSupportsRule {
     fn as_web_sys_css_grouping_rule(&self) -> &web_sys::CssGroupingRule {
@@ -44,4 +36,4 @@ impl AsRef<web_sys::CssSupportsRule> for CssSupportsRule {
     }
 }
 
-impl_css_rule_traits!(CssSupportsRule, web_sys::CssSupportsRule);
+impl_css_rule_traits!(CssSupportsRule, CssSupportsRule);

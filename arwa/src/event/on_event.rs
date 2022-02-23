@@ -1,12 +1,12 @@
+use std::async_iter::AsyncIterator;
 use std::borrow::Cow;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
-use futures::Stream;
 use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::event::Event;
-use wasm_bindgen::JsCast;
 
 // TODO: currently these spawn infinite tasks (unless combined with some terminating combinator
 // e.g. `Once` or `TakeUntil`). However, if the reference to the EventTarget held by a stream is
@@ -20,15 +20,12 @@ use wasm_bindgen::JsCast;
 struct Internal<T> {
     target: web_sys::EventTarget,
     event_type: Cow<'static, str>,
-    callback: Option<Closure<dyn FnMut(&web_sys::Event)>>,
+    callback: Option<Closure<dyn FnMut(web_sys::Event)>>,
     use_capture: bool, // We need this to drop properly
     state: CallbackState<T>,
 }
 
-impl<T> Internal<T>
-where
-    T: Event,
-{
+impl<T> Internal<T> {
     fn uninitialized(target: web_sys::EventTarget, event_type: Cow<'static, str>) -> Self {
         Internal {
             target,
@@ -42,13 +39,21 @@ where
     fn is_uninitialized(&self) -> bool {
         self.callback.is_none()
     }
+}
 
-    fn initialize(mut self: Pin<&mut Self>, options: &EventStreamOptions) {
-        if self.callback.is_some() {
+impl<T> Internal<T>
+where
+    T: Event + 'static,
+{
+    fn initialize(self: Pin<&mut Self>, options: &EventIteratorOptions) {
+        // Use `get_unchecked_mut` here to avoid having to restrict `T` to `Unpin`
+        let internal = unsafe { self.get_unchecked_mut() };
+
+        if internal.callback.is_some() {
             panic!("Cannot initialize an event stream twice.");
         }
 
-        let state_ptr = (&mut self.state) as *mut CallbackState<T>;
+        let state_ptr = (&mut internal.state) as *mut CallbackState<T>;
 
         let callback = move |event| {
             // We should not be dropping events here if this gets run with wasm-bindgen-futures
@@ -73,13 +78,13 @@ where
             let CallbackState { next, waker } = unsafe { &mut *state_ptr };
 
             if let Some(waker) = waker.take() {
-                next.replace(T::from_event(event.clone()));
+                next.replace(T::from_web_sys_event_unchecked(event));
 
                 waker.wake();
             }
         };
 
-        let boxed = Box::new(callback) as Box<dyn FnMut(&web_sys::Event)>;
+        let boxed = Box::new(callback) as Box<dyn FnMut(web_sys::Event)>;
         let closure = Closure::wrap(boxed);
 
         let use_capture = match options.phase {
@@ -92,18 +97,19 @@ where
         add_event_lister_options.capture(use_capture);
         add_event_lister_options.passive(options.passive);
 
-        self.target
+        internal
+            .target
             .add_event_listener_with_callback_and_add_event_listener_options(
-                &self.event_type,
-                callback.as_ref().unchecked_ref(),
-                options,
+                &internal.event_type,
+                closure.as_ref().unchecked_ref(),
+                &add_event_lister_options,
             )
             .unwrap_throw();
 
         // Hang on to the closure so we don't drop it while the listener is still active on the
         // target.
-        self.callback = Some(closure);
-        self.use_capture = use_capture;
+        internal.callback = Some(closure);
+        internal.use_capture = use_capture;
     }
 
     fn refresh_waker(&mut self, waker: Waker) {
@@ -155,32 +161,36 @@ impl<T> OnEvent<T> {
         }
     }
 
-    pub fn with_options(self, options: EventStreamOptions) -> OnEventWithOptions<T> {
+    pub fn with_options(self, options: EventIteratorOptions) -> OnEventWithOptions<T> {
         OnEventWithOptions::new(self, options)
     }
 }
 
-impl<T> Stream for OnEvent<T>
+impl<T> AsyncIterator for OnEvent<T>
 where
     T: Event + 'static,
 {
     type Item = T;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        // Use `get_unchecked_mut` here to avoid having to restrict `T` to `Unpin`
+        let on_event = unsafe { &mut self.get_unchecked_mut() };
+
         // If the stream hasn't been initialized yet, initialize it
-        if self.internal.is_uninitialized() {
+        if on_event.internal.is_uninitialized() {
+            // We dont move internal, so this is safe.
             unsafe {
-                self.map_unchecked_mut(|v| &mut v.internal)
-                    .initialize(&EventStreamOptions::default())
-            }
+                Pin::new_unchecked(&mut on_event.internal)
+                    .initialize(&EventIteratorOptions::default());
+            };
         }
 
-        // Set a new waker to keep the Stream alive (or set the initial waker if we've just
+        // Set a new waker to keep the async iterator alive (or set the initial waker if we've just
         // initialized).
-        self.internal.refresh_waker(cx.waker().clone());
+        on_event.internal.refresh_waker(cx.waker().clone());
 
         // Return the most recent event, if any.
-        if let Some(event) = self.internal.next() {
+        if let Some(event) = on_event.internal.next() {
             Poll::Ready(Some(event))
         } else {
             Poll::Pending
@@ -195,14 +205,14 @@ pub enum Phase {
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub struct EventStreamOptions {
+pub struct EventIteratorOptions {
     pub phase: Phase,
     pub passive: bool,
 }
 
-impl Default for EventStreamOptions {
+impl Default for EventIteratorOptions {
     fn default() -> Self {
-        EventStreamOptions {
+        EventIteratorOptions {
             phase: Phase::Bubble,
             passive: true,
         }
@@ -212,11 +222,11 @@ impl Default for EventStreamOptions {
 #[must_use = "streams do nothing unless polled or spawned"]
 pub struct OnEventWithOptions<T> {
     internal: Internal<T>,
-    options: EventStreamOptions,
+    options: EventIteratorOptions,
 }
 
 impl<T> OnEventWithOptions<T> {
-    pub(crate) fn new(on_event: OnEvent<T>, options: EventStreamOptions) -> Self {
+    pub(crate) fn new(on_event: OnEvent<T>, options: EventIteratorOptions) -> Self {
         OnEventWithOptions {
             internal: on_event.internal,
             options,
@@ -224,27 +234,30 @@ impl<T> OnEventWithOptions<T> {
     }
 }
 
-impl<T> Stream for OnEventWithOptions<T>
+impl<T> AsyncIterator for OnEventWithOptions<T>
 where
-    T: FromEvent + 'static,
+    T: Event + 'static,
 {
     type Item = T;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        // Use `get_unchecked_mut` here to avoid having to restrict `T` to `Unpin`
+        let on_event = unsafe { self.get_unchecked_mut() };
+
         // If the stream hasn't been initialized yet, initialize it
-        if self.internal.is_uninitialized() {
-            unsafe {
-                self.map_unchecked_mut(|v| &mut v.internal)
-                    .initialize(&self.options)
-            }
+        if on_event.internal.is_uninitialized() {
+            let options = on_event.options;
+
+            // We dont move internal, so this is safe.
+            unsafe { Pin::new_unchecked(&mut on_event.internal).initialize(&options) }
         }
 
-        // Set a new waker to keep the Stream alive (or set the initial waker if we've just
+        // Set a new waker to keep the async iterator alive (or set the initial waker if we've just
         // initialized).
-        self.internal.refresh_waker(cx.waker().clone());
+        on_event.internal.refresh_waker(cx.waker().clone());
 
         // Return the most recent event, if any.
-        if let Some(event) = self.internal.next() {
+        if let Some(event) = on_event.internal.next() {
             Poll::Ready(Some(event))
         } else {
             Poll::Pending
@@ -252,49 +265,66 @@ where
     }
 }
 
-macro_rules! typed_event_stream {
-    ($stream:ident, $stream_with_options:ident, $event:ident, $name:tt) => {
+macro_rules! typed_event_iterator {
+    ($iterator:ident, $iterator_with_options:ident, $event:ident, $name:tt) => {
         #[must_use = "streams do nothing unless polled or spawned"]
-        pub struct $stream<T> {
+        pub struct $iterator<T> {
             inner: $crate::event::OnEvent<$event<T>>,
         }
 
-        impl<T> $stream<T> {
-            pub(crate) fn new(target: web_sys::EventTarget) -> Self {
-                $stream {
-                    inner: $crate::event::OnEvent::new(target, $name),
+        impl<T> $iterator<T> {
+            pub(crate) fn new(target: &web_sys::EventTarget) -> Self {
+                $iterator {
+                    inner: $crate::event::OnEvent::new(
+                        target.clone(),
+                        std::borrow::Cow::Borrowed($name),
+                    ),
                 }
             }
 
             pub fn with_options(
                 self,
-                options: $crate::event::EventStreamOptions,
-            ) -> $stream_with_options<T> {
-                $stream_with_options {
+                options: $crate::event::EventIteratorOptions,
+            ) -> $iterator_with_options<T> {
+                $iterator_with_options {
                     inner: $crate::event::OnEventWithOptions::new(self.inner, options),
                 }
             }
         }
 
-        impl<T> std::stream::Stream for $stream<T> {
+        impl<T> std::async_iter::AsyncIterator for $iterator<T>
+        where
+            T: $crate::event::EventTarget + 'static,
+        {
             type Item = $event<T>;
 
-            fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+            fn poll_next(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<Option<Self::Item>> {
                 unsafe { self.map_unchecked_mut(|s| &mut s.inner).poll_next(cx) }
             }
         }
 
         #[must_use = "streams do nothing unless polled or spawned"]
-        pub struct $stream_with_options<T> {
+        pub struct $iterator_with_options<T> {
             inner: $crate::event::OnEventWithOptions<$event<T>>,
         }
 
-        impl<T> std::stream::Stream for $stream_with_options<T> {
+        impl<T> std::async_iter::AsyncIterator for $iterator_with_options<T>
+        where
+            T: $crate::event::EventTarget + 'static,
+        {
             type Item = $event<T>;
 
-            fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+            fn poll_next(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<Option<Self::Item>> {
                 unsafe { self.map_unchecked_mut(|s| &mut s.inner).poll_next(cx) }
             }
         }
     };
 }
+
+pub(crate) use typed_event_iterator;

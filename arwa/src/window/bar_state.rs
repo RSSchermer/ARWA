@@ -14,13 +14,17 @@ macro_rules! impl_bar_state {
 
         impl BarState for $tpe {
             fn visible(&self) -> bool {
+                use wasm_bindgen::UnwrapThrowExt;
+
                 // No indication in the spec this can actually fail, unwrap for now.
-                self.inner.visible().unwrap()
+                self.inner.visible().unwrap_throw()
             }
 
             fn set_visible(&self, visible: bool) {
+                use wasm_bindgen::UnwrapThrowExt;
+
                 // No indication in the spec this can actually fail, unwrap for now.
-                self.inner.set_visible(visible).unwrap();
+                self.inner.set_visible(visible).unwrap_throw();
             }
         }
     };

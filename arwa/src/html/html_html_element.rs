@@ -1,3 +1,6 @@
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
+
 #[derive(Clone)]
 pub struct HtmlHtmlElement {
     inner: web_sys::HtmlHtmlElement,

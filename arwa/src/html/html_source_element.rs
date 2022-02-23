@@ -1,3 +1,5 @@
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::media_type::MediaType;
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 
@@ -8,7 +10,7 @@ pub struct HtmlSourceElement {
 
 impl HtmlSourceElement {
     pub fn src(&self) -> Option<Url> {
-        Url::parse(self.inner.src()).ok()
+        Url::parse(self.inner.src().as_ref()).ok()
     }
 
     pub fn set_src<T>(&self, src: T)

@@ -1,3 +1,6 @@
+use delegate::delegate;
+
+use crate::event::impl_event_target_traits;
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
@@ -13,7 +16,7 @@ impl BroadcastChannel {
     // From<web_sys::BroadcastChannel>.
 
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn name(&self) -> String;
         }
     }

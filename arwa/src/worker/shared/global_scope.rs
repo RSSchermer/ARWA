@@ -1,6 +1,10 @@
+use crate::event::typed_event_iterator;
+use crate::worker::impl_worker_global_scope_traits;
+use crate::worker::shared::ConnectEvent;
+
 #[derive(Clone)]
 pub struct SharedWorkerGlobalScope {
-    inner: web_sys::DedicatedWorkerGlobalScope,
+    inner: web_sys::SharedWorkerGlobalScope,
 }
 
 impl SharedWorkerGlobalScope {
@@ -23,6 +27,18 @@ impl SharedWorkerGlobalScope {
     }
 }
 
-impl_worker_global_scope_traits!(SharedWorkerGlobalScope, web_sys::SharedWorkerGlobalScope);
+impl From<web_sys::SharedWorkerGlobalScope> for SharedWorkerGlobalScope {
+    fn from(inner: web_sys::SharedWorkerGlobalScope) -> Self {
+        SharedWorkerGlobalScope { inner }
+    }
+}
 
-typed_event_stream!(OnConnect, OnConnectWithOptions, ConnectEvent, "connect");
+impl AsRef<web_sys::SharedWorkerGlobalScope> for SharedWorkerGlobalScope {
+    fn as_ref(&self) -> &web_sys::SharedWorkerGlobalScope {
+        &self.inner
+    }
+}
+
+impl_worker_global_scope_traits!(SharedWorkerGlobalScope, SharedWorkerGlobalScope);
+
+typed_event_iterator!(OnConnect, OnConnectWithOptions, ConnectEvent, "connect");

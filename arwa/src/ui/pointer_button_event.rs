@@ -30,8 +30,8 @@ pub(crate) mod pointer_button_event_seal {
 
 pub trait PointerButtonEvent: pointer_button_event_seal::Seal {
     fn button(&self) -> PointerButton {
-        match self.inner.button() {
-            0 => PointerButton::Primary,
+        match self.as_web_sys_mouse_event().button() {
+            0 => PointerButton::Main,
             1 => PointerButton::Auxiliary,
             2 => PointerButton::Secondary,
             3 => PointerButton::Fourth,

@@ -1,3 +1,6 @@
+use crate::event::typed_event_iterator;
+use crate::loading::{ErrorEvent, LoadEvent};
+
 pub(crate) mod load_event_target_seal {
     pub trait Seal {
         #[doc(hidden)]
@@ -5,7 +8,7 @@ pub(crate) mod load_event_target_seal {
     }
 }
 
-pub trait LoadEventTarget: load_event_target_seal::Seal {
+pub trait LoadEventTarget: load_event_target_seal::Seal + Sized {
     fn on_load(&self) -> OnLoad<Self> {
         OnLoad::new(self.as_web_sys_event_target())
     }
@@ -15,5 +18,5 @@ pub trait LoadEventTarget: load_event_target_seal::Seal {
     }
 }
 
-typed_event_stream!(OnLoad, OnLoadWithOptions, LoadEvent, "load");
-typed_event_stream!(OnError, OnErrorWithOptions, ErrorEvent, "error");
+typed_event_iterator!(OnLoad, OnLoadWithOptions, LoadEvent, "load");
+typed_event_iterator!(OnError, OnErrorWithOptions, ErrorEvent, "error");

@@ -1,7 +1,5 @@
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::console::{Write, Writer};
-use crate::error::{LocationAssignError, SecurityError, SyntaxError};
 use crate::security::SecurityError;
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 
@@ -17,19 +15,15 @@ impl WindowLocation {
 
     pub fn to_url(&self) -> Url {
         // Location.href is always a valid URL.
-        Url::parse(self.inner.href().unwrap_throw()).unwrap()
+        Url::parse(self.inner.href().unwrap_throw().as_ref()).unwrap_throw()
     }
 
-    pub fn try_to_url(&self) -> Result<String, SecurityError> {
+    pub fn try_to_url(&self) -> Result<Url, SecurityError> {
         // Note: assuming Location.href is always a valid URL.
         self.inner
             .href()
-            .map(|href| Url::parse(self.inner.href()).unwrap())
-            .map_err(|e| {
-                let e: web_sys::DomException = e.unchecked_into();
-
-                SecurityError::new(e)
-            })
+            .map(|href| Url::parse(href.as_ref()).unwrap_throw())
+            .map_err(|e| SecurityError::new(e.unchecked_into()))
     }
 
     pub fn assign<T>(&self, url: T)
@@ -55,7 +49,7 @@ impl WindowLocation {
     where
         T: AbsoluteOrRelativeUrl,
     {
-        self.inner.assign(url).unwrap_throw()
+        self.inner.assign(url.as_str()).unwrap_throw();
     }
 
     pub fn reload(&self) {

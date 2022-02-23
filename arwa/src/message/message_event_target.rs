@@ -1,3 +1,6 @@
+use crate::event::typed_event_iterator;
+use crate::message::{MessageErrorEvent, MessageEvent};
+
 pub(crate) mod message_event_target_seal {
     pub trait Seal {
         #[doc(hidden)]
@@ -5,7 +8,7 @@ pub(crate) mod message_event_target_seal {
     }
 }
 
-pub trait MessageEventTarget: message_event_target_seal::Seal {
+pub trait MessageEventTarget: message_event_target_seal::Seal + Sized {
     fn on_message(&self) -> OnMessage<Self> {
         OnMessage::new(self.as_web_sys_event_target())
     }
@@ -15,8 +18,8 @@ pub trait MessageEventTarget: message_event_target_seal::Seal {
     }
 }
 
-typed_event_stream!(OnMessage, OnMessageWithOptions, MessageEvent, "message");
-typed_event_stream!(
+typed_event_iterator!(OnMessage, OnMessageWithOptions, MessageEvent, "message");
+typed_event_iterator!(
     OnMessageError,
     OnMessageErrorWithOptions,
     MessageErrorEvent,

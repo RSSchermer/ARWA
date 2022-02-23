@@ -14,8 +14,8 @@ pub use self::fetch_context::*;
 mod headers;
 pub use self::headers::*;
 
-mod method;
-pub use self::method::*;
+mod request_method;
+pub use self::request_method::*;
 
 mod request;
 pub use self::request::*;

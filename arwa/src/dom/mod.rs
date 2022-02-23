@@ -1,6 +1,3 @@
-mod adopt_node_error;
-pub use self::adopt_node_error::*;
-
 mod attribute;
 pub use self::attribute::*;
 
@@ -59,7 +56,7 @@ mod pointer_lock_change_event;
 pub use self::pointer_lock_change_event::*;
 
 mod pointer_lock_error_event;
-pub use self::pointer_lock_change_event::*;
+pub use self::pointer_lock_error_event::*;
 
 mod processing_instruction;
 pub use self::processing_instruction::*;
@@ -76,6 +73,9 @@ pub use self::ready_state_change_event::*;
 mod selection;
 pub use self::selection::*;
 
+mod selection_change_event;
+pub use self::selection_change_event::*;
+
 mod shadow_root;
 pub use self::shadow_root::*;
 
@@ -89,6 +89,7 @@ mod token;
 pub use self::token::*;
 
 mod selector;
+pub use selector::*;
 
 mod visibility_change_event;
 pub use self::visibility_change_event::*;

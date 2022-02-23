@@ -1,17 +1,25 @@
-use crate::fetch::{cache_context_seal, CacheContext};
-use crate::message::{
-    message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
-};
-use crate::url::{AbsoluteOrRelativeUrl, Url};
-use crate::InvalidCast;
 use std::convert::TryFrom;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use url::Url;
-use wasm_bindgen::JsCast;
+
+use delegate::delegate;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
+use web_sys::Client as WebSysClient;
 use web_sys::ServiceWorkerRegistration;
+
+use crate::dom_exception_wrapper;
+use crate::fetch::{cache_context_seal, CacheContext};
+use crate::impl_common_wrapper_traits;
+use crate::message::{
+    message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
+};
+use crate::type_error_wrapper;
+use crate::unchecked_cast_array::unchecked_cast_array;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::worker::impl_worker_global_scope_traits;
+use crate::InvalidCast;
 
 #[derive(Clone)]
 pub struct ServiceWorkerGlobalScope {
@@ -40,7 +48,19 @@ impl cache_context_seal::Seal for ServiceWorkerGlobalScope {}
 
 impl CacheContext for ServiceWorkerGlobalScope {}
 
-impl_worker_global_scope_traits!(ServiceWorkerGlobalScope, web_sys::ServiceWorkerGlobalScope);
+impl From<web_sys::ServiceWorkerGlobalScope> for ServiceWorkerGlobalScope {
+    fn from(inner: web_sys::ServiceWorkerGlobalScope) -> Self {
+        ServiceWorkerGlobalScope { inner }
+    }
+}
+
+impl AsRef<web_sys::ServiceWorkerGlobalScope> for ServiceWorkerGlobalScope {
+    fn as_ref(&self) -> &web_sys::ServiceWorkerGlobalScope {
+        &self.inner
+    }
+}
+
+impl_worker_global_scope_traits!(ServiceWorkerGlobalScope, ServiceWorkerGlobalScope);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum MatchClientType {
@@ -48,6 +68,17 @@ pub enum MatchClientType {
     DedicatedWorker,
     SharedWorker,
     All,
+}
+
+impl MatchClientType {
+    fn to_web_sys(&self) -> web_sys::ClientType {
+        match self {
+            MatchClientType::Window => web_sys::ClientType::Window,
+            MatchClientType::DedicatedWorker => web_sys::ClientType::Worker,
+            MatchClientType::SharedWorker => web_sys::ClientType::Sharedworker,
+            MatchClientType::All => web_sys::ClientType::All,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -73,18 +104,10 @@ impl Clients {
     }
 
     pub fn query_all(&self, query: ClientQuery) -> ClientsQueryAll {
-        let mut query_options = ClientQueryOptions::new();
+        let mut query_options = web_sys::ClientQueryOptions::new();
 
         query_options.include_uncontrolled(query.include_uncontrolled);
-
-        let web_sys_client_type = match query.client_type {
-            MatchClientType::Window => web_sys::ClientType::Window,
-            MatchClientType::DedicatedWorker => web_sys::ClientType::Worker,
-            MatchClientType::SharedWorker => web_sys::ClientType::Sharedworker,
-            MatchClientType::All => web_sys::ClientType::All,
-        };
-
-        query_options.type_(&web_sys_client_type);
+        query_options.type_(query.client_type.to_web_sys());
 
         ClientsQueryAll {
             init: Some(QueryAllInit {
@@ -143,19 +166,21 @@ pub struct ClientsQueryId {
 impl Future for ClientsQueryId {
     type Output = Option<Client>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
             let QueryIdInit { clients, client_id } = init;
 
             self.inner = Some(clients.get(&client_id).into());
         }
 
-        self.inner.as_mut().unwrap().poll(cx).map(|res| {
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner.poll(cx).map(|res| {
             res.ok().and_then(|val| {
                 if val.is_undefined() {
                     None
                 } else {
-                    Some(Client::from(c.unchecked_into()))
+                    Some(Client::from(val.unchecked_into::<web_sys::Client>()))
                 }
             })
         })
@@ -168,34 +193,38 @@ struct QueryAllInit {
 }
 
 pub struct ClientsQueryAll {
-    init: Option<MatchAllClientsInit>,
+    init: Option<QueryAllInit>,
     inner: Option<JsFuture>,
 }
 
 impl Future for ClientsQueryAll {
     type Output = MatchingClients;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
             let QueryAllInit {
                 clients,
                 query_options,
             } = init;
 
-            self.inner = Some(clients.match_all(&query_options).into());
+            self.inner = Some(clients.match_all_with_options(&query_options).into());
         }
 
-        self.inner.as_mut().unwrap().poll(cx).map(|res| {
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner.poll(cx).map(|res| {
             let inner = res
-                .map(|v| v.unchecked_into())
+                .map(|v| v.unchecked_into::<js_sys::Array>())
                 .unwrap_or_else(|_| js_sys::Array::new());
 
-            MatchingClients { inner }
+            MatchingClients::new(inner)
         })
     }
 }
 
-unchecked_cast_array!(Client, web_sys::Client, MatchingClients);
+unchecked_cast_array!(Client, WebSysClient, MatchingClients);
+
+dom_exception_wrapper!(OpenWindowClientError);
 
 struct OpenWindowClientInit {
     clients: web_sys::Clients,
@@ -203,29 +232,31 @@ struct OpenWindowClientInit {
 }
 
 pub struct OpenWindowClient {
-    init: Option<MatchAllClientsInit>,
+    init: Option<OpenWindowClientInit>,
     inner: Option<JsFuture>,
 }
 
 impl Future for OpenWindowClient {
     type Output = Result<Option<WindowClient>, OpenWindowClientError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
             let OpenWindowClientInit { clients, url } = init;
 
             self.inner = Some(clients.open_window(&url).into());
         }
 
-        self.inner
-            .as_mut()
-            .unwrap()
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner
             .poll(cx)
             .map_ok(|v| {
                 if v.is_null() {
                     None
                 } else {
-                    Some(WindowClient::from(v.unchecked_into()))
+                    Some(WindowClient::from(
+                        v.unchecked_into::<web_sys::WindowClient>(),
+                    ))
                 }
             })
             .map_err(|err| OpenWindowClientError::new(err.unchecked_into()))
@@ -240,30 +271,21 @@ pub struct ClaimClients {
 impl Future for ClaimClients {
     type Output = Result<(), ClaimClientsError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(clients) = self.clients.take() {
             self.inner = Some(clients.claim().into());
         }
 
-        self.inner
-            .as_mut()
-            .unwrap()
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner
             .poll(cx)
             .map_ok(|_| ())
             .map_err(|err| ClaimClientsError::new(err.unchecked_into()))
     }
 }
 
-#[derive(Clone)]
-pub struct ClaimClientsError {
-    inner: web_sys::DomException,
-}
-
-impl ClaimClientsError {
-    fn new(inner: web_sys::DomException) -> Self {
-        ClaimClientsError { inner }
-    }
-}
+dom_exception_wrapper!(ClaimClientsError);
 
 mod service_worker_client_seal {
     pub trait Seal {
@@ -278,25 +300,15 @@ pub trait ServiceWorkerClient: service_worker_client_seal::Seal {
     }
 
     fn client_type(&self) -> ClientType {
-        match self.as_web_sys_client().type_() {
-            web_sys::ClientType::Window => ClientType::Window,
-            web_sys::ClientType::Worker => ClientType::DedicatedWorker,
-            web_sys::ClientType::Sharedworker => ClientType::SharedWorker,
-            _ => unreachable!(),
-        }
+        ClientType::from_web_sys(self.as_web_sys_client().type_())
     }
 
     fn frame_type(&self) -> ClientFrameType {
-        match self.as_web_sys_client().frame_type() {
-            web_sys::FrameType::TopLevel => ClientFrameType::TopLevel,
-            web_sys::FrameType::Auxiliary => ClientFrameType::Auxiliary,
-            web_sys::FrameType::Nested => ClientFrameType::Nested,
-            web_sys::FrameType::None => ClientFrameType::None,
-        }
+        ClientFrameType::from_web_sys(self.as_web_sys_client().frame_type())
     }
 
     fn url(&self) -> Url {
-        Url::parse(self.as_web_sys_client().url()).unwrap()
+        Url::parse(self.as_web_sys_client().url().as_ref()).unwrap_throw()
     }
 }
 
@@ -307,11 +319,35 @@ pub enum ClientType {
     SharedWorker,
 }
 
+impl ClientType {
+    fn from_web_sys(client_type: web_sys::ClientType) -> Self {
+        match client_type {
+            web_sys::ClientType::Window => ClientType::Window,
+            web_sys::ClientType::Worker => ClientType::DedicatedWorker,
+            web_sys::ClientType::Sharedworker => ClientType::SharedWorker,
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ClientFrameType {
     TopLevel,
     Auxiliary,
     Nested,
     None,
+}
+
+impl ClientFrameType {
+    fn from_web_sys(frame_type: web_sys::FrameType) -> Self {
+        match frame_type {
+            web_sys::FrameType::TopLevel => ClientFrameType::TopLevel,
+            web_sys::FrameType::Auxiliary => ClientFrameType::Auxiliary,
+            web_sys::FrameType::Nested => ClientFrameType::Nested,
+            web_sys::FrameType::None => ClientFrameType::None,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -337,6 +373,12 @@ impl From<web_sys::Client> for Client {
     }
 }
 
+impl From<Client> for web_sys::Client {
+    fn from(client: Client) -> Self {
+        client.inner
+    }
+}
+
 impl AsRef<web_sys::Client> for Client {
     fn as_ref(&self) -> &web_sys::Client {
         &self.inner
@@ -351,6 +393,16 @@ pub enum WindowClientVisibilityState {
     Hidden,
 }
 
+impl WindowClientVisibilityState {
+    fn from_web_sys(state: web_sys::VisibilityState) -> Self {
+        match state {
+            web_sys::VisibilityState::Visible => WindowClientVisibilityState::Visible,
+            web_sys::VisibilityState::Hidden => WindowClientVisibilityState::Hidden,
+            _ => unreachable!(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct WindowClient {
     inner: web_sys::WindowClient,
@@ -358,16 +410,13 @@ pub struct WindowClient {
 
 impl WindowClient {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn focused(&self) -> bool;
         }
     }
 
     pub fn visibility_state(&self) -> WindowClientVisibilityState {
-        match self.inner.visibility_state {
-            web_sys::VisibilityState::Visible => WindowClientVisibilityState::Visible,
-            web_sys::VisibilityState::Hidden => WindowClientVisibilityState::Hidden,
-        }
+        WindowClientVisibilityState::from_web_sys(self.inner.visibility_state())
     }
 
     pub fn focus(&self) -> FocusWindowClient {
@@ -416,7 +465,7 @@ impl AsRef<web_sys::WindowClient> for WindowClient {
 }
 
 impl TryFrom<Client> for WindowClient {
-    type Error = InvalidCast<Client>;
+    type Error = InvalidCast<Client, WindowClient>;
 
     fn try_from(value: Client) -> Result<Self, Self::Error> {
         let value: web_sys::Client = value.into();
@@ -424,7 +473,7 @@ impl TryFrom<Client> for WindowClient {
         value
             .dyn_into::<web_sys::WindowClient>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(e.into()))
     }
 }
 
@@ -438,30 +487,22 @@ pub struct FocusWindowClient {
 impl Future for FocusWindowClient {
     type Output = Result<WindowClient, FocusWindowClientError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(window_client) = self.window_client.take() {
-            self.inner = Some(window_client.focus().into());
+            // No indication in the spec that focus is fallible; it does return a fallible promise.
+            self.inner = Some(window_client.focus().unwrap_throw().into());
         }
 
-        self.inner
-            .as_mut()
-            .unwrap()
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner
             .poll(cx)
-            .map_ok(|c| c.into())
-            .map_err(|err| FocusWindowClientError::new(err))
+            .map_ok(|c| WindowClient::from(c.unchecked_into::<web_sys::WindowClient>()))
+            .map_err(|err| FocusWindowClientError::new(err.unchecked_into()))
     }
 }
 
-#[derive(Clone)]
-pub struct FocusWindowClientError {
-    inner: js_sys::TypeError,
-}
-
-impl FocusWindowClientError {
-    fn new(inner: js_sys::TypeError) -> Self {
-        FocusWindowClientError { inner }
-    }
-}
+type_error_wrapper!(FocusWindowClientError);
 
 struct NavigateWindowClientInit {
     window_client: web_sys::WindowClient,
@@ -476,29 +517,22 @@ pub struct NavigateWindowClient {
 impl Future for NavigateWindowClient {
     type Output = Result<WindowClient, NavigateWindowClientError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
             let NavigateWindowClientInit { window_client, url } = init;
 
-            self.inner = Some(window_client.navigate(&url).into());
+            // No indication in the spec that navigate is fallible; it does return a fallible
+            // promise.
+            self.inner = Some(window_client.navigate(&url).unwrap_throw().into());
         }
 
-        self.inner
-            .as_mut()
-            .unwrap()
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner
             .poll(cx)
-            .map_ok(|c| c.into())
-            .map_err(|err| NavigateWindowClientError::new(err))
+            .map_ok(|c| WindowClient::from(c.unchecked_into::<web_sys::WindowClient>()))
+            .map_err(|err| NavigateWindowClientError::new(err.unchecked_into()))
     }
 }
 
-#[derive(Clone)]
-pub struct NavigateWindowClientError {
-    inner: js_sys::TypeError,
-}
-
-impl NavigateWindowClientError {
-    fn new(inner: js_sys::TypeError) -> Self {
-        NavigateWindowClientError { inner }
-    }
-}
+type_error_wrapper!(NavigateWindowClientError);

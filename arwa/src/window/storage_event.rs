@@ -1,6 +1,11 @@
-use crate::storage::Storage;
 use std::marker;
-use url::Url;
+
+use delegate::delegate;
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::event::impl_typed_event_traits;
+use crate::storage::Storage;
+use crate::url::Url;
 
 #[derive(Clone)]
 pub struct StorageEvent<T> {
@@ -10,7 +15,7 @@ pub struct StorageEvent<T> {
 
 impl<T> StorageEvent<T> {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn key(&self) -> Option<String>;
 
             pub fn old_value(&self) -> Option<String>;
@@ -24,8 +29,10 @@ impl<T> StorageEvent<T> {
     }
 
     pub fn url(&self) -> Option<Url> {
-        self.inner.url().map(|s| Url::parse(s.as_ref()).unwrap())
+        self.inner
+            .url()
+            .map(|s| Url::parse(s.as_ref()).unwrap_throw())
     }
 }
 
-impl_event_traits!(StorageEvent, web_sys::StorageEvent, "storage");
+impl_typed_event_traits!(StorageEvent, StorageEvent, "storage");

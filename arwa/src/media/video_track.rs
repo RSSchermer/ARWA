@@ -1,6 +1,7 @@
-use crate::lang::LanguageTag;
-use arwa::console::{Write, Writer};
 use delegate::delegate;
+
+use crate::impl_common_wrapper_traits;
+use crate::lang::LanguageTag;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum VideoTrackKind {
@@ -30,7 +31,7 @@ impl VideoTrack {
     }
 
     pub fn language(&self) -> Option<LanguageTag> {
-        LanguageTag::parse(self.inner.language()).ok()
+        LanguageTag::parse(self.inner.language().as_ref()).ok()
     }
 
     pub fn kind(&self) -> Option<VideoTrackKind> {
@@ -58,4 +59,4 @@ impl AsRef<web_sys::VideoTrack> for VideoTrack {
     }
 }
 
-impl_common_wrapper_traits!(VideoTrack, web_sys::VideoTrack);
+impl_common_wrapper_traits!(VideoTrack);

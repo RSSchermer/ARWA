@@ -1,3 +1,8 @@
+use delegate::delegate;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
+
 #[derive(Clone)]
 pub struct HtmlParamElement {
     inner: web_sys::HtmlParamElement,
@@ -18,7 +23,7 @@ impl HtmlParamElement {
 }
 
 impl From<web_sys::HtmlParamElement> for HtmlParamElement {
-    fn from(inner: web_sys::HtmlParagraphElement) -> Self {
+    fn from(inner: web_sys::HtmlParamElement) -> Self {
         HtmlParamElement { inner }
     }
 }

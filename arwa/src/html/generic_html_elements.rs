@@ -1,16 +1,16 @@
-use crate::dom::{shadow_host_seal, ShadowHost};
+use crate::dom::impl_shadow_host_for_element;
 
 macro_rules! generic_html_element {
     ($tpe:ident, $tag_name:literal) => {
         #[derive(Clone)]
         pub struct $tpe {
-            inner: web_sys::HtmlElement
+            inner: web_sys::HtmlElement,
         }
 
         $crate::html::impl_html_element_traits!($tpe);
-        $crate::dom::impl_try_from_element_with_tag_check($tpe, web_sys::HtmlElement, $tag_name);
-        $crate::html::impl_know_element($tpe, web_sys::HtmlElement, $tag_name);
-    }
+        $crate::dom::impl_try_from_element_with_tag_check!($tpe, HtmlElement, $tag_name);
+        $crate::html::impl_known_element!($tpe, HtmlElement, $tag_name);
+    };
 }
 
 generic_html_element!(HtmlAddressElement, "ADDRESS");

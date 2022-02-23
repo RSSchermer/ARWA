@@ -1,5 +1,9 @@
-use crate::message::{messaging_event_seal, MessagePort, MessagingEvent};
 use std::marker;
+
+use wasm_bindgen::JsCast;
+
+use crate::event::impl_typed_event_traits;
+use crate::message::{messaging_event_seal, MessagePort, MessagingEvent};
 
 #[derive(Clone)]
 pub struct ConnectEvent<T> {
@@ -29,4 +33,4 @@ impl<T> AsRef<web_sys::MessageEvent> for ConnectEvent<T> {
     }
 }
 
-impl_event_traits!(ConnectEvent, web_sys::MessageEvent);
+impl_typed_event_traits!(ConnectEvent, MessageEvent, "connect");

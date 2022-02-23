@@ -10,7 +10,7 @@ pub trait Collection {
 }
 
 /// A host-owned, ordered, sized collection of items.
-pub trait Sequence: Collection {
+pub trait Sequence: Collection + Sized {
     /// The type of the items contained in the sequence.
     type Item: Sized + 'static;
 
@@ -100,7 +100,7 @@ pub trait Sequence: Collection {
 /// An iterator over a host-owned sequence.
 ///
 ///
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct SequenceIter<'a, T> {
     sequence: &'a T,
     range: Range<u32>,
@@ -115,7 +115,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.range.next()?;
 
-        Some(self.sequence.get(index))
+        self.sequence.get(index)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

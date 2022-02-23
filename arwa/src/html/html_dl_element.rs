@@ -1,3 +1,6 @@
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
+
 #[derive(Clone)]
 pub struct HtmlDlElement {
     inner: web_sys::HtmlDListElement,
@@ -16,5 +19,5 @@ impl AsRef<web_sys::HtmlDListElement> for HtmlDlElement {
 }
 
 impl_html_element_traits!(HtmlDlElement);
-impl_try_from_element!(HtmlDlElement, web_sys::HtmlDListElement);
-impl_known_element!(HtmlDlElement, "DL");
+impl_try_from_element!(HtmlDlElement, HtmlDListElement);
+impl_known_element!(HtmlDlElement, HtmlDListElement, "DL");

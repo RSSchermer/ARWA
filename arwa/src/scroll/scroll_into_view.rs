@@ -44,8 +44,10 @@ macro_rules! impl_scroll_into_view_for_element {
     ($element:ident) => {
         impl $crate::scroll::scroll_into_view_seal::Seal for $element {}
 
-        impl ScrollIntoView for $element {
-            fn scroll_into_view(&self, options: ScrollIntoViewOptions) {
+        impl $crate::scroll::ScrollIntoView for $element {
+            fn scroll_into_view(&self, options: $crate::scroll::ScrollIntoViewOptions) {
+                use crate::dom::element_seal::Seal;
+
                 let mut opts = web_sys::ScrollIntoViewOptions::new();
 
                 opts.behavior(options.behavior.into());

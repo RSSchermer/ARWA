@@ -1,19 +1,39 @@
-use crate::message::{message_event_target_seal, MessageEventTarget};
-use crate::url::AbsoluteOrRelativeUrl;
-use crate::worker::service::{ServiceWorker, ServiceWorkerRegistration};
-use crate::worker::WorkerType;
 use std::future::Future;
 use std::marker;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use wasm_bindgen::JsCast;
+
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
+use web_sys::ServiceWorkerRegistration as WebSysServiceWorkerRegistration;
+
+use crate::event::{
+    impl_event_target_traits, impl_try_from_event_target, impl_typed_event_traits,
+    typed_event_iterator,
+};
+use crate::message::{message_event_target_seal, MessageEventTarget};
+use crate::unchecked_cast_array::unchecked_cast_array;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::worker::service::{
+    ServiceWorker, ServiceWorkerRegistration, ServiceWorkerRegistrationError,
+};
+use crate::worker::WorkerType;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum UpdateViaCache {
     All,
     Imports,
     None,
+}
+
+impl UpdateViaCache {
+    fn to_web_sys(&self) -> web_sys::ServiceWorkerUpdateViaCache {
+        match self {
+            UpdateViaCache::All => web_sys::ServiceWorkerUpdateViaCache::All,
+            UpdateViaCache::Imports => web_sys::ServiceWorkerUpdateViaCache::Imports,
+            UpdateViaCache::None => web_sys::ServiceWorkerUpdateViaCache::None,
+        }
+    }
 }
 
 impl Default for UpdateViaCache {
@@ -23,7 +43,7 @@ impl Default for UpdateViaCache {
 }
 
 pub struct ServiceWorkerOptions<'a> {
-    pub scope: Option<AbsoluteOrRelativeUrl<'a>>,
+    pub scope: Option<&'a Url>,
     pub worker_type: WorkerType,
     pub update_via_cache: UpdateViaCache,
 }
@@ -55,11 +75,10 @@ impl ServiceWorkerContainer {
         self.inner.controller().map(|s| s.into())
     }
 
-    pub fn register(
-        &self,
-        script_url: AbsoluteOrRelativeUrl,
-        options: ServiceWorkerOptions,
-    ) -> ServiceWorkerRegister {
+    pub fn register<T>(&self, script_url: T, options: ServiceWorkerOptions) -> ServiceWorkerRegister
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
         let ServiceWorkerOptions {
             scope,
             worker_type,
@@ -72,25 +91,16 @@ impl ServiceWorkerContainer {
             opts.scope(scope.as_ref());
         }
 
-        match update_via_cache {
-            UpdateViaCache::None => {
-                opts.update_via_cache(web_sys::ServiceWorkerUpdateViaCache::None)
-            }
-            UpdateViaCache::Imports => {
-                opts.update_via_cache(web_sys::ServiceWorkerUpdateViaCache::Imports)
-            }
-            UpdateViaCache::All => opts.update_via_cache(web_sys::ServiceWorkerUpdateViaCache::All),
-        }
+        opts.update_via_cache(update_via_cache.to_web_sys());
 
-        match worker_type {
-            WorkerType::Classic => (),
-            WorkerType::Module => todo!("missing in web-sys"),
+        if worker_type == WorkerType::Module {
+            todo!("missing in web-sys")
         }
 
         ServiceWorkerRegister {
             init: Some(RegisterInit {
                 container: self.inner.clone(),
-                script_url: script_url.to_string(),
+                script_url: script_url.as_str().to_string(),
                 opts,
             }),
             inner: None,
@@ -100,11 +110,14 @@ impl ServiceWorkerContainer {
     // Note: while get_registration make the scope url argument optional, we don't here. A scope of
     // `None` should be equivalent to `ready`.
 
-    pub fn registration_for(&self, scope: AbsoluteOrRelativeUrl) -> ServiceWorkerRegistrationFor {
+    pub fn registration_for<T>(&self, scope: T) -> ServiceWorkerRegistrationFor
+    where
+        T: AbsoluteOrRelativeUrl,
+    {
         ServiceWorkerRegistrationFor {
             init: Some(RegistrationForInit {
                 container: self.inner.clone(),
-                scope: scope.to_string(),
+                scope: scope.as_str().to_string(),
             }),
             inner: None,
         }
@@ -120,7 +133,7 @@ impl ServiceWorkerContainer {
     // TODO: `start_messages` is missing in web_sys.
 
     pub fn on_controller_change(&self) -> OnControllerChange<Self> {
-        OnControllerChange::new(self.inner.clone().into())
+        OnControllerChange::new(self.inner.as_ref())
     }
 }
 
@@ -144,8 +157,8 @@ impl AsRef<web_sys::ServiceWorkerContainer> for ServiceWorkerContainer {
     }
 }
 
-impl_event_target_traits!(ServiceWorker);
-impl_try_from_event_targets!(ServiceWorker, web_sys::ServiceWorker);
+impl_event_target_traits!(ServiceWorkerContainer);
+impl_try_from_event_target!(ServiceWorkerContainer);
 
 #[must_use = "a future does nothing unless polled or spawned"]
 pub struct ServiceWorkerReady {
@@ -156,14 +169,17 @@ pub struct ServiceWorkerReady {
 impl Future for ServiceWorkerReady {
     type Output = ServiceWorkerRegistration;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(container) = self.container.take() {
             // Initialize
-            self.inner = Some(container.ready().unwrap().into())
+            self.inner = Some(container.ready().unwrap_throw().into())
         }
 
-        self.inner.as_mut().unwrap().poll(cx).map(|result| {
-            let registration: web_sys::ServiceWorkerRegistration = result.unwrap().unchecked_into();
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner.poll(cx).map(|result| {
+            let registration: web_sys::ServiceWorkerRegistration =
+                result.unwrap_throw().unchecked_into();
 
             registration.into()
         })
@@ -185,7 +201,7 @@ pub struct ServiceWorkerRegister {
 impl Future for ServiceWorkerRegister {
     type Output = Result<ServiceWorkerRegistration, ServiceWorkerRegistrationError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
             let RegisterInit {
                 container,
@@ -193,12 +209,12 @@ impl Future for ServiceWorkerRegister {
                 opts,
             } = init;
 
-            self.inner = Some(container.register_with_options(&script_url, &opts));
+            self.inner = Some(container.register_with_options(&script_url, &opts).into());
         }
 
-        self.inner
-            .as_mut()
-            .unwrap()
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner
             .poll(cx)
             .map_ok(|ok| {
                 let registration: web_sys::ServiceWorkerRegistration = ok.unchecked_into();
@@ -222,14 +238,20 @@ pub struct ServiceWorkerRegistrationFor {
 impl Future for ServiceWorkerRegistrationFor {
     type Output = Option<ServiceWorkerRegistration>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
             let RegistrationForInit { container, scope } = init;
 
-            self.inner = Some(container.get_registration_with_document_url(scope).into())
+            self.inner = Some(
+                container
+                    .get_registration_with_document_url(scope.as_ref())
+                    .into(),
+            )
         }
 
-        self.inner.as_mut().unwrap().poll(cx).map(|result| {
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
+
+        inner.poll(cx).map(|result| {
             result.ok().and_then(|ok| {
                 if ok.is_undefined() {
                     None
@@ -252,20 +274,28 @@ pub struct ServiceWorkerRegistrations {
 impl Future for ServiceWorkerRegistrations {
     type Output = ServiceWorkers;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(container) = self.container.take() {
             self.inner = Some(container.get_registrations().into())
         }
 
-        self.inner.as_mut().unwrap().poll(cx).map(|result| {
-            let inner = result.unwrap_or_else(|_| js_sys::Array::new());
+        let inner = Pin::new(self.inner.as_mut().unwrap_throw());
 
-            ServiceWorkers { inner }
+        inner.poll(cx).map(|result| {
+            let inner = result
+                .map(|v| v.unchecked_into::<js_sys::Array>())
+                .unwrap_or_else(|_| js_sys::Array::new());
+
+            ServiceWorkers::new(inner)
         })
     }
 }
 
-unchecked_cast_array!(ServiceWorker, web_sys::ServiceWorker, ServiceWorkers);
+unchecked_cast_array!(
+    ServiceWorkerRegistration,
+    WebSysServiceWorkerRegistration,
+    ServiceWorkers
+);
 
 #[derive(Clone)]
 pub struct ControllerChangeEvent<T> {
@@ -273,9 +303,9 @@ pub struct ControllerChangeEvent<T> {
     _marker: marker::PhantomData<T>,
 }
 
-impl_event_traits!(ControllerChangeEvent, web_sys::Event, "controllerchange");
+impl_typed_event_traits!(ControllerChangeEvent, Event, "controllerchange");
 
-typed_event_stream!(
+typed_event_iterator!(
     OnControllerChange,
     OnControllerChangeWithOptions,
     ControllerChangeEvent,

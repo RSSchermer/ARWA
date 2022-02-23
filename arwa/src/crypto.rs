@@ -1,5 +1,6 @@
-use crate::console::{Write, Writer};
-use crate::SubtleCrypto;
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::subtle_crypto::SubtleCrypto;
 
 #[derive(Clone)]
 pub struct Crypto {
@@ -31,25 +32,19 @@ impl AsRef<web_sys::Crypto> for Crypto {
     }
 }
 
-impl Write for Crypto {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self.inner.as_ref())
-    }
-}
-
-pub trait FillRandom: fill_random_seal::Sealed {
+pub trait FillRandom: fill_random_seal::Seal {
     fn fill_random(&mut self, crypto: &Crypto);
 }
 
 mod fill_random_seal {
-    pub trait Sealed {}
+    pub trait Seal {}
 
-    impl Sealed for [i8] {}
-    impl Sealed for [i16] {}
-    impl Sealed for [i32] {}
-    impl Sealed for [u8] {}
-    impl Sealed for [u16] {}
-    impl Sealed for [u32] {}
+    impl Seal for [i8] {}
+    impl Seal for [i16] {}
+    impl Seal for [i32] {}
+    impl Seal for [u8] {}
+    impl Seal for [u16] {}
+    impl Seal for [u32] {}
 }
 
 // TODO: Panic or error on quota exceeded? Panic for now.
@@ -62,7 +57,7 @@ impl FillRandom for [i8] {
             crypto
                 .inner
                 .get_random_values_with_array_buffer_view(&view.into())
-                .unwrap();
+                .unwrap_throw();
         }
     }
 }
@@ -75,7 +70,7 @@ impl FillRandom for [i16] {
             crypto
                 .inner
                 .get_random_values_with_array_buffer_view(&view.into())
-                .unwrap();
+                .unwrap_throw();
         }
     }
 }
@@ -88,7 +83,7 @@ impl FillRandom for [i32] {
             crypto
                 .inner
                 .get_random_values_with_array_buffer_view(&view.into())
-                .unwrap();
+                .unwrap_throw();
         }
     }
 }
@@ -101,7 +96,7 @@ impl FillRandom for [u8] {
             crypto
                 .inner
                 .get_random_values_with_array_buffer_view(&view.into())
-                .unwrap();
+                .unwrap_throw();
         }
     }
 }
@@ -114,7 +109,7 @@ impl FillRandom for [u16] {
             crypto
                 .inner
                 .get_random_values_with_array_buffer_view(&view.into())
-                .unwrap();
+                .unwrap_throw();
         }
     }
 }
@@ -127,7 +122,7 @@ impl FillRandom for [u32] {
             crypto
                 .inner
                 .get_random_values_with_array_buffer_view(&view.into())
-                .unwrap();
+                .unwrap_throw();
         }
     }
 }

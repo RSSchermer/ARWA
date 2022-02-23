@@ -1,4 +1,9 @@
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::impl_common_wrapper_traits;
+use crate::type_error_wrapper;
+
+type_error_wrapper!(InvalidHeaderName);
 
 #[derive(Clone)]
 pub struct Headers {
@@ -42,7 +47,7 @@ impl Headers {
         self.inner.delete(header_name).unwrap_throw()
     }
 
-    pub fn try_remove(&self, header_name: &str, value: &str) -> Result<(), InvalidHeaderName> {
+    pub fn try_remove(&self, header_name: &str) -> Result<(), InvalidHeaderName> {
         self.inner
             .delete(header_name)
             .map_err(|err| InvalidHeaderName::new(err.unchecked_into()))
@@ -64,14 +69,3 @@ impl AsRef<web_sys::Headers> for Headers {
 }
 
 impl_common_wrapper_traits!(Headers);
-
-#[derive(Clone)]
-pub struct InvalidHeaderName {
-    inner: web_sys::TypeError,
-}
-
-impl InvalidHeaderName {
-    fn new(inner: web_sys::TypeError) -> Self {
-        InvalidHeaderName { inner }
-    }
-}

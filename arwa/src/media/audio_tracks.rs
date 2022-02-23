@@ -1,7 +1,10 @@
-use crate::collection::{Collection, Sequence};
-use crate::html::media::AudioTrack;
-use crate::media::AudioTrack;
 use std::marker;
+
+use wasm_bindgen::JsCast;
+
+use crate::collection::{Collection, Sequence};
+use crate::event::{impl_typed_event_traits, typed_event_iterator};
+use crate::media::AudioTrack;
 
 pub struct AudioTracks {
     inner: web_sys::AudioTrackList,
@@ -16,16 +19,16 @@ impl AudioTracks {
         self.inner.get_track_by_id(id).map(|t| t.into())
     }
 
-    pub fn on_change(&self) -> OnChangeAudioTrack {
-        OnChangeAudioTrack::new(self.inner.clone().into())
+    pub fn on_change(&self) -> OnChangeAudioTrack<Self> {
+        OnChangeAudioTrack::new(self.inner.as_ref())
     }
 
-    pub fn on_add_track(&self) -> OnAddAudioTrack {
-        OnAddAudioTrack::new(self.inner.clone().into())
+    pub fn on_add_track(&self) -> OnAddAudioTrack<Self> {
+        OnAddAudioTrack::new(self.inner.as_ref())
     }
 
-    pub fn on_remove_track(&self) -> OnRemoveAudioTrack {
-        OnRemoveAudioTrack::new(self.inner.clone().into())
+    pub fn on_remove_track(&self) -> OnRemoveAudioTrack<Self> {
+        OnRemoveAudioTrack::new(self.inner.as_ref())
     }
 }
 
@@ -54,8 +57,10 @@ pub struct AddAudioTrackEvent<T> {
 }
 
 impl<T> AddAudioTrackEvent<T> {
-    pub fn track(&self) -> AudioTrack {
-        AudioTrack::from(self.inner.track().unchecked_into())
+    pub fn track(&self) -> Option<AudioTrack> {
+        self.inner
+            .track()
+            .map(|t| AudioTrack::from(t.unchecked_into::<web_sys::AudioTrack>()))
     }
 }
 
@@ -65,7 +70,7 @@ impl<T> AsRef<web_sys::TrackEvent> for AddAudioTrackEvent<T> {
     }
 }
 
-impl_event_traits!(AddAudioTrackEvent, web_sys::TrackEvent, "addtrack");
+impl_typed_event_traits!(AddAudioTrackEvent, TrackEvent, "addtrack");
 
 #[derive(Clone)]
 pub struct RemoveAudioTrackEvent<T> {
@@ -74,8 +79,10 @@ pub struct RemoveAudioTrackEvent<T> {
 }
 
 impl<T> RemoveAudioTrackEvent<T> {
-    pub fn track(&self) -> AudioTrack {
-        AudioTrack::from(self.inner.track().unchecked_into())
+    pub fn track(&self) -> Option<AudioTrack> {
+        self.inner
+            .track()
+            .map(|t| AudioTrack::from(t.unchecked_into::<web_sys::AudioTrack>()))
     }
 }
 
@@ -85,7 +92,7 @@ impl<T> AsRef<web_sys::TrackEvent> for RemoveAudioTrackEvent<T> {
     }
 }
 
-impl_event_traits!(RemoveAudioTrackEvent, web_sys::TrackEvent, "removetrack");
+impl_typed_event_traits!(RemoveAudioTrackEvent, TrackEvent, "removetrack");
 
 #[derive(Clone)]
 pub struct ChangeAudioTrackEvent<T> {
@@ -93,27 +100,21 @@ pub struct ChangeAudioTrackEvent<T> {
     _marker: marker::PhantomData<T>,
 }
 
-impl<T> AsRef<web_sys::TrackEvent> for ChangeAudioTrackEvent<T> {
-    fn as_ref(&self) -> &web_sys::TrackEvent {
-        &self.inner
-    }
-}
+impl_typed_event_traits!(ChangeAudioTrackEvent, Event, "change");
 
-impl_event_traits!(ChangeAudioTrackEvent, web_sys::TrackEvent, "change");
-
-typed_event_stream!(
+typed_event_iterator!(
     OnAddAudioTrack,
     OnAddAudioTrackWithOptions,
     AddAudioTrackEvent,
     "addtrack"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnRemoveAudioTrack,
     OnRemoveAudioTrackWithOptions,
     RemoveAudioTrackEvent,
     "removetrack"
 );
-typed_event_stream!(
+typed_event_iterator!(
     OnChangeAudioTrack,
     OnChangeAudioTrackWithOptions,
     ChangeAudioTrackEvent,

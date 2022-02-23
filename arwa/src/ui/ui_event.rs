@@ -9,7 +9,7 @@ pub(crate) mod ui_event_seal {
 
 pub trait UiEvent: ui_event_seal::Seal {
     fn view(&self) -> Option<Window> {
-        self.as_web_sys_ui_event().view().into()
+        self.as_web_sys_ui_event().view().map(|w| w.into())
     }
 }
 
@@ -24,12 +24,14 @@ macro_rules! impl_ui_event_traits {
         impl<T> $crate::ui::UiEvent for $tpe<T> {}
 
         impl<T> AsRef<web_sys::UiEvent> for $tpe<T> {
-            fn as_ref(&self) -> web_sys::UiEvent {
+            fn as_ref(&self) -> &web_sys::UiEvent {
+                use crate::ui::ui_event_seal::Seal;
+
                 self.as_web_sys_ui_event()
             }
         }
 
-        impl_typed_event_traits!($tpe, $web_sys_tpe, $name);
+        $crate::event::impl_typed_event_traits!($tpe, $web_sys_tpe, $name);
     };
 }
 

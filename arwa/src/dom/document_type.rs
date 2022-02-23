@@ -1,8 +1,10 @@
 use delegate::delegate;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::console::{Write, Writer};
-use crate::dom::{child_node_seal, ChildNode, DocumentFragment, HierarchyRequestError};
-use crate::Node;
+use crate::dom::{
+    child_node_seal, impl_node_traits, impl_owned_node, impl_try_from_node, ChildNode,
+    DocumentFragment, HierarchyRequestError,
+};
 
 pub struct DocumentType {
     inner: web_sys::DocumentType,
@@ -33,7 +35,8 @@ impl AsRef<web_sys::DocumentType> for DocumentType {
 }
 
 impl_node_traits!(DocumentType);
-impl_try_from_node!(DocumentType, web_sys::DocumentType);
+impl_owned_node!(DocumentType);
+impl_try_from_node!(DocumentType);
 
 impl child_node_seal::Seal for DocumentType {
     fn as_web_sys_node(&self) -> &web_sys::Node {
@@ -79,7 +82,7 @@ impl ChildNode for DocumentType {
     {
         self.inner
             .before_with_node_1(node.as_web_sys_node())
-            .map_err(|err| Hierarchy_request_error::new(err.unchecked_into()))
+            .map_err(|err| HierarchyRequestError::new(err.unchecked_into()))
     }
 
     fn before_insert_fragment<T>(&self, document_fragment: &T)
@@ -106,7 +109,7 @@ impl ChildNode for DocumentType {
     {
         self.inner
             .after_with_node_1(node.as_web_sys_node())
-            .map_err(|err| Hierarchy_request_error::new(err.unchecked_into()))
+            .map_err(|err| HierarchyRequestError::new(err.unchecked_into()))
     }
 
     fn after_insert_fragment<T>(&self, document_fragment: &T)

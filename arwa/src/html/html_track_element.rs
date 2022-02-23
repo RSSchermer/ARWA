@@ -1,3 +1,7 @@
+use delegate::delegate;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::lang::LanguageTag;
 use crate::media::{TextTrack, TextTrackReadyState};
 use crate::url::{AbsoluteOrRelativeUrl, Url};
@@ -21,7 +25,7 @@ impl HtmlTrackElement {
     }
 
     pub fn src(&self) -> Option<Url> {
-        Url::parse(self.inner.src()).ok()
+        Url::parse(self.inner.src().as_ref()).ok()
     }
 
     pub fn set_src<T>(&self, src: T)
@@ -32,7 +36,7 @@ impl HtmlTrackElement {
     }
 
     pub fn src_lang(&self) -> Option<LanguageTag> {
-        LanguageTag::parse(self.inner.srclang()).ok()
+        LanguageTag::parse(self.inner.srclang().as_ref()).ok()
     }
 
     pub fn set_src_lang(&self, src_lang: Option<&LanguageTag>) {

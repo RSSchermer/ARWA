@@ -1,12 +1,12 @@
-use crate::fetch::{Body, BodySource, Headers, Status};
-use crate::file::Blob;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
-use url::Url;
+use std::mem;
+
+use delegate::delegate;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
-use wasm_bindgen_futures::JsFuture;
+
+use crate::fetch::{Body, BodySource, Headers, Status};
+use crate::impl_common_wrapper_traits;
+use crate::type_error_wrapper;
+use crate::url::{AbsoluteOrRelativeUrl, Url};
 
 pub enum ResponseType {
     Default,
@@ -17,6 +17,20 @@ pub enum ResponseType {
     OpaqueRedirect,
 }
 
+impl ResponseType {
+    fn from_web_sys(response_type: web_sys::ResponseType) -> Self {
+        match response_type {
+            web_sys::ResponseType::Basic => ResponseType::Basic,
+            web_sys::ResponseType::Cors => ResponseType::CORS,
+            web_sys::ResponseType::Error => ResponseType::Error,
+            web_sys::ResponseType::Opaque => ResponseType::Opaque,
+            web_sys::ResponseType::Opaqueredirect => ResponseType::OpaqueRedirect,
+            web_sys::ResponseType::Default => ResponseType::Default,
+            _ => unreachable!(),
+        }
+    }
+}
+
 pub struct ResponseDescriptor<'a> {
     pub status: Status,
     pub status_text: &'a str,
@@ -24,7 +38,7 @@ pub struct ResponseDescriptor<'a> {
     pub body: Option<BodySource<'a>>,
 }
 
-impl Default for ResponseDescriptor {
+impl Default for ResponseDescriptor<'static> {
     fn default() -> Self {
         ResponseDescriptor {
             status: Status::OK,
@@ -35,42 +49,33 @@ impl Default for ResponseDescriptor {
     }
 }
 
-#[derive(Clone)]
-pub struct ResponseInitError {
-    inner: js_sys::TypeError,
-}
-
-impl ResponseInitError {
-    fn new(inner: js_sys::TypeError) -> Self {
-        ResponseInitError { inner }
-    }
-}
+type_error_wrapper!(ResponseInitError);
 
 pub struct Response {
     inner: web_sys::Response,
 }
 
 impl Response {
-    fn init(&self, descriptor: ResponseDescriptor) -> Response {
+    pub fn init(&self, descriptor: ResponseDescriptor) -> Response {
         create_response_internal(descriptor).unwrap_throw()
     }
 
-    fn try_init(&self, descriptor: ResponseDescriptor) -> Result<Response, ResponseInitError> {
+    pub fn try_init(&self, descriptor: ResponseDescriptor) -> Result<Response, ResponseInitError> {
         create_response_internal(descriptor)
             .map_err(|err| ResponseInitError::new(err.unchecked_into()))
     }
 
-    fn redirect<T>(url: T, status: Status) -> Response
+    pub fn redirect<T>(url: T, status: Status) -> Response
     where
         T: AbsoluteOrRelativeUrl,
     {
-        web_sys::Response::redirect_with_status(url.as_str(), status)
+        web_sys::Response::redirect_with_status(url.as_str(), status.into())
             .unwrap_throw()
             .into()
     }
 
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn status(&self) -> u16;
 
             pub fn status_text(&self) -> String;
@@ -86,14 +91,7 @@ impl Response {
     }
 
     pub fn response_type(&self) -> ResponseType {
-        match self.inner.type_().as_ref() {
-            "basic" => ResponseType::Basic,
-            "cors" => ResponseType::CORS,
-            "error" => ResponseType::Error,
-            "opaque" => ResponseType::Opaque,
-            "opaqueredirect" => ResponseType::OpaqueRedirect,
-            _ => ResponseType::Default,
-        }
+        ResponseType::from_web_sys(self.inner.type_())
     }
 
     pub fn url(&self) -> Option<Url> {
@@ -103,7 +101,7 @@ impl Response {
             None
         } else {
             // Assume URL is always valid for now (until counter-example).
-            Some(Url::parse(&url).unwrap())
+            Some(Url::parse(&url).unwrap_throw())
         }
     }
 
@@ -112,7 +110,7 @@ impl Response {
     }
 
     pub fn body(&self) -> Body {
-        Body::response(self.inner.clone())
+        Body::response(Clone::clone(&self.inner))
     }
 }
 
@@ -156,6 +154,12 @@ fn create_response_internal(descriptor: ResponseDescriptor) -> Result<Response, 
                 web_sys::Response::new_with_opt_blob_and_init(Some(blob.as_ref()), &init)
             }
             BodySource::Bytes(bytes) => {
+                // TODO: web_sys wants a mutable reference here (which I believe is a general
+                // defensive strategy, with explicit whitelisting. Transmute for now, look into
+                // getting it whitelisted in web_sys at some point in the future.
+                #[allow(mutable_transmutes)]
+                let bytes: &mut [u8] = unsafe { mem::transmute(bytes) };
+
                 web_sys::Response::new_with_opt_u8_array_and_init(Some(bytes), &init)
             }
         }

@@ -1,4 +1,6 @@
 use std::convert::TryFrom;
+use std::error::Error;
+use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Status {
@@ -153,4 +155,20 @@ impl StatusRangeError {
     }
 }
 
-impl fmt::Debug for StatusRangeError {}
+impl fmt::Display for StatusRangeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "`{}` is not a valid status code; must be in the range `200..600`",
+            self.code
+        )
+    }
+}
+
+impl fmt::Debug for StatusRangeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for StatusRangeError {}

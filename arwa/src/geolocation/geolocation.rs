@@ -1,4 +1,7 @@
+use delegate::delegate;
+
 use crate::geolocation::{CurrentPosition, WatchPosition};
+use crate::impl_common_wrapper_traits;
 use crate::timer::Duration;
 
 pub struct Geolocation {
@@ -51,12 +54,12 @@ impl From<PositionOptions> for web_sys::PositionOptions {
         match maximum_age {
             Duration::Milliseconds(milliseconds) => result.maximum_age(milliseconds),
             Duration::Infinity => unimplemented!("web-sys does not yet support Infinity"),
-        }
+        };
 
         match timeout {
             Duration::Milliseconds(milliseconds) => result.timeout(milliseconds),
             Duration::Infinity => unimplemented!("web-sys does not yet support Infinity"),
-        }
+        };
 
         result
     }

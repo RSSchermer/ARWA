@@ -1,16 +1,21 @@
+use std::convert::TryFrom;
+use std::ops::{Bound, Range, RangeBounds};
+
+use delegate::delegate;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
 use crate::collection::{Collection, Sequence};
+use crate::dom::{impl_try_from_element, SelectionDirection};
 use crate::file::File;
 use crate::html::{
     constraint_validation_target_seal, form_listed_element_seal, form_submitter_element_seal,
-    labelable_element_seal, AutoComplete, ConstraintValidationTarget, DynamicFormListedElement,
-    FormEncoding, FormListedElement, FormMethod, FormSubmitterElement, HtmlDataListElement,
-    HtmlFormElement, LabelableElement, Labels, ValidityState,
+    impl_html_element_traits, impl_known_element, labelable_element_seal, AutoComplete,
+    ConstraintValidationTarget, DynamicFormListedElement, FormEncoding, FormListedElement,
+    FormMethod, FormSubmitterElement, HtmlDatalistElement, HtmlFormElement, LabelableElement,
+    Labels, ValidityState,
 };
-use crate::ui::DragEventFiles;
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 use crate::InvalidCast;
-use std::convert::TryFrom;
-use std::ops::{Bound, Range, RangeBounds};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum InputType {
@@ -185,7 +190,7 @@ impl HtmlInputElement {
     }
 
     pub fn src(&self) -> Option<Url> {
-        Url::parse(self.inner.src()).ok()
+        Url::parse(self.inner.src().as_ref()).ok()
     }
 
     pub fn set_src<T>(&self, src: T)
@@ -238,7 +243,7 @@ impl HtmlInputElement {
         self.inner.set_files(Some(files.as_web_sys_file_list()));
     }
 
-    pub fn list(&self) -> Option<HtmlDataListElement> {
+    pub fn list(&self) -> Option<HtmlDatalistElement> {
         self.inner.list().map(|e| {
             let list: web_sys::HtmlDataListElement = e.unchecked_into();
 
@@ -246,42 +251,14 @@ impl HtmlInputElement {
         })
     }
 
-    pub fn set_text_range<R>(&self, range: R, text: &str) -> Result<(), SetTextRangeError>
-    where
-        R: RangeBounds<u32>,
-    {
-        let start = match range.start_bound() {
-            Bound::Included(start) => *start,
-            Bound::Excluded(start) => *start + 1,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
-        };
+    pub fn selection_range(&self) -> Option<Range<u32>> {
+        let start = self.inner.selection_start().ok().flatten();
+        let end = self.inner.selection_end().ok().flatten();
 
-        let end = match range.end_bound() {
-            Bound::Included(end) => *end + 1,
-            Bound::Excluded(end) => *end,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
-        };
-
-        self.inner
-            .set_range_text_with_start_and_end(text, start, end)
-            .map_err(|err| {
-                let err: web_sys::DomException = err.unchecked_into();
-
-                match &*err.name() {
-                    "IndexSizeError" => RangeError::new(err).into(),
-                    "RangeError" => RangeError::new(err).into(),
-                    "InvalidStateError" => InvalidStateError::new(err).into(),
-                    _ => unreachable!(),
-                }
-            })
-    }
-
-    pub fn selection_start(&self) -> Option<u32> {
-        self.inner.selection_start().ok().flatten()
-    }
-
-    pub fn selection_end(&self) -> Option<u32> {
-        self.inner.selection_end().ok().flatten()
+        match (start, end) {
+            (Some(start), Some(end)) => Some(start..end),
+            _ => None,
+        }
     }
 
     pub fn selection_direction(&self) -> Option<SelectionDirection> {
@@ -296,24 +273,20 @@ impl HtmlInputElement {
             })
     }
 
-    pub fn set_selection_range<R>(
-        &self,
-        range: R,
-        direction: SelectionDirection,
-    ) -> Result<(), InvalidStateError>
+    pub fn set_selection<R>(&self, range: R, direction: SelectionDirection)
     where
         R: RangeBounds<u32>,
     {
         let start = match range.start_bound() {
             Bound::Included(start) => *start,
             Bound::Excluded(start) => *start + 1,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
+            Bound::Unbounded => self.inner.selection_start().ok().flatten().unwrap_or(0),
         };
 
         let end = match range.end_bound() {
             Bound::Included(end) => *end + 1,
             Bound::Excluded(end) => *end,
-            Bound::Unbounded => self.selection_end().unwrap_or(0),
+            Bound::Unbounded => self.inner.selection_end().ok().flatten().unwrap_or(0),
         };
 
         let direction = match direction {
@@ -324,7 +297,11 @@ impl HtmlInputElement {
 
         self.inner
             .set_selection_range_with_direction(start, end, direction)
-            .map_err(|err| InvalidStateError::new(err.unchecked_into()))
+            .unwrap_throw()
+    }
+
+    pub fn set_selection_text(&self, text: &str) {
+        self.inner.set_range_text(text).unwrap_throw()
     }
 
     // TODO: `accept`, `min`, `max`, `pattern` all take complex restricted string types.
@@ -334,7 +311,7 @@ impl form_listed_element_seal::Seal for HtmlInputElement {}
 
 impl FormListedElement for HtmlInputElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -347,15 +324,15 @@ impl FormListedElement for HtmlInputElement {
 }
 
 impl TryFrom<DynamicFormListedElement> for HtmlInputElement {
-    type Error = InvalidCast<DynamicFormListedElement>;
+    type Error = InvalidCast<DynamicFormListedElement, HtmlInputElement>;
 
     fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
         let value: web_sys::HtmlElement = value.into();
 
         value
-            .dyn_into::<web_sys::HtmlButtonElement>()
+            .dyn_into::<web_sys::HtmlInputElement>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(DynamicFormListedElement::new(e)))
     }
 }
 
@@ -363,7 +340,7 @@ impl form_submitter_element_seal::Seal for HtmlInputElement {}
 
 impl FormSubmitterElement for HtmlInputElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn form_no_validate(&self) -> bool;
 
             fn set_form_no_validate(&self, form_no_validate: bool);
@@ -375,7 +352,7 @@ impl FormSubmitterElement for HtmlInputElement {
     }
 
     fn form_action(&self) -> Option<Url> {
-        Url::parse(self.inner.form_action()).ok()
+        Url::parse(self.inner.form_action().as_ref()).ok()
     }
 
     fn set_form_action<T>(&self, form_action: T)
@@ -396,7 +373,7 @@ impl FormSubmitterElement for HtmlInputElement {
 
     fn set_form_encoding(&self, encoding: Option<FormEncoding>) {
         self.inner
-            .set_form_enctype(encoding.map(|e| e.as_ref()).unwrap_or(""));
+            .set_form_enctype(encoding.as_ref().map(|e| e.as_ref()).unwrap_or(""));
     }
 
     fn form_method(&self) -> FormMethod {
@@ -430,7 +407,7 @@ impl constraint_validation_target_seal::Seal for HtmlInputElement {}
 
 impl ConstraintValidationTarget for HtmlInputElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

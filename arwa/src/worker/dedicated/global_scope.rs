@@ -2,6 +2,7 @@ use crate::fetch::{cache_context_seal, CacheContext};
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
+use crate::worker::impl_worker_global_scope_traits;
 
 #[derive(Clone)]
 pub struct DedicatedWorkerGlobalScope {
@@ -40,7 +41,16 @@ impl cache_context_seal::Seal for DedicatedWorkerGlobalScope {}
 
 impl CacheContext for DedicatedWorkerGlobalScope {}
 
-impl_worker_global_scope_traits!(
-    DedicatedWorkerGlobalScope,
-    web_sys::DedicatedWorkerGlobalScope
-);
+impl From<web_sys::DedicatedWorkerGlobalScope> for DedicatedWorkerGlobalScope {
+    fn from(inner: web_sys::DedicatedWorkerGlobalScope) -> Self {
+        DedicatedWorkerGlobalScope { inner }
+    }
+}
+
+impl AsRef<web_sys::DedicatedWorkerGlobalScope> for DedicatedWorkerGlobalScope {
+    fn as_ref(&self) -> &web_sys::DedicatedWorkerGlobalScope {
+        &self.inner
+    }
+}
+
+impl_worker_global_scope_traits!(DedicatedWorkerGlobalScope, DedicatedWorkerGlobalScope);

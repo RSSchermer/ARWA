@@ -1,8 +1,9 @@
-use crate::fetch::RequestCredentials;
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+
+use crate::event::{impl_event_target_traits, impl_try_from_event_target};
 use crate::message::MessagePort;
 use crate::url::AbsoluteOrRelativeUrl;
-use crate::worker::{worker_seal, CreateWorkerError, Worker, WorkerOptions, WorkerType};
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use crate::worker::{worker_seal, CreateWorkerError, Worker, WorkerOptions};
 
 #[derive(Clone)]
 pub struct SharedWorker {
@@ -51,7 +52,7 @@ impl AsRef<web_sys::SharedWorker> for SharedWorker {
 }
 
 impl_event_target_traits!(SharedWorker);
-impl_try_from_event_target_traits!(SharedWorker, web_sys::SharedWorker);
+impl_try_from_event_target!(SharedWorker);
 
 fn create_shared_worker_internal<T>(url: T, options: WorkerOptions) -> Result<SharedWorker, JsValue>
 where

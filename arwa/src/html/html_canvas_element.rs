@@ -1,13 +1,18 @@
-use crate::file::Blob;
-use crate::security::SecurityError;
 use std::convert::TryFrom;
 use std::future::Future;
 use std::mem;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::task::{Context, Poll};
+
+use delegate::delegate;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
+
+use crate::dom::impl_try_from_element;
+use crate::file::Blob;
+use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::security::SecurityError;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct InvalidImageQuality(f64);
@@ -116,7 +121,7 @@ pub struct CanvasToBlob {
 impl Future for CanvasToBlob {
     type Output = Result<Option<Blob>, SecurityError>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(init) = self.init.take() {
             let CanvasToBlobInit {
                 canvas_element,
@@ -130,12 +135,12 @@ impl Future for CanvasToBlob {
             let mut waker = Some(cx.waker().clone());
             let ptr = &mut self.result as *mut Option<Option<Blob>>;
 
-            let closure = Closure::wrap(Box::new(move |value| {
+            let closure = Closure::wrap(Box::new(move |value: JsValue| {
                 if let Some(waker) = waker.take() {
                     let res = if value.is_null() {
                         None
                     } else {
-                        Some(Blob::from(value.unchecked_into()))
+                        Some(Blob::from(value.unchecked_into::<web_sys::Blob>()))
                     };
 
                     // Safe because of Pin
@@ -146,11 +151,11 @@ impl Future for CanvasToBlob {
                     waker.wake();
 
                     // We know this is the only remaining reference, so this is safe
-                    let option_closure = unsafe { rc_clone.get_mut_unchecked().take() };
+                    let option_closure = unsafe { Rc::get_mut_unchecked(&mut rc_clone).take() };
 
                     mem::drop(option_closure);
                 }
-            }) as Box<dyn FnOnce(JsValue) -> ()>);
+            }) as Box<dyn FnMut(JsValue)>);
 
             let quality: f64 = quality.into();
 
@@ -166,7 +171,7 @@ impl Future for CanvasToBlob {
                     // There is exactly one other reference, and we know it won't get dereferenced
                     // at any time in the current task, so this is safe
                     unsafe {
-                        rc.get_mut_unchecked() = Some(closure);
+                        *Rc::get_mut_unchecked(&mut rc) = Some(closure);
                     }
                 }
                 Err(err) => {

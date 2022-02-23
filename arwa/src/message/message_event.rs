@@ -1,9 +1,11 @@
-use crate::event::DynamicEventTarget;
+use std::marker;
+
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::ServiceWorker;
+
+use crate::event::impl_typed_event_traits;
 use crate::message::MessagePort;
 use crate::window::Window;
-use std::marker;
-use wasm_bindgen::JsValue;
-use web_sys::ServiceWorker;
 
 pub enum MessageEventSource {
     Window(Window),
@@ -31,12 +33,16 @@ pub trait MessagingEvent: messaging_event_seal::Seal {
     fn source(&self) -> MessageEventSource {
         if let Some(object) = self.as_web_sys_message_event().source() {
             if object.is_instance_of::<web_sys::Window>() {
-                return MessageEventSource::Window(Window::from(object.unchecked_into()));
+                return MessageEventSource::Window(Window::from(
+                    object.unchecked_into::<web_sys::Window>(),
+                ));
             } else if object.is_instance_of::<web_sys::MessagePort>() {
-                return MessageEventSource::MessagePort(MessagePort::from(object.unchecked_into()));
+                return MessageEventSource::MessagePort(MessagePort::from(
+                    object.unchecked_into::<web_sys::MessagePort>(),
+                ));
             } else if object.is_instance_of::<web_sys::ServiceWorker>() {
                 return MessageEventSource::ServiceWorker(ServiceWorker::from(
-                    object.unchecked_into(),
+                    object.unchecked_into::<web_sys::ServiceWorker>(),
                 ));
             }
 
@@ -73,7 +79,7 @@ impl<T> AsRef<web_sys::MessageEvent> for MessageEvent<T> {
     }
 }
 
-impl_event_traits!(MessageEvent, web_sys::MessageEvent);
+impl_typed_event_traits!(MessageEvent, MessageEvent, "message");
 
 #[derive(Clone)]
 pub struct MessageErrorEvent<T> {
@@ -95,4 +101,4 @@ impl<T> AsRef<web_sys::MessageEvent> for MessageErrorEvent<T> {
     }
 }
 
-impl_event_traits!(MessageErrorEvent, web_sys::MessageEvent);
+impl_typed_event_traits!(MessageErrorEvent, MessageEvent, "messageerror");

@@ -1,5 +1,8 @@
+use wasm_bindgen::JsCast;
+
 use crate::collection::{Collection, Sequence};
-use crate::html::DynamicTableCellElement;
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element, DynamicTableCellElement};
 
 #[derive(Clone)]
 pub struct HtmlTrElement {
@@ -26,7 +29,7 @@ impl HtmlTrElement {
 
 impl From<web_sys::HtmlTableRowElement> for HtmlTrElement {
     fn from(inner: web_sys::HtmlTableRowElement) -> Self {
-        HtmlTableRowElement { inner }
+        HtmlTrElement { inner }
     }
 }
 
@@ -37,8 +40,8 @@ impl AsRef<web_sys::HtmlTableRowElement> for HtmlTrElement {
 }
 
 impl_html_element_traits!(HtmlTrElement);
-impl_try_from_element!(HtmlTrElement, web_sys::HtmlTableRowElement);
-impl_known_element!(HtmlTrElement, web_sys::HtmlTableRowElement, "TABLE");
+impl_try_from_element!(HtmlTrElement, HtmlTableRowElement);
+impl_known_element!(HtmlTrElement, HtmlTableRowElement, "TABLE");
 
 pub struct TableRowCells {
     inner: web_sys::HtmlCollection,
@@ -54,7 +57,9 @@ impl Sequence for TableRowCells {
     type Item = DynamicTableCellElement;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.get_with_index(index).map(|e| DynamicTableCellElement::from(e.unchecked_into()))
+        self.inner.get_with_index(index).map(|e| {
+            DynamicTableCellElement::from(e.unchecked_into::<web_sys::HtmlTableCellElement>())
+        })
     }
 
     fn to_host_array(&self) -> js_sys::Array {

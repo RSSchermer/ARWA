@@ -1,7 +1,16 @@
-use crate::html::{AutoComplete, form_listed_element_seal, FormListedElement, HtmlFormElement, DynamicFormListedElement, constraint_validation_target_seal, ConstraintValidationTarget, ValidityState, HtmlOptionElement};
-use crate::InvalidCast;
 use std::convert::TryFrom;
+
+use delegate::delegate;
+use wasm_bindgen::JsCast;
+
 use crate::collection::{Collection, Sequence};
+use crate::dom::impl_try_from_element;
+use crate::html::{
+    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
+    impl_known_element, AutoComplete, ConstraintValidationTarget, DynamicFormListedElement,
+    FormListedElement, HtmlFormElement, HtmlOptionElement, ValidityState,
+};
+use crate::InvalidCast;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SelectType {
@@ -89,7 +98,7 @@ impl form_listed_element_seal::Seal for HtmlSelectElement {}
 
 impl FormListedElement for HtmlSelectElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -102,15 +111,15 @@ impl FormListedElement for HtmlSelectElement {
 }
 
 impl TryFrom<DynamicFormListedElement> for HtmlSelectElement {
-    type Error = InvalidCast<DynamicFormListedElement>;
+    type Error = InvalidCast<DynamicFormListedElement, HtmlSelectElement>;
 
     fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
         let value: web_sys::HtmlElement = value.into();
 
         value
-            .dyn_into::<web_sys::HtmlObjectElement>()
+            .dyn_into::<web_sys::HtmlSelectElement>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(DynamicFormListedElement::new(e)))
     }
 }
 
@@ -118,7 +127,7 @@ impl constraint_validation_target_seal::Seal for HtmlSelectElement {}
 
 impl ConstraintValidationTarget for HtmlSelectElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;
@@ -154,7 +163,7 @@ impl_html_element_traits!(HtmlSelectElement);
 impl_try_from_element!(HtmlSelectElement);
 impl_known_element!(HtmlSelectElement, "SELECT");
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct SelectOptions {
     inner: web_sys::HtmlOptionsCollection,
 }
@@ -170,8 +179,8 @@ impl Sequence for SelectOptions {
 
     fn get(&self, index: u32) -> Option<Self::Item> {
         self.inner
-            .get(index)
-            .map(|o| HtmlOptionElement::from(o.unchecked_into()))
+            .item(index)
+            .map(|o| HtmlOptionElement::from(o.unchecked_into::<web_sys::HtmlOptionElement>()))
     }
 
     fn to_host_array(&self) -> js_sys::Array {
@@ -194,8 +203,8 @@ impl Sequence for SelectSelectedOptions {
 
     fn get(&self, index: u32) -> Option<Self::Item> {
         self.inner
-            .get(index)
-            .map(|o| HtmlOptionElement::from(o.unchecked_into()))
+            .item(index)
+            .map(|o| HtmlOptionElement::from(o.unchecked_into::<web_sys::HtmlOptionElement>()))
     }
 
     fn to_host_array(&self) -> js_sys::Array {

@@ -1,8 +1,11 @@
-use crate::collection::{Collection, Sequence};
-use crate::html::LinkTypes;
+use delegate::delegate;
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element, AnchorRelationshipTypes};
 use crate::media_type::MediaType;
 use crate::security::ReferrerPolicy;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::{absolute_url_or_relative_url_seal::Seal, AbsoluteOrRelativeUrl, Url};
 
 #[derive(Clone)]
 pub struct HtmlAElement {
@@ -23,7 +26,7 @@ impl HtmlAElement {
     }
 
     pub fn href(&self) -> Option<Url> {
-        Url::parse(self.inner.href()).ok()
+        Url::parse(self.inner.href().as_ref()).ok()
     }
 
     pub fn set_href<T>(&self, href: T)
@@ -34,7 +37,9 @@ impl HtmlAElement {
     }
 
     pub fn ping(&self) -> Vec<Url> {
-        let mut iter = self.inner.ping().split_ascii_whitespace();
+        let ping = self.inner.ping();
+
+        let iter = ping.split_ascii_whitespace();
         let mut result = Vec::new();
 
         for candidate in iter {
@@ -46,24 +51,33 @@ impl HtmlAElement {
         result
     }
 
-    pub fn set_ping<I>(&self, ping: I)
+    pub fn set_ping<I>(&self, mut ping: I)
     where
         I: Iterator,
         I::Item: AbsoluteOrRelativeUrl,
     {
-        let serialized: String = ping.map(|url| url.as_str()).intersperse(" ").collect();
+        let mut serialized = String::new();
+
+        if let Some(url) = ping.next() {
+            serialized.push_str(url.as_str());
+        }
+
+        for url in ping {
+            serialized.push(' ');
+            serialized.push_str(url.as_str());
+        }
 
         self.inner.set_ping(&serialized);
     }
 
     pub fn text(&self) -> String {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.text().unwrap()
+        self.inner.text().unwrap_throw()
     }
 
     pub fn set_text(&self, text: &str) {
         // No indication in the spec that this can fail, unwrap for now.
-        self.inner.set_text(text).unwrap();
+        self.inner.set_text(text).unwrap_throw();
     }
 
     pub fn media_type(&self) -> Option<MediaType> {
@@ -90,16 +104,16 @@ impl HtmlAElement {
 
 impl From<web_sys::HtmlAnchorElement> for HtmlAElement {
     fn from(inner: web_sys::HtmlAnchorElement) -> Self {
-        HtmlAnchorElement { inner }
+        HtmlAElement { inner }
     }
 }
 
 impl AsRef<web_sys::HtmlAnchorElement> for HtmlAElement {
-    fn as_ref(&self) -> Self {
+    fn as_ref(&self) -> &web_sys::HtmlAnchorElement {
         &self.inner
     }
 }
 
 impl_html_element_traits!(HtmlAElement);
-impl_try_from_element!(HtmlAElement, web_sys::HtmlAnchorElement);
-impl_known_element!(HtmlAElement, "A");
+impl_try_from_element!(HtmlAElement, HtmlAnchorElement);
+impl_known_element!(HtmlAElement, HtmlAnchorElement, "A");

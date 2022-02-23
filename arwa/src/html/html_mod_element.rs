@@ -1,3 +1,6 @@
+use crate::dom::impl_try_from_element_with_tag_check;
+use crate::html::{impl_html_element_traits, impl_known_element};
+
 mod html_mod_element_seal {
     pub trait Seal {
         #[doc(hidden)]
@@ -37,8 +40,8 @@ impl AsRef<web_sys::HtmlModElement> for HtmlDelElement {
 }
 
 impl_html_element_traits!(HtmlDelElement);
-impl_try_from_element_with_tag_check!(HtmlDelElement, web_sys::HtmlModElement, "DEL");
-impl_known_element!(HtmlDelElement, web_sys::HtmlModElement, "DEL");
+impl_try_from_element_with_tag_check!(HtmlDelElement, HtmlModElement, "DEL");
+impl_known_element!(HtmlDelElement, HtmlModElement, "DEL");
 
 #[derive(Clone)]
 pub struct HtmlInsElement {
@@ -60,5 +63,5 @@ impl AsRef<web_sys::HtmlModElement> for HtmlInsElement {
 }
 
 impl_html_element_traits!(HtmlInsElement);
-impl_try_from_element_with_tag_check!(HtmlInsElement, web_sys::HtmlModElement, "INS");
-impl_known_element!(HtmlInsElement, web_sys::HtmlModElement, "INS");
+impl_try_from_element_with_tag_check!(HtmlInsElement, HtmlModElement, "INS");
+impl_known_element!(HtmlInsElement, HtmlModElement, "INS");

@@ -1,3 +1,6 @@
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::impl_common_wrapper_traits;
 use crate::message::MessagePort;
 
 #[derive(Clone)]
@@ -39,4 +42,4 @@ impl From<web_sys::MessageChannel> for MessageChannel {
     }
 }
 
-impl_common_wrapper_traits!(MessagePort);
+impl_common_wrapper_traits!(MessageChannel);

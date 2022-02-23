@@ -1,24 +1,30 @@
-use std::cell::{Cell, RefCell};
+use std::borrow::Cow;
 use std::fmt;
-use std::ops::{Deref, Range};
+use std::ops::Range;
+use std::str::FromStr;
 
-mod valid_url_or_relative_url_seal {
+use lazycell::LazyCell;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::type_error_wrapper;
+
+pub(crate) mod absolute_url_or_relative_url_seal {
     pub trait Seal {
         #[doc(hidden)]
         fn as_str(&self) -> &str;
     }
 }
 
-pub trait AbsoluteOrRelativeUrl: valid_url_or_relative_url_seal::Seal {}
+pub trait AbsoluteOrRelativeUrl: absolute_url_or_relative_url_seal::Seal {}
 
-impl valid_url_or_relative_url_seal::Seal for Url {
+impl absolute_url_or_relative_url_seal::Seal for Url {
     fn as_str(&self) -> &str {
         self.as_ref()
     }
 }
 impl AbsoluteOrRelativeUrl for Url {}
 
-impl valid_url_or_relative_url_seal::Seal for RelativeUrl {
+impl absolute_url_or_relative_url_seal::Seal for RelativeUrl {
     fn as_str(&self) -> &str {
         self.as_ref()
     }
@@ -26,7 +32,7 @@ impl valid_url_or_relative_url_seal::Seal for RelativeUrl {
 impl AbsoluteOrRelativeUrl for RelativeUrl {}
 
 #[doc(hidden)]
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct StaticallyParsedUrl {
     #[doc(hidden)]
     pub raw: &'static str,
@@ -56,15 +62,15 @@ impl StaticallyParsedUrl {
     }
 
     fn username(&self) -> Option<&str> {
-        self.username_range.map(|r| &self.raw[r.clone()])
+        self.username_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn password(&self) -> Option<&str> {
-        self.password_range.map(|r| &self.raw[r.clone()])
+        self.password_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn host(&self) -> Option<&str> {
-        self.host_range.map(|r| &self.raw[r.clone()])
+        self.host_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn port(&self) -> Option<u16> {
@@ -87,23 +93,15 @@ impl StaticallyParsedUrl {
     }
 
     fn path(&self) -> Option<&str> {
-        self.path_range.map(|r| &self.raw[r.clone()])
-    }
-
-    fn path_segments(&self) -> impl Iterator<Item = &str> {
-        self.path().unwrap_or("").split('/')
+        self.path_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn query(&self) -> Option<&str> {
-        self.query_range.map(|r| &self.raw[r.clone()])
-    }
-
-    fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        form_urlencoded::parse(self.query().unwrap_or("").as_bytes())
+        self.query_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn fragment(&self) -> Option<&str> {
-        self.fragment_range.map(|r| &self.raw[r.clone()])
+        self.fragment_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn origin(&self) -> Origin {
@@ -118,70 +116,35 @@ impl AsRef<str> for StaticallyParsedUrl {
 }
 
 #[derive(Clone, Copy)]
-enum Lazy<T> {
-    Cached(T),
-    Uninitialized,
-}
-
-impl<T> Lazy<T> {
-    fn is_uninitialized(&self) -> bool {
-        if let Lazy::Uninitialized = self {
-            true
-        } else {
-            false
-        }
-    }
-
-    fn assume_cached(&self) -> &T {
-        if let Lazy::Cached(value) = self {
-            value
-        } else {
-            unreachable!()
-        }
-    }
-
-    fn cached_or_init_with<F>(&mut self, f: F) -> &T
-    where
-        F: FnOnce() -> T,
-    {
-        if self.is_uninitialized() {
-            *self = Lazy::Cached(f());
-        }
-
-        self.assume_cached()
-    }
-}
-
-#[derive(Clone, Copy)]
 enum OriginInternal {
     Opaque,
     Tuple,
 }
 
 struct ParsedDynamicCache {
-    scheme: Lazy<String>,
-    username: Lazy<String>,
-    password: Lazy<String>,
-    host: Lazy<String>,
-    port: Lazy<u16>,
-    path: Lazy<String>,
-    query: Lazy<String>,
-    fragment: Lazy<String>,
-    origin: Lazy<OriginInternal>,
+    scheme: LazyCell<String>,
+    username: LazyCell<String>,
+    password: LazyCell<String>,
+    host: LazyCell<String>,
+    port: LazyCell<Option<u16>>,
+    path: LazyCell<String>,
+    query: LazyCell<String>,
+    fragment: LazyCell<String>,
+    origin: LazyCell<OriginInternal>,
 }
 
 impl ParsedDynamicCache {
     fn uninitialized() -> Self {
         ParsedDynamicCache {
-            scheme: Lazy::Uninitialized,
-            username: Lazy::Uninitialized,
-            password: Lazy::Uninitialized,
-            host: Lazy::Uninitialized,
-            port: Lazy::Uninitialized,
-            path: Lazy::Uninitialized,
-            query: Lazy::Uninitialized,
-            fragment: Lazy::Uninitialized,
-            origin: Lazy::Uninitialized,
+            scheme: LazyCell::new(),
+            username: LazyCell::new(),
+            password: LazyCell::new(),
+            host: LazyCell::new(),
+            port: LazyCell::new(),
+            path: LazyCell::new(),
+            query: LazyCell::new(),
+            fragment: LazyCell::new(),
+            origin: LazyCell::new(),
         }
     }
 }
@@ -189,23 +152,16 @@ impl ParsedDynamicCache {
 struct DynamicallyParsedUrl {
     raw: String,
     parsed: web_sys::Url,
-    cache: RefCell<ParsedDynamicCache>,
+    cache: ParsedDynamicCache,
 }
 
 impl DynamicallyParsedUrl {
     fn scheme(&self) -> &str {
-        self.cache
-            .borrow_mut()
-            .scheme
-            .cached_or_init_with(|| self.parsed.protocol())
+        self.cache.scheme.borrow_with(|| self.parsed.protocol())
     }
 
     fn username(&self) -> Option<&str> {
-        let username = self
-            .cache
-            .borrow_mut()
-            .username
-            .cached_or_init_with(|| self.parsed.username());
+        let username = self.cache.username.borrow_with(|| self.parsed.username());
 
         if username.is_empty() {
             None
@@ -215,11 +171,7 @@ impl DynamicallyParsedUrl {
     }
 
     fn password(&self) -> Option<&str> {
-        let password = self
-            .cache
-            .borrow_mut()
-            .password
-            .cached_or_init_with(|| self.parsed.password());
+        let password = self.cache.password.borrow_with(|| self.parsed.password());
 
         if password.is_empty() {
             None
@@ -229,11 +181,7 @@ impl DynamicallyParsedUrl {
     }
 
     fn host(&self) -> Option<&str> {
-        let host = self
-            .cache
-            .borrow_mut()
-            .host
-            .cached_or_init_with(|| self.parsed.hostname());
+        let host = self.cache.host.borrow_with(|| self.parsed.hostname());
 
         if host.is_empty() {
             None
@@ -245,15 +193,10 @@ impl DynamicallyParsedUrl {
     fn port(&self) -> Option<u16> {
         let port = self
             .cache
-            .borrow_mut()
             .port
-            .cached_or_init_with(|| self.parsed.port());
+            .borrow_with(|| u16::from_str(self.parsed.port().as_ref()).ok());
 
-        if port.is_empty() {
-            None
-        } else {
-            Some(*port)
-        }
+        *port
     }
 
     fn port_or_known_default(&self) -> Option<u16> {
@@ -272,11 +215,7 @@ impl DynamicallyParsedUrl {
     }
 
     fn path(&self) -> Option<&str> {
-        let path = self
-            .cache
-            .borrow_mut()
-            .path
-            .cached_or_init_with(|| self.parsed.pathname());
+        let path = self.cache.path.borrow_with(|| self.parsed.pathname());
 
         if path.is_empty() {
             None
@@ -285,16 +224,8 @@ impl DynamicallyParsedUrl {
         }
     }
 
-    fn path_segments(&self) -> impl Iterator<Item = &str> {
-        self.path().unwrap_or("").split('/')
-    }
-
     fn query(&self) -> Option<&str> {
-        let query = self
-            .cache
-            .borrow_mut()
-            .query
-            .cached_or_init_with(|| self.parsed.search());
+        let query = self.cache.query.borrow_with(|| self.parsed.search());
 
         if query.is_empty() {
             None
@@ -303,16 +234,8 @@ impl DynamicallyParsedUrl {
         }
     }
 
-    fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        form_urlencoded::parse(self.query().unwrap_or("").as_bytes())
-    }
-
     fn fragment(&self) -> Option<&str> {
-        let fragment = self
-            .cache
-            .borrow_mut()
-            .fragment
-            .cached_or_init_with(|| self.parsed.hash());
+        let fragment = self.cache.fragment.borrow_with(|| self.parsed.hash());
 
         if fragment.is_empty() {
             None
@@ -322,7 +245,7 @@ impl DynamicallyParsedUrl {
     }
 
     fn origin(&self) -> Origin {
-        let origin = self.cache.borrow_mut().origin.cached_or_init_with(|| {
+        let origin = self.cache.origin.borrow_with(|| {
             if self.parsed.origin().is_empty() {
                 OriginInternal::Opaque
             } else {
@@ -334,8 +257,8 @@ impl DynamicallyParsedUrl {
             OriginInternal::Opaque => Origin::Opaque,
             OriginInternal::Tuple => {
                 let scheme = self.scheme();
-                let host = self.host().unwrap();
-                let port = self.port_or_known_default().unwrap();
+                let host = self.host().unwrap_throw();
+                let port = self.port_or_known_default().unwrap_throw();
 
                 Origin::Tuple(scheme, host, port)
             }
@@ -383,7 +306,7 @@ impl Url {
                 internal: DynamicallyParsedUrl {
                     raw: url.to_string(),
                     parsed,
-                    cache: RefCell::new(ParsedDynamicCache::uninitialized()),
+                    cache: ParsedDynamicCache::uninitialized(),
                 }
                 .into(),
             })
@@ -448,10 +371,7 @@ impl Url {
     }
 
     pub fn path_segments(&self) -> impl Iterator<Item = &str> {
-        match &self.internal {
-            UrlInternal::Dynamic(url) => url.path_segments(),
-            UrlInternal::Static(url) => url.path_segments(),
-        }
+        self.path().unwrap_or("").split('/')
     }
 
     pub fn query(&self) -> Option<&str> {
@@ -462,10 +382,7 @@ impl Url {
     }
 
     pub fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        match &self.internal {
-            UrlInternal::Dynamic(url) => url.query_pairs(),
-            UrlInternal::Static(url) => url.query_pairs(),
-        }
+        query_pairs(self.query())
     }
 
     pub fn fragment(&self) -> Option<&str> {
@@ -496,9 +413,9 @@ impl From<web_sys::Url> for Url {
     fn from(parsed: web_sys::Url) -> Self {
         Url {
             internal: UrlInternal::Dynamic(DynamicallyParsedUrl {
-                raw: parsed.to_string(),
+                raw: parsed.to_string().into(),
                 parsed,
-                cache: RefCell::new(ParsedDynamicCache::uninitialized()),
+                cache: ParsedDynamicCache::uninitialized(),
             }),
         }
     }
@@ -552,8 +469,10 @@ impl fmt::Display for Url {
 }
 
 #[doc(hidden)]
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct StaticallyParsedRelativeUrl {
+    #[doc(hidden)]
+    pub raw: &'static str,
     #[doc(hidden)]
     pub path_range: Option<Range<usize>>,
     #[doc(hidden)]
@@ -564,23 +483,15 @@ pub struct StaticallyParsedRelativeUrl {
 
 impl StaticallyParsedRelativeUrl {
     fn path(&self) -> Option<&str> {
-        self.path_range.map(|r| &self.raw[r.clone()])
-    }
-
-    fn path_segments(&self) -> impl Iterator<Item = &str> {
-        self.path().unwrap_or("").split('/')
+        self.path_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn query(&self) -> Option<&str> {
-        self.query_range.map(|r| &self.raw[r.clone()])
-    }
-
-    fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        form_urlencoded::parse(self.query().unwrap_or("").as_bytes())
+        self.query_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 
     fn fragment(&self) -> Option<&str> {
-        self.fragment_range.map(|r| &self.raw[r.clone()])
+        self.fragment_range.as_ref().map(|r| &self.raw[r.clone()])
     }
 }
 
@@ -591,15 +502,15 @@ impl AsRef<str> for StaticallyParsedRelativeUrl {
 }
 
 struct RelativeParsedDynamicCache {
-    query: Lazy<String>,
-    fragment: Lazy<String>,
+    query: LazyCell<String>,
+    fragment: LazyCell<String>,
 }
 
 impl RelativeParsedDynamicCache {
     fn uninitialized() -> Self {
         RelativeParsedDynamicCache {
-            query: Lazy::Uninitialized,
-            fragment: Lazy::Uninitialized,
+            query: LazyCell::new(),
+            fragment: LazyCell::new(),
         }
     }
 }
@@ -608,7 +519,7 @@ pub struct DynamicallyParsedRelativeUrl {
     raw: String,
     path_end: usize,
     parsed: web_sys::Url,
-    cache: RefCell<RelativeParsedDynamicCache>,
+    cache: RelativeParsedDynamicCache,
 }
 
 impl DynamicallyParsedRelativeUrl {
@@ -620,16 +531,8 @@ impl DynamicallyParsedRelativeUrl {
         }
     }
 
-    fn path_segments(&self) -> impl Iterator<Item = &str> {
-        self.path().unwrap_or("").split('/')
-    }
-
     fn query(&self) -> Option<&str> {
-        let query = self
-            .cache
-            .borrow_mut()
-            .query
-            .cached_or_init_with(|| self.parsed.search());
+        let query = self.cache.query.borrow_with(|| self.parsed.search());
 
         if query.is_empty() {
             None
@@ -638,16 +541,8 @@ impl DynamicallyParsedRelativeUrl {
         }
     }
 
-    fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        form_urlencoded::parse(self.query().unwrap_or("").as_bytes())
-    }
-
     fn fragment(&self) -> Option<&str> {
-        let fragment = self
-            .cache
-            .borrow_mut()
-            .fragment
-            .cached_or_init_with(|| self.parsed.hash());
+        let fragment = self.cache.fragment.borrow_with(|| self.parsed.hash());
 
         if fragment.is_empty() {
             None
@@ -657,9 +552,27 @@ impl DynamicallyParsedRelativeUrl {
     }
 }
 
+impl AsRef<str> for DynamicallyParsedRelativeUrl {
+    fn as_ref(&self) -> &str {
+        &self.raw
+    }
+}
+
 enum RelativeUrlInternal {
     Static(StaticallyParsedRelativeUrl),
     Dynamic(DynamicallyParsedRelativeUrl),
+}
+
+impl From<StaticallyParsedRelativeUrl> for RelativeUrlInternal {
+    fn from(url: StaticallyParsedRelativeUrl) -> Self {
+        RelativeUrlInternal::Static(url)
+    }
+}
+
+impl From<DynamicallyParsedRelativeUrl> for RelativeUrlInternal {
+    fn from(url: DynamicallyParsedRelativeUrl) -> Self {
+        RelativeUrlInternal::Dynamic(url)
+    }
 }
 
 pub struct RelativeUrl {
@@ -669,16 +582,24 @@ pub struct RelativeUrl {
 impl RelativeUrl {
     pub fn parse(relative_url: &str) -> Result<RelativeUrl, InvalidUrl> {
         web_sys::Url::new_with_base(&relative_url, "http://dummy")
-            .map(|parsed| Url {
+            .map(|parsed| RelativeUrl {
                 internal: DynamicallyParsedRelativeUrl {
                     raw: relative_url.to_string(),
                     path_end: relative_url.find(&['?', '#']).unwrap_or(relative_url.len()),
                     parsed,
-                    cache: RefCell::new(RelativeParsedDynamicCache::uninitialized()),
+                    cache: RelativeParsedDynamicCache::uninitialized(),
                 }
                 .into(),
             })
             .map_err(|err| InvalidUrl::new(err.unchecked_into()))
+    }
+
+    /// Only meant to be called by the accompanying proc-macro, not part of the public API.
+    #[doc(hidden)]
+    pub fn from_statically_parsed(parsed: DynamicallyParsedRelativeUrl) -> Self {
+        RelativeUrl {
+            internal: parsed.into(),
+        }
     }
 
     pub fn path(&self) -> Option<&str> {
@@ -689,10 +610,7 @@ impl RelativeUrl {
     }
 
     pub fn path_segments(&self) -> impl Iterator<Item = &str> {
-        match &self.internal {
-            RelativeUrlInternal::Dynamic(url) => url.path_segments(),
-            RelativeUrlInternal::Static(url) => url.path_segments(),
-        }
+        self.path().unwrap_or("").split('/')
     }
 
     pub fn query(&self) -> Option<&str> {
@@ -703,10 +621,7 @@ impl RelativeUrl {
     }
 
     pub fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        match &self.internal {
-            RelativeUrlInternal::Dynamic(url) => url.query_pairs(),
-            RelativeUrlInternal::Static(url) => url.query_pairs(),
-        }
+        query_pairs(self.query())
     }
 
     pub fn fragment(&self) -> Option<&str> {
@@ -773,13 +688,22 @@ impl fmt::Display for RelativeUrl {
     }
 }
 
-#[derive(Clone)]
-pub struct InvalidUrl {
-    inner: js_sys::TypeError,
-}
+type_error_wrapper!(InvalidUrl);
 
-impl InvalidUrl {
-    fn new(inner: js_sys::TypeError) -> Self {
-        InvalidUrl { inner }
-    }
+fn query_pairs(query: Option<&str>) -> impl Iterator<Item = (&str, &str)> {
+    form_urlencoded::parse(query.unwrap_or("").as_bytes()).map(|(k, v)| {
+        let k = if let Cow::Borrowed(k) = k {
+            k
+        } else {
+            unreachable!()
+        };
+
+        let v = if let Cow::Borrowed(v) = v {
+            v
+        } else {
+            unreachable!()
+        };
+
+        (k, v)
+    })
 }

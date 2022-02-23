@@ -1,14 +1,7 @@
-use std::convert::TryFrom;
-
 use bitflags::bitflags;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::UnwrapThrowExt;
 
-use crate::console::{Write, Writer};
-use crate::dom::element::DynamicElement;
-use crate::error::HierarchyRequestError;
-use crate::event::GenericEventTarget;
-use crate::InvalidCast;
-use js_sys::Array;
+use crate::event::{impl_event_target_traits, impl_try_from_event_target};
 
 bitflags! {
     pub struct CompareDocumentPosition: u16 {
@@ -23,6 +16,9 @@ bitflags! {
 
 pub(crate) mod node_seal {
     pub trait Seal {
+        #[doc(hidden)]
+        fn from_web_sys_node_unchecked(node: web_sys::Node) -> Self;
+
         #[doc(hidden)]
         fn as_web_sys_node(&self) -> &web_sys::Node;
     }
@@ -61,7 +57,7 @@ pub trait Node: node_seal::Seal + Sized {
     {
         let pos = self
             .as_web_sys_node()
-            .compare_document_position(other.as_ref());
+            .compare_document_position(other.as_web_sys_node());
 
         CompareDocumentPosition::from_bits_truncate(pos)
     }
@@ -70,12 +66,15 @@ pub trait Node: node_seal::Seal + Sized {
         self.as_web_sys_node().is_default_namespace(Some(namespace))
     }
 
-    fn lookup_namespace_uri(&self, prefix: &str) -> Option<String> {
-        self.as_web_sys_node().lookup_namespace_uri(Some(prefix))
+    fn lookup_namespace_uri(&self, prefix: &NonColonName) -> Option<String> {
+        self.as_web_sys_node()
+            .lookup_namespace_uri(Some(prefix.as_ref()))
     }
 
-    fn lookup_prefix(&self, namespace: &str) -> Option<String> {
-        self.as_web_sys_node().lookup_prefix(Some(namespace))
+    fn lookup_prefix(&self, namespace: &str) -> Option<NonColonName> {
+        self.as_web_sys_node()
+            .lookup_prefix(Some(namespace))
+            .map(|p| NonColonName::trusted(p))
     }
 
     // TODO:
@@ -92,6 +91,10 @@ pub struct DynamicNode {
 }
 
 impl node_seal::Seal for DynamicNode {
+    fn from_web_sys_node_unchecked(inner: web_sys::Node) -> Self {
+        DynamicNode { inner }
+    }
+
     fn as_web_sys_node(&self) -> &web_sys::Node {
         &self.inner
     }
@@ -117,12 +120,20 @@ impl From<DynamicNode> for web_sys::Node {
     }
 }
 
-impl_common_wrapper_traits!(DynamicNode, Node);
-impl_common_event_target_traits!(DynamicNode, Node);
+impl_event_target_traits!(DynamicNode);
+impl_try_from_event_target!(DynamicNode, Node);
 
 macro_rules! impl_node_traits {
     ($tpe:ident) => {
         impl $crate::dom::node_seal::Seal for $tpe {
+            fn from_web_sys_node_unchecked(node: web_sys::Node) -> Self {
+                use wasm_bindgen::JsCast;
+
+                $tpe {
+                    inner: node.unchecked_into(),
+                }
+            }
+
             fn as_web_sys_node(&self) -> &web_sys::Node {
                 self.inner.as_ref()
             }
@@ -132,6 +143,8 @@ macro_rules! impl_node_traits {
 
         impl AsRef<web_sys::Node> for $tpe {
             fn as_ref(&self) -> &web_sys::Node {
+                use crate::dom::node_seal::Seal;
+
                 self.as_web_sys_node()
             }
         }
@@ -144,21 +157,27 @@ pub(crate) use impl_node_traits;
 
 macro_rules! impl_try_from_node {
     ($tpe:ident, $web_sys_tpe:ident) => {
-        impl TryFrom<$crate::dom::DynamicNode> for $tpe {
-            type Error = $crate::InvalidCast<$tpe>;
+        impl std::convert::TryFrom<$crate::dom::DynamicNode> for $tpe {
+            type Error = $crate::InvalidCast<$crate::dom::DynamicNode, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicNode) -> Result<Self, Self::Error> {
+                use wasm_bindgen::JsCast;
+
                 let value: web_sys::Node = value.into();
 
                 value
                     .dyn_into::<web_sys::$web_sys_tpe>()
                     .map(|e| e.into())
-                    .map_err(|e| $crate::InvalidCast(e.into()))
+                    .map_err(|e| $crate::InvalidCast::new(e.into()))
             }
         }
 
         $crate::event::impl_try_from_event_target!($tpe, $web_sys_tpe);
     };
+    ($tpe:ident) => {
+        $crate::dom::impl_try_from_node!($tpe, $tpe);
+    };
 }
 
+use crate::dom::NonColonName;
 pub(crate) use impl_try_from_node;

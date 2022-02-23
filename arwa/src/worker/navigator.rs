@@ -1,6 +1,7 @@
-use crate::connection::{
-    connection_event_target_seal, connection_status_seal, ConnectionEventTarget, ConnectionStatus,
-};
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::connection::{connection_status_seal, ConnectionStatus};
+use crate::impl_common_wrapper_traits;
 use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
 
@@ -13,7 +14,9 @@ impl navigator_seal::Seal for WorkerNavigator {}
 
 impl Navigator for WorkerNavigator {
     fn language(&self) -> Option<LanguageTag> {
-        self.inner.language().and_then(|l| LanguageTag::parse(l))
+        self.inner
+            .language()
+            .and_then(|l| LanguageTag::parse(l.as_ref()).ok())
     }
 
     fn hardware_concurrency(&self) -> u32 {
@@ -21,7 +24,7 @@ impl Navigator for WorkerNavigator {
     }
 
     fn user_agent(&self) -> String {
-        self.inner.user_agent().unwrap()
+        self.inner.user_agent().unwrap_throw()
     }
 }
 
@@ -29,7 +32,7 @@ impl connection_status_seal::Seal for WorkerNavigator {}
 
 impl ConnectionStatus for WorkerNavigator {
     fn online(&self) -> bool {
-        self.inner.online()
+        self.inner.on_line()
     }
 }
 

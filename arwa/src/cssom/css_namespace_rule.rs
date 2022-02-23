@@ -1,4 +1,6 @@
-use crate::cssom::{css_rule_seal, CssRule};
+use delegate::delegate;
+
+use crate::cssom::impl_css_rule_traits;
 
 #[derive(Clone)]
 pub struct CssNamespaceRule {
@@ -7,21 +9,13 @@ pub struct CssNamespaceRule {
 
 impl CssNamespaceRule {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn namespace_uri(&self) -> String;
 
             pub fn prefix(&self) -> String;
         }
     }
 }
-
-impl css_rule_seal::Seal for CssNamespaceRule {
-    fn as_web_sys_css_rule(&self) -> &web_sys::CssRule {
-        self.inner.as_ref()
-    }
-}
-
-impl CssRule for CssNamespaceRule {}
 
 impl From<web_sys::CssNamespaceRule> for CssNamespaceRule {
     fn from(inner: web_sys::CssNamespaceRule) -> Self {
@@ -35,4 +29,4 @@ impl AsRef<web_sys::CssNamespaceRule> for CssNamespaceRule {
     }
 }
 
-impl_css_rule_traits!(CssNamespaceRule, web_sys::CssNamespaceRule);
+impl_css_rule_traits!(CssNamespaceRule, CssNamespaceRule);

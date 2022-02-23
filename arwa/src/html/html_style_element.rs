@@ -1,4 +1,9 @@
+use delegate::delegate;
+use wasm_bindgen::JsCast;
+
 use crate::cssom::{link_style_seal, CssStyleSheet, LinkStyle};
+use crate::dom::impl_try_from_element;
+use crate::html::{impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlStyleElement {
@@ -23,7 +28,7 @@ impl LinkStyle for HtmlStyleElement {
     fn sheet(&self) -> Option<CssStyleSheet> {
         self.inner
             .sheet()
-            .map(|s| CssStyleSheet::from(s.unchecked_into()))
+            .map(|s| CssStyleSheet::from(s.unchecked_into::<web_sys::CssStyleSheet>()))
     }
 }
 

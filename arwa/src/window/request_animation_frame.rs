@@ -1,8 +1,9 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
 #[must_use = "futures do nothing unless polled or spawned"]
 pub struct RequestAnimationFrame {
@@ -26,20 +27,18 @@ impl RequestAnimationFrame {
 impl Future for RequestAnimationFrame {
     type Output = f64;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let request = self.get_mut();
-
-        if let Some(time) = request.time {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if let Some(time) = self.time {
             return Poll::Ready(time);
         }
 
-        if request.handle.is_none() {
+        if self.handle.is_none() {
             // Initialize
-            let time_ptr = &mut request.time as *mut Option<f64>;
+            let time_ptr = &mut self.time as *mut Option<f64>;
             let mut waker = Some(cx.waker().clone());
 
             let callback = Closure::wrap(Box::new(move |t: JsValue| {
-                let t = t.as_f64().unwrap();
+                let t = t.as_f64().unwrap_throw();
 
                 if let Some(waker) = waker.take() {
                     // Safe because of Pin
@@ -51,15 +50,15 @@ impl Future for RequestAnimationFrame {
                 }
             }) as Box<dyn FnMut(JsValue)>);
 
-            let handle = request
+            let handle = self
                 .context
                 .request_animation_frame(callback.as_ref().unchecked_ref())
-                .unwrap();
+                .unwrap_throw();
 
-            request.handle = Some(handle);
+            self.handle = Some(handle);
 
             // Hold on to callback to prevent it from being dropped prematurely.
-            request.callback = Some(callback);
+            self.callback = Some(callback);
         }
 
         Poll::Pending

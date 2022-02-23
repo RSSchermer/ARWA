@@ -1,9 +1,9 @@
-use crate::collection::{Collection, Sequence};
-use crate::dom::Token;
-use futures::StreamExt;
 use std::cell::{RefCell, RefMut};
-use std::collections::HashSet;
 use std::convert::TryFrom;
+
+use crate::collection::{Collection, Sequence};
+use crate::dom::{impl_try_from_element, impl_try_from_element_with_tag_check, Token};
+use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::InvalidCast;
 
 mod table_cell_element_seal {
@@ -120,7 +120,7 @@ impl TableCellHeaders {
         let mut cached = self.refresh();
 
         if cached.contains(header.as_ref()) {
-            cached.parsed.retain(|h| h != header);
+            cached.parsed.retain(|h| h.as_str() != header);
 
             let new_headers = cached.serialize();
 
@@ -138,7 +138,7 @@ impl TableCellHeaders {
         let mut cached = self.refresh();
 
         let output = if cached.contains(header.as_ref()) {
-            cached.parsed.retain(|h| h != header);
+            cached.parsed.retain(|h| h.as_str() != header);
 
             false
         } else {
@@ -162,7 +162,7 @@ impl TableCellHeaders {
         let mut did_replace = false;
 
         for header in cached.parsed.iter_mut() {
-            if header == old {
+            if header.as_str() == old {
                 *header = new.to_string();
 
                 did_replace = true;
@@ -195,7 +195,7 @@ impl TableCellHeaders {
 
         cached.refresh(serialized);
 
-        self.cell.set_headers(cached.serialize());
+        self.cell.set_headers(cached.serialize().as_ref());
     }
 }
 
@@ -206,10 +206,13 @@ impl Collection for TableCellHeaders {
 }
 
 impl Sequence for TableCellHeaders {
-    type Item = Token<'static>;
+    type Item = Token;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.refresh().parsed.get(index as usize).map(|t| Token(t.clone().into()))
+        self.refresh()
+            .parsed
+            .get(index as usize)
+            .map(|t| Token::trusted(t.clone()))
     }
 
     fn to_host_array(&self) -> js_sys::Array {
@@ -238,14 +241,12 @@ impl AsRef<web_sys::HtmlTableCellElement> for DynamicTableCellElement {
 
 impl From<web_sys::HtmlTableCellElement> for DynamicTableCellElement {
     fn from(inner: web_sys::HtmlTableCellElement) -> Self {
-        DynamicTableCellElement {
-            inner
-        }
+        DynamicTableCellElement { inner }
     }
 }
 
 impl_html_element_traits!(DynamicTableCellElement);
-impl_try_from_element!(DynamicTableCellElement, web_sys::HtmlTableCellElement);
+impl_try_from_element!(DynamicTableCellElement, HtmlTableCellElement);
 
 #[derive(Clone)]
 pub struct HtmlTdElement {
@@ -267,26 +268,26 @@ impl AsRef<web_sys::HtmlTableCellElement> for HtmlTdElement {
 }
 
 impl TryFrom<DynamicTableCellElement> for HtmlTdElement {
-    type Error = InvalidCast<DynamicTableCellElement>;
+    type Error = InvalidCast<DynamicTableCellElement, HtmlTdElement>;
 
     fn try_from(value: DynamicTableCellElement) -> Result<Self, Self::Error> {
         let table_cell_element = value.inner;
 
-        if table_cell_element.tag_name().as_ref() == "TD" {
-            Ok(HtmlTableDataElement {
-                inner: table_cell_element
+        if table_cell_element.tag_name().as_str() == "TD" {
+            Ok(HtmlTdElement {
+                inner: table_cell_element,
             })
         } else {
-            InvalidCast(DynamicTableCellElement {
-                inner: table_cell_element
-            })
+            Err(InvalidCast::new(DynamicTableCellElement {
+                inner: table_cell_element,
+            }))
         }
     }
 }
 
 impl_html_element_traits!(HtmlTdElement);
-impl_try_from_element_with_tag_check!(HtmlTdElement, web_sys::HtmlTableCellElement, "TD");
-impl_known_element!(HtmlTdElement, "TD");
+impl_try_from_element_with_tag_check!(HtmlTdElement, HtmlTableCellElement, "TD");
+impl_known_element!(HtmlTdElement, HtmlTableCellElement, "TD");
 
 #[derive(Clone)]
 pub struct HtmlThElement {
@@ -308,23 +309,23 @@ impl AsRef<web_sys::HtmlTableCellElement> for HtmlThElement {
 }
 
 impl TryFrom<DynamicTableCellElement> for HtmlThElement {
-    type Error = InvalidCast<DynamicTableCellElement>;
+    type Error = InvalidCast<DynamicTableCellElement, HtmlThElement>;
 
     fn try_from(value: DynamicTableCellElement) -> Result<Self, Self::Error> {
         let table_cell_element = value.inner;
 
-        if table_cell_element.tag_name().as_ref() == "TH" {
-            Ok(HtmlTableHeaderElement {
-                inner: table_cell_element
+        if table_cell_element.tag_name().as_str() == "TH" {
+            Ok(HtmlThElement {
+                inner: table_cell_element,
             })
         } else {
-            InvalidCast(DynamicTableCellElement {
-                inner: table_cell_element
-            })
+            Err(InvalidCast::new(DynamicTableCellElement {
+                inner: table_cell_element,
+            }))
         }
     }
 }
 
 impl_html_element_traits!(HtmlThElement);
-impl_try_from_element_with_tag_check!(HtmlThElement, web_sys::HtmlTableCellElement, "TH");
-impl_known_element!(HtmlThElement, "TH");
+impl_try_from_element_with_tag_check!(HtmlThElement, HtmlTableCellElement, "TH");
+impl_known_element!(HtmlThElement, HtmlTableCellElement, "TH");

@@ -1,4 +1,6 @@
-use crate::cssom::{css_rule_seal, CssRule};
+use delegate::delegate;
+
+use crate::cssom::impl_css_rule_traits;
 
 #[derive(Clone)]
 pub struct CssCounterStyleRule {
@@ -7,7 +9,7 @@ pub struct CssCounterStyleRule {
 
 impl CssCounterStyleRule {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn name(&self) -> String;
 
             pub fn set_name(&self, value: &str);
@@ -55,14 +57,6 @@ impl CssCounterStyleRule {
     }
 }
 
-impl css_rule_seal::Seal for CssCounterStyleRule {
-    fn as_web_sys_css_rule(&self) -> &web_sys::CssRule {
-        self.inner.as_ref()
-    }
-}
-
-impl CssRule for CssCounterStyleRule {}
-
 impl From<web_sys::CssCounterStyleRule> for CssCounterStyleRule {
     fn from(inner: web_sys::CssCounterStyleRule) -> Self {
         CssCounterStyleRule { inner }
@@ -75,4 +69,4 @@ impl AsRef<web_sys::CssCounterStyleRule> for CssCounterStyleRule {
     }
 }
 
-impl_css_rule_traits!(CssCounterStyleRule, web_sys::CssCounterStyleRule);
+impl_css_rule_traits!(CssCounterStyleRule, CssCounterStyleRule);

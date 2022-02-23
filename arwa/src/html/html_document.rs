@@ -1,7 +1,11 @@
+use std::convert::TryFrom;
+
+use wasm_bindgen::JsCast;
+
+use crate::dom::impl_document_traits;
 use crate::html::{
     slot_change_event_target_seal, HtmlBodyElement, HtmlHeadElement, SlotChangeEventTarget,
 };
-use std::convert::TryFrom;
 
 pub(crate) mod known_element_seal {
     pub trait Seal {}
@@ -20,20 +24,22 @@ macro_rules! impl_known_element {
 
         impl $crate::html::KnownElement for $tpe {
             fn create(document: &$crate::html::HtmlDocument) -> Self {
-                let web_sys_document: web_sys::Document = document.as_ref();
+                use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+                let web_sys_document: &web_sys::Document = document.as_ref();
 
                 // Tag name is guaranteed to be valid, safe to unwrap.
-                let element = web_sys_document.create_element($tag_name).unwrap();
+                let element = web_sys_document.create_element($tag_name).unwrap_throw();
 
-                let typed_element: $web_sys_tpe = element.unchecked_into();
+                let inner: web_sys::$web_sys_tpe = element.unchecked_into();
 
-                typed_element.into()
+                $tpe { inner }
             }
         }
-    }
+    };
     ($tpe:ident, $tag_name:literal) => {
-        $crate::html::impl_known_element!($tpe, web_sys::$tpe, $tag_name);
-    }
+        $crate::html::impl_known_element!($tpe, $tpe, $tag_name);
+    };
 }
 
 pub(crate) use impl_known_element;
@@ -61,12 +67,12 @@ impl HtmlDocument {
     }
 
     pub fn head(&self) -> Option<HtmlHeadElement> {
-        self.as_ref().head().map(|h| h.into())
+        self.inner.head().map(|h| h.into())
     }
 
     pub fn body(&self) -> Option<HtmlBodyElement> {
         // Disregard deprecated frameset element
-        self.as_ref()
+        self.inner
             .body()
             .and_then(|e| e.dyn_into::<web_sys::HtmlBodyElement>().ok())
             .map(|body| body.into())
@@ -80,7 +86,7 @@ impl HtmlDocument {
 
 impl slot_change_event_target_seal::Seal for HtmlDocument {
     fn as_web_sys_event_target(&self) -> &web_sys::EventTarget {
-        self.as_web_sys_html_element().as_ref()
+        self.inner.as_ref()
     }
 }
 

@@ -1,10 +1,16 @@
+use std::convert::TryFrom;
+
+use delegate::delegate;
+use wasm_bindgen::JsCast;
+
+use crate::dom::impl_try_from_element;
 use crate::html::{
-    constraint_validation_target_seal, form_listed_element_seal, labelable_element_seal,
-    ConstraintValidationTarget, DynamicFormListedElement, FormListedElement, HtmlFormElement,
-    LabelableElement, Labels, ValidityState,
+    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
+    impl_known_element, labelable_element_seal, ConstraintValidationTarget,
+    DynamicFormListedElement, FormListedElement, HtmlFormElement, LabelableElement, Labels,
+    ValidityState,
 };
 use crate::InvalidCast;
-use std::convert::TryFrom;
 
 #[derive(Clone)]
 pub struct HtmlOutputElement {
@@ -32,7 +38,7 @@ impl form_listed_element_seal::Seal for HtmlOutputElement {}
 
 impl FormListedElement for HtmlOutputElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -45,7 +51,7 @@ impl FormListedElement for HtmlOutputElement {
 }
 
 impl TryFrom<DynamicFormListedElement> for HtmlOutputElement {
-    type Error = InvalidCast<DynamicFormListedElement>;
+    type Error = InvalidCast<DynamicFormListedElement, HtmlOutputElement>;
 
     fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
         let value: web_sys::HtmlElement = value.into();
@@ -53,7 +59,7 @@ impl TryFrom<DynamicFormListedElement> for HtmlOutputElement {
         value
             .dyn_into::<web_sys::HtmlOutputElement>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(DynamicFormListedElement::new(e)))
     }
 }
 
@@ -61,7 +67,7 @@ impl constraint_validation_target_seal::Seal for HtmlOutputElement {}
 
 impl ConstraintValidationTarget for HtmlOutputElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;
@@ -85,7 +91,7 @@ impl labelable_element_seal::Seal for HtmlOutputElement {}
 
 impl LabelableElement for HtmlOutputElement {
     fn labels(&self) -> Labels {
-        Labels::new(self.inner.labels())
+        Labels::new(Some(self.inner.labels()))
     }
 }
 

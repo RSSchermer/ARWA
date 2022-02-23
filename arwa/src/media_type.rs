@@ -3,6 +3,9 @@
 // `MediaType::parse` signature, which uses a sealed `Parse` trait for no obvious reason (to me at
 // least, maybe a legacy reason?).
 
+use std::error::Error;
+use std::fmt;
+
 pub use mime_4::Value;
 
 #[doc(hidden)]
@@ -50,7 +53,7 @@ impl MediaType {
         self.inner.params()
     }
 
-    pub fn without_params(&self) -> Self {
+    pub fn without_params(self) -> Self {
         MediaType {
             inner: self.inner.without_params(),
         }
@@ -114,6 +117,21 @@ pub struct InvalidMediaType {
     inner: mime_4::InvalidMime,
 }
 
+impl fmt::Display for InvalidMediaType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.inner, f)
+    }
+}
+
+impl fmt::Debug for InvalidMediaType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.inner, f)
+    }
+}
+
+impl Error for InvalidMediaType {}
+
+#[macro_export]
 macro_rules! media_type {
     ($media_type:literal) => {
         MediaType::from_mime_4($crate::media_type::mime_4_media_type!($media_type))
@@ -121,4 +139,3 @@ macro_rules! media_type {
 }
 
 pub use media_type;
-use std::fmt;

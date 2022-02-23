@@ -104,7 +104,7 @@ mod html_map_element;
 pub use self::html_map_element::*;
 
 mod html_menu_element;
-pub use self::html_menu_elementt::*;
+pub use self::html_menu_element::*;
 
 mod html_meta_element;
 pub use self::html_meta_element::*;

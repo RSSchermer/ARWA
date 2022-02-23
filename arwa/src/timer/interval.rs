@@ -1,35 +1,39 @@
-use crate::timer::Duration;
-use futures::Stream;
+use std::async_iter::AsyncIterator;
 use std::pin::Pin;
-use std::task::{Poll, Waker};
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::JsCast;
+use std::task::{Context, Poll, Waker};
 
-enum Context {
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::timer::Duration;
+
+enum TimerContext {
     Window(web_sys::Window),
     WorkerGlobalScope(web_sys::WorkerGlobalScope),
 }
 
-impl Context {
+impl TimerContext {
     fn spawn(&self, callback: &Closure<dyn FnMut()>, milliseconds: u32) -> i32 {
         match self {
-            Context::Window(window) => window
+            TimerContext::Window(window) => window
                 .set_interval_with_callback_and_timeout_and_arguments_0(
                     callback.as_ref().unchecked_ref(),
                     milliseconds as i32,
-                ),
-            Context::WorkerGlobalScope(worker) => worker
+                )
+                .unwrap_throw(),
+            TimerContext::WorkerGlobalScope(worker) => worker
                 .set_interval_with_callback_and_timeout_and_arguments_0(
                     callback.as_ref().unchecked_ref(),
                     milliseconds as i32,
-                ),
+                )
+                .unwrap_throw(),
         }
     }
 
     fn clear(&self, timer_id: i32) {
         match self {
-            Context::Window(window) => window.clear_interval_with_handle(timer_id),
-            Context::WorkerGlobalScope(worker) => worker.clear_interval_with_handle(timer_id),
+            TimerContext::Window(window) => window.clear_interval_with_handle(timer_id),
+            TimerContext::WorkerGlobalScope(worker) => worker.clear_interval_with_handle(timer_id),
         }
     }
 }
@@ -51,7 +55,7 @@ impl CallbackState {
 #[must_use = "streams do nothing unless polled or spawned"]
 pub struct Interval {
     duration: Duration,
-    context: Context,
+    context: TimerContext,
     callback: Option<Closure<dyn FnMut()>>,
     callback_state: CallbackState,
     timer_id: Option<i32>,
@@ -61,7 +65,7 @@ impl Interval {
     pub(crate) fn window_context(window: web_sys::Window, duration: Duration) -> Self {
         Interval {
             duration,
-            context: Context::Window(window),
+            context: TimerContext::Window(window),
             callback: None,
             callback_state: CallbackState::uninitialized(),
             timer_id: None,
@@ -71,7 +75,7 @@ impl Interval {
     pub(crate) fn worker_context(worker: web_sys::WorkerGlobalScope, duration: Duration) -> Self {
         Interval {
             duration,
-            context: Context::WorkerGlobalScope(worker),
+            context: TimerContext::WorkerGlobalScope(worker),
             callback: None,
             callback_state: CallbackState::uninitialized(),
             timer_id: None,
@@ -79,10 +83,10 @@ impl Interval {
     }
 }
 
-impl Stream for Interval {
+impl AsyncIterator for Interval {
     type Item = ();
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let milliseconds = match self.duration {
             Duration::Infinity => return Poll::Pending,
             Duration::Milliseconds(milliseconds) => milliseconds,
@@ -92,7 +96,7 @@ impl Stream for Interval {
         if self.timer_id.is_none() {
             let state_ptr = (&mut self.callback_state) as *mut CallbackState;
 
-            let callback = move |event| {
+            let callback = move || {
                 // This is safe because of Pin
                 let CallbackState { next, waker } = unsafe { &mut *state_ptr };
 

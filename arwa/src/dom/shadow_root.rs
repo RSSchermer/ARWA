@@ -1,9 +1,10 @@
-use crate::cssom::{style_context_seal, StyleContext, StyleSheets};
-use crate::dom::selector::CompiledSelector;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::cssom::{styled_seal, StyleSheets, Styled};
 use crate::dom::{
-    document_fragment_seal, parent_node_seal, ChildElements, ChildNode, DocumentFragment,
-    DynamicElement, HierarchyRequestError, ParentNode, QuerySelectorAll,
+    impl_document_fragment_traits, DynamicElement, HierarchyRequestError, QuerySelectorAll,
 };
+use crate::dom_exception_wrapper;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ShadowRootMode {
@@ -30,14 +31,16 @@ impl ShadowRootOptions {
             delegates_focus,
         } = self;
 
-        let mut init = web_sys::ShadowRootInit::new();
+        let mode = match mode {
+            ShadowRootMode::Open => web_sys::ShadowRootMode::Open,
+            ShadowRootMode::Closed => web_sys::ShadowRootMode::Closed,
+        };
 
-        match mode {
-            ShadowRootMode::Open => init.mode(web_sys::ShadowRootMode::Open),
-            ShadowRootMode::Closed => init.mode(web_sys::ShadowRootMode::Closed),
+        if delegates_focus {
+            todo!("Missing from web-sys")
         }
 
-        init
+        web_sys::ShadowRootInit::new(mode)
     }
 }
 
@@ -60,7 +63,7 @@ pub(crate) mod shadow_host_seal {
 pub trait ShadowHost: shadow_host_seal::Seal {
     fn attach_shadow(&self, options: ShadowRootOptions) -> ShadowRoot {
         self.as_web_sys_element()
-            .attach_shadow(options.into_web_sys())
+            .attach_shadow(&options.into_web_sys())
             .unwrap_throw()
             .into()
     }
@@ -70,7 +73,7 @@ pub trait ShadowHost: shadow_host_seal::Seal {
         options: ShadowRootOptions,
     ) -> Result<ShadowRoot, AttachShadowError> {
         self.as_web_sys_element()
-            .attach_shadow(options.into_web_sys())
+            .attach_shadow(&options.into_web_sys())
             .map(|r| r.into())
             .map_err(|err| AttachShadowError::new(err.unchecked_into()))
     }
@@ -80,16 +83,7 @@ pub trait ShadowHost: shadow_host_seal::Seal {
     }
 }
 
-#[derive(Clone)]
-pub struct AttachShadowError {
-    inner: web_sys::DomException,
-}
-
-impl AttachShadowError {
-    fn new(inner: web_sys::DomException) -> Self {
-        AttachShadowError { inner }
-    }
-}
+dom_exception_wrapper!(AttachShadowError);
 
 #[derive(Clone)]
 pub struct ShadowRoot {
@@ -105,6 +99,7 @@ impl ShadowRoot {
         match self.inner.mode() {
             web_sys::ShadowRootMode::Open => ShadowRootMode::Open,
             web_sys::ShadowRootMode::Closed => ShadowRootMode::Closed,
+            _ => unreachable!(),
         }
     }
 
@@ -121,8 +116,8 @@ impl ShadowRoot {
     }
 }
 
-impl style_context_seal::Seal for ShadowRoot {}
-impl StyleContext for ShadowRoot {
+impl styled_seal::Seal for ShadowRoot {}
+impl Styled for ShadowRoot {
     fn style_sheets(&self) -> StyleSheets {
         StyleSheets::new(self.inner.style_sheets())
     }
@@ -144,14 +139,14 @@ impl_document_fragment_traits!(ShadowRoot);
 
 macro_rules! impl_shadow_host_for_element {
     ($tpe:ident) => {
-        impl shadow_host_seal::Seal for HtmlArticleElement {
+        impl $crate::dom::shadow_host_seal::Seal for $tpe {
             fn as_web_sys_element(&self) -> &web_sys::Element {
                 self.inner.as_ref()
             }
         }
 
-        impl ShadowHost for HtmlArticleElement {}
-    }
+        impl $crate::dom::ShadowHost for $tpe {}
+    };
 }
 
 pub(crate) use impl_shadow_host_for_element;

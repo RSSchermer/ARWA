@@ -1,5 +1,9 @@
 use std::marker;
-use url::Url;
+
+use wasm_bindgen::UnwrapThrowExt;
+
+use crate::event::impl_typed_event_traits;
+use crate::url::Url;
 
 #[derive(Clone)]
 pub struct HashChangeEvent<T> {
@@ -9,12 +13,12 @@ pub struct HashChangeEvent<T> {
 
 impl<T> HashChangeEvent<T> {
     pub fn old_url(&self) -> Url {
-        Url::parse(self.inner.old_url().as_ref()).unwrap()
+        Url::parse(self.inner.old_url().as_ref()).unwrap_throw()
     }
 
     pub fn new_url(&self) -> Url {
-        Url::parse(self.inner.new_url().as_ref()).unwrap()
+        Url::parse(self.inner.new_url().as_ref()).unwrap_throw()
     }
 }
 
-impl_event_traits!(HashChangeEvent, web_sys::HashChangeEvent, "hashchange");
+impl_typed_event_traits!(HashChangeEvent, HashChangeEvent, "hashchange");

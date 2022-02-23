@@ -1,5 +1,6 @@
-pub use arwa_parse::xml_name::InvalidQualifiedName;
 use std::fmt;
+
+pub use arwa_parse::xml_name::InvalidQualifiedName;
 
 #[doc(hidden)]
 pub struct StaticallyParsedQualifiedName {

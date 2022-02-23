@@ -1,5 +1,9 @@
 use std::marker;
 
+use delegate::delegate;
+
+use crate::ui::{impl_mouse_event_traits, impl_ui_event_traits};
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DeltaMode {
     Pixel,
@@ -40,4 +44,5 @@ impl<T> AsRef<web_sys::WheelEvent> for WheelEvent<T> {
     }
 }
 
-impl_mouse_event_traits!(WheelEvent, web_sys::WheelEvent, "wheel");
+impl_ui_event_traits!(WheelEvent, WheelEvent, "wheel");
+impl_mouse_event_traits!(WheelEvent);

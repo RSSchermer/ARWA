@@ -1,12 +1,17 @@
+use std::convert::TryFrom;
+
+use delegate::delegate;
+use wasm_bindgen::JsCast;
+
+use crate::dom::impl_try_from_element;
 use crate::html::{
     constraint_validation_target_seal, form_listed_element_seal, form_submitter_element_seal,
-    labelable_element_seal, ConstraintValidationTarget, DynamicFormListedElement, FormEncoding,
-    FormListedElement, FormMethod, FormSubmitterElement, HtmlFormElement, LabelableElement, Labels,
-    ValidityState,
+    impl_html_element_traits, impl_known_element, labelable_element_seal,
+    ConstraintValidationTarget, DynamicFormListedElement, FormEncoding, FormListedElement,
+    FormMethod, FormSubmitterElement, HtmlFormElement, LabelableElement, Labels, ValidityState,
 };
 use crate::url::{AbsoluteOrRelativeUrl, Url};
 use crate::InvalidCast;
-use std::convert::TryFrom;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ButtonType {
@@ -28,7 +33,7 @@ pub struct HtmlButtonElement {
 
 impl HtmlButtonElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -66,7 +71,7 @@ impl form_listed_element_seal::Seal for HtmlButtonElement {}
 
 impl FormListedElement for HtmlButtonElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -79,7 +84,7 @@ impl FormListedElement for HtmlButtonElement {
 }
 
 impl TryFrom<DynamicFormListedElement> for HtmlButtonElement {
-    type Error = InvalidCast<DynamicFormListedElement>;
+    type Error = InvalidCast<DynamicFormListedElement, HtmlButtonElement>;
 
     fn try_from(value: DynamicFormListedElement) -> Result<Self, Self::Error> {
         let value: web_sys::HtmlElement = value.into();
@@ -87,7 +92,7 @@ impl TryFrom<DynamicFormListedElement> for HtmlButtonElement {
         value
             .dyn_into::<web_sys::HtmlButtonElement>()
             .map(|e| e.into())
-            .map_err(|e| InvalidCast(e.into()))
+            .map_err(|e| InvalidCast::new(DynamicFormListedElement::new(e)))
     }
 }
 
@@ -95,7 +100,7 @@ impl form_submitter_element_seal::Seal for HtmlButtonElement {}
 
 impl FormSubmitterElement for HtmlButtonElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn form_no_validate(&self) -> bool;
 
             fn set_form_no_validate(&self, form_no_validate: bool);
@@ -107,7 +112,7 @@ impl FormSubmitterElement for HtmlButtonElement {
     }
 
     fn form_action(&self) -> Option<Url> {
-        Url::parse(self.inner.form_action()).ok()
+        Url::parse(self.inner.form_action().as_ref()).ok()
     }
 
     fn set_form_action<T>(&self, form_action: T)
@@ -128,7 +133,7 @@ impl FormSubmitterElement for HtmlButtonElement {
 
     fn set_form_encoding(&self, encoding: Option<FormEncoding>) {
         self.inner
-            .set_form_enctype(encoding.map(|e| e.as_ref()).unwrap_or(""));
+            .set_form_enctype(encoding.as_ref().map(|e| e.as_ref()).unwrap_or(""));
     }
 
     fn form_method(&self) -> FormMethod {
@@ -154,7 +159,7 @@ impl labelable_element_seal::Seal for HtmlButtonElement {}
 
 impl LabelableElement for HtmlButtonElement {
     fn labels(&self) -> Labels {
-        Labels::new(self.inner.labels())
+        Labels::new(Some(self.inner.labels()))
     }
 }
 
@@ -162,7 +167,7 @@ impl constraint_validation_target_seal::Seal for HtmlButtonElement {}
 
 impl ConstraintValidationTarget for HtmlButtonElement {
     delegate! {
-        to self.inner {
+        target self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

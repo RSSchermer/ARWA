@@ -1,15 +1,6 @@
-use std::convert::TryFrom;
-
 use wasm_bindgen::JsCast;
 
-use crate::dom::selector::CompiledSelector;
-use crate::dom::ChildNode;
-use crate::dom::DynamicNode;
-use crate::dom::HierarchyRequestError;
-use crate::dom::{
-    parent_node_seal, ChildElements, DynamicElement, ParentNode, QuerySelectorAll,
-    QuerySelectorSyntaxError,
-};
+use crate::dom::{impl_owned_node, HierarchyRequestError, QuerySelectorAll};
 
 pub(crate) mod document_fragment_seal {
     pub trait Seal {
@@ -31,7 +22,15 @@ macro_rules! impl_document_fragment_traits {
         impl $crate::dom::DocumentFragment for $tpe {}
 
         impl $crate::dom::parent_node_seal::Seal for $tpe {
+            fn from_web_sys_node_unchecked(node: web_sys::Node) -> Self {
+                $tpe {
+                    inner: node.unchecked_into(),
+                }
+            }
+
             fn as_web_sys_node(&self) -> &web_sys::Node {
+                use crate::dom::document_fragment_seal::Seal;
+
                 self.as_web_sys_document_fragment().as_ref()
             }
         }
@@ -39,26 +38,34 @@ macro_rules! impl_document_fragment_traits {
         impl $crate::dom::ParentNode for $tpe {
             fn query_selector_first(
                 &self,
-                selector: &CompiledSelector,
+                selector: &$crate::dom::Selector,
             ) -> Option<$crate::dom::DynamicElement> {
+                use crate::dom::document_fragment_seal::Seal;
+                use wasm_bindgen::UnwrapThrowExt;
+
                 self.as_web_sys_document_fragment()
-                    .query_selector_first(selector.as_ref())
+                    .query_selector(selector.as_ref())
                     .unwrap_throw()
                     .map(|e| e.into())
             }
 
             fn query_selector_all(
                 &self,
-                selector: &CompiledSelector,
+                selector: &$crate::dom::Selector,
             ) -> $crate::dom::QuerySelectorAll {
+                use crate::dom::document_fragment_seal::Seal;
+                use wasm_bindgen::UnwrapThrowExt;
+
                 QuerySelectorAll::new(
                     self.as_web_sys_document_fragment()
                         .query_selector_all(selector.as_ref())
-                        .unwrap_trhwo(),
+                        .unwrap_throw(),
                 )
             }
 
             fn child_elements(&self) -> $crate::dom::ChildElements {
+                use crate::dom::document_fragment_seal::Seal;
+
                 $crate::dom::ChildElements::new(self.as_web_sys_document_fragment().children())
             }
 
@@ -66,6 +73,9 @@ macro_rules! impl_document_fragment_traits {
             where
                 T: $crate::dom::ChildNode,
             {
+                use crate::dom::document_fragment_seal::Seal;
+                use wasm_bindgen::UnwrapThrowExt;
+
                 self.as_web_sys_document_fragment()
                     .prepend_with_node_1(node.as_web_sys_node())
                     .unwrap_throw();
@@ -75,6 +85,8 @@ macro_rules! impl_document_fragment_traits {
             where
                 T: $crate::dom::ChildNode,
             {
+                use crate::dom::document_fragment_seal::Seal;
+
                 self.as_web_sys_document_fragment()
                     .prepend_with_node_1(node.as_web_sys_node())
                     .map_err(|err| $crate::dom::HierarchyRequestError::new(err.unchecked_into()))
@@ -84,6 +96,9 @@ macro_rules! impl_document_fragment_traits {
             where
                 T: $crate::dom::DocumentFragment,
             {
+                use crate::dom::document_fragment_seal::Seal;
+                use wasm_bindgen::UnwrapThrowExt;
+
                 self.as_web_sys_document_fragment()
                     .prepend_with_node_1(document_fragment.as_web_sys_document_fragment().as_ref())
                     .unwrap_throw();
@@ -92,12 +107,17 @@ macro_rules! impl_document_fragment_traits {
 
         impl AsRef<web_sys::DocumentFragment> for $tpe {
             fn as_ref(&self) -> &web_sys::DocumentFragment {
+                use crate::dom::document_fragment_seal::Seal;
+
                 self.as_web_sys_document_fragment()
             }
         }
 
-        impl_node_traits!($tpe);
-        impl_try_from_node!($tpe, $web_sys_tpe);
+        $crate::dom::impl_node_traits!($tpe);
+        $crate::dom::impl_try_from_node!($tpe, $web_sys_tpe);
+    };
+    ($tpe:ident) => {
+        $crate::dom::impl_document_fragment_traits!($tpe, $tpe);
     };
 }
 
@@ -113,4 +133,5 @@ impl From<web_sys::DocumentFragment> for GenericDocumentFragment {
     }
 }
 
-impl_document_fragment_traits!(GenericDocumentFragment);
+impl_document_fragment_traits!(GenericDocumentFragment, DocumentFragment);
+impl_owned_node!(GenericDocumentFragment);

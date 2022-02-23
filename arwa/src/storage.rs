@@ -1,10 +1,10 @@
-use std::convert::TryFrom;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use wasm_bindgen::JsCast;
+use crate::collection::Collection;
+use crate::dom_exception_wrapper;
+use crate::impl_common_wrapper_traits;
 
-use crate::collection::{Collection, Sequence};
-use crate::console::{Write, Writer};
-use crate::error::QuotaExceededError;
+dom_exception_wrapper!(StorageQuotaExceeded);
 
 #[derive(Clone)]
 pub struct Storage {
@@ -25,12 +25,10 @@ impl Storage {
         self.inner.set_item(key, value).unwrap_throw();
     }
 
-    pub fn try_set(&self, key: &str, value: &str) -> Result<(), QuotaExceededError> {
-        self.inner.set_item(key, value).map_err(|err| {
-            let err: web_sys::DomException = err.unchecked_into();
-
-            QuotaExceededError::new(err)
-        })
+    pub fn try_set(&self, key: &str, value: &str) -> Result<(), StorageQuotaExceeded> {
+        self.inner
+            .set_item(key, value)
+            .map_err(|err| StorageQuotaExceeded::new(err.unchecked_into()))
     }
 
     pub fn remove(&self, key: &str) {

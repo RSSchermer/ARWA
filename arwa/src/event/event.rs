@@ -1,10 +1,9 @@
-use std::convert::TryFrom;
-
-use crate::dom::event_target::EventTarget;
-use crate::event::event_target::{DynamicEventTarget, EventTarget};
-use crate::event::on_event::FromEvent;
 use std::marker;
-use wasm_bindgen::JsCast;
+
+use web_sys::EventTarget as WebSysEventTarget;
+
+use crate::event::{DynamicEventTarget, EventTarget};
+use crate::unchecked_cast_array::unchecked_cast_array;
 
 pub(crate) mod event_seal {
     pub trait Seal {
@@ -12,7 +11,7 @@ pub(crate) mod event_seal {
         fn from_web_sys_event_unchecked(event: web_sys::Event) -> Self;
 
         #[doc(hidden)]
-        fn as_web_sys_event(&self) -> web_sys::Event;
+        fn as_web_sys_event(&self) -> &web_sys::Event;
     }
 }
 
@@ -58,13 +57,13 @@ pub trait Event: event_seal::Seal {
     }
 
     fn current_target(&self) -> Option<Self::CurrentTarget> {
-        self.as_web_sys_event().current_target().map(|t| t.into())
+        self.as_web_sys_event()
+            .current_target()
+            .map(|t| Self::CurrentTarget::from_web_sys_event_target_unchecked(t))
     }
 
     fn composed_path(&self) -> ComposedPath {
-        ComposedPath {
-            inner: self.as_web_sys_event().composed_path(),
-        }
+        ComposedPath::new(self.as_web_sys_event().composed_path())
     }
 
     fn prevent_default(&self) {
@@ -92,7 +91,7 @@ macro_rules! impl_typed_event_traits {
             }
         }
 
-        impl<T> $crate::event::event::event_seal::Seal for $tpe<T>
+        impl<T> $crate::event::event_seal::Seal for $tpe<T>
         where
             T: $crate::event::EventTarget,
         {
@@ -101,9 +100,11 @@ macro_rules! impl_typed_event_traits {
             }
 
             fn from_web_sys_event_unchecked(event: web_sys::Event) -> Self {
+                use wasm_bindgen::JsCast;
+
                 $tpe {
                     inner: event.unchecked_into(),
-                    _marker: marker::PhantomData,
+                    _marker: std::marker::PhantomData,
                 }
             }
         }
@@ -122,27 +123,48 @@ macro_rules! impl_typed_event_traits {
             const TYPE_NAME: &'static str = $tpe_name;
         }
 
-        impl<T> TryFrom<$crate::event::DynamicEvent<T>> for $tpe<T> {
-            type Error = $crate::InvalidCast<$tpe<T>>;
+        impl<T> std::convert::TryFrom<$crate::event::DynamicEvent<T>> for $tpe<T> {
+            type Error = $crate::InvalidCast<$crate::event::DynamicEvent<T>, $tpe<T>>;
 
-            fn try_from(value: DynamicEvent) -> Result<Self, Self::Error> {
+            fn try_from(value: $crate::event::DynamicEvent<T>) -> Result<Self, Self::Error> {
+                use wasm_bindgen::JsCast;
+
                 let value: web_sys::Event = value.into();
 
                 if &value.type_() != $tpe_name {
-                    return Err($crate::InvalidCast(value.into()));
+                    return Err($crate::InvalidCast::new($crate::event::DynamicEvent::from(
+                        value,
+                    )));
                 }
 
                 value
                     .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
-                    .map_err(|e| $crate::InvalidCast(e.into()))
+                    .map(|inner| $tpe {
+                        inner,
+                        _marker: std::marker::PhantomData,
+                    })
+                    .map_err(|e| $crate::InvalidCast::new($crate::event::DynamicEvent::from(e)))
             }
         }
 
-        $crate::impl_common_wrapper_traits!($tpe);
+        impl<T> AsRef<js_sys::Object> for $tpe<T> {
+            fn as_ref(&self) -> &js_sys::Object {
+                self.inner.as_ref()
+            }
+        }
+
+        impl<T> AsRef<wasm_bindgen::JsValue> for $tpe<T> {
+            fn as_ref(&self) -> &wasm_bindgen::JsValue {
+                self.inner.as_ref()
+            }
+        }
+    };
+    ($tpe:ident, $tpe_name:literal) => {
+        $crate::event::impl_typed_event_traits!($tpe, $tpe, $tpe_name);
     };
 }
 
+use crate::event::event_target_seal::Seal;
 pub(crate) use impl_typed_event_traits;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -153,12 +175,7 @@ pub enum EventPhase {
     BubblingPhase,
 }
 
-unchecked_cast_array_wrapper!(
-    DynamicEventTarget,
-    web_sys::EventTarget,
-    ComposedPath,
-    ComposedPathIter
-);
+unchecked_cast_array!(DynamicEventTarget, WebSysEventTarget, ComposedPath);
 
 pub struct DynamicEvent<T> {
     inner: web_sys::Event,
@@ -183,6 +200,12 @@ impl<T> From<web_sys::Event> for DynamicEvent<T> {
     }
 }
 
+impl<T> From<DynamicEvent<T>> for web_sys::Event {
+    fn from(event: DynamicEvent<T>) -> Self {
+        event.inner
+    }
+}
+
 impl<T> AsRef<web_sys::Event> for DynamicEvent<T> {
     fn as_ref(&self) -> &web_sys::Event {
         &self.inner
@@ -199,8 +222,21 @@ impl<T> event_seal::Seal for DynamicEvent<T> {
     }
 }
 
-impl<T> Event for DynamicEvent<T> {
+impl<T> Event for DynamicEvent<T>
+where
+    T: EventTarget,
+{
     type CurrentTarget = T;
 }
 
-impl_common_wrapper_traits!(DynamicEvent);
+impl<T> AsRef<js_sys::Object> for DynamicEvent<T> {
+    fn as_ref(&self) -> &js_sys::Object {
+        self.inner.as_ref()
+    }
+}
+
+impl<T> AsRef<wasm_bindgen::JsValue> for DynamicEvent<T> {
+    fn as_ref(&self) -> &wasm_bindgen::JsValue {
+        self.inner.as_ref()
+    }
+}

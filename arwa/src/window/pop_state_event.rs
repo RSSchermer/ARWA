@@ -1,5 +1,10 @@
 use std::marker;
 
+use delegate::delegate;
+use wasm_bindgen::JsValue;
+
+use crate::event::impl_typed_event_traits;
+
 #[derive(Clone)]
 pub struct PopStateEvent<T> {
     inner: web_sys::PopStateEvent,
@@ -8,10 +13,10 @@ pub struct PopStateEvent<T> {
 
 impl<T> PopStateEvent<T> {
     delegate! {
-        to self.inner {
+        target self.inner {
             pub fn state(&self) -> JsValue;
         }
     }
 }
 
-impl_event_traits!(PopStateEvent, web_sys::PopStateEvent, "popstate");
+impl_typed_event_traits!(PopStateEvent, PopStateEvent, "popstate");
