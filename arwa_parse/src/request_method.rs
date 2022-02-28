@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Clone)]
 pub struct InvalidRequestMethod {
     token: String,
-    invalid_pos: usize
+    invalid_pos: usize,
 }
 
 impl fmt::Debug for InvalidRequestMethod {
@@ -11,14 +11,18 @@ impl fmt::Debug for InvalidRequestMethod {
         if self.token.is_empty() {
             write!(f, "The empty string is not a valid request method.")
         } else {
-            write!(f, "`{}` is not a valid request method; disallowed code point at position `{}`.", &self.token, self.invalid_pos)
+            write!(
+                f,
+                "`{}` is not a valid request method; disallowed code point at position `{}`.",
+                &self.token, self.invalid_pos
+            )
         }
     }
 }
 
 #[derive(Clone)]
 pub struct RequestMethod {
-    request_method: String
+    request_method: String,
 }
 
 impl RequestMethod {
@@ -36,7 +40,7 @@ impl RequestMethod {
             if !valid_char(&c) {
                 return Err(InvalidRequestMethod {
                     token: token.to_string(),
-                    invalid_pos: 0
+                    invalid_pos: 0,
                 });
             }
 
@@ -44,26 +48,24 @@ impl RequestMethod {
                 if !valid_char(&c) {
                     return Err(InvalidRequestMethod {
                         token: token.to_string(),
-                        invalid_pos: i
+                        invalid_pos: i,
                     });
                 }
             }
 
             Ok(RequestMethod {
-                request_method: token.to_string()
+                request_method: token.to_string(),
             })
         } else {
             Err(InvalidRequestMethod {
                 token: token.to_string(),
-                invalid_pos: 0
+                invalid_pos: 0,
             })
         }
     }
 
     pub fn trusted(request_method: String) -> Self {
-        RequestMethod {
-            request_method
-        }
+        RequestMethod { request_method }
     }
 }
 

@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Clone)]
 pub struct InvalidToken {
     token: String,
-    invalid_pos: usize
+    invalid_pos: usize,
 }
 
 impl fmt::Debug for InvalidToken {
@@ -11,14 +11,18 @@ impl fmt::Debug for InvalidToken {
         if self.token.is_empty() {
             write!(f, "The empty string is not a valid DOM token.")
         } else {
-            write!(f, "`{}` is not a valid DOM token; disallowed whitespace character at position `{}`.", &self.token, self.invalid_pos)
+            write!(
+                f,
+                "`{}` is not a valid DOM token; disallowed whitespace character at position `{}`.",
+                &self.token, self.invalid_pos
+            )
         }
     }
 }
 
 #[derive(Clone)]
 pub struct Token {
-    name: String
+    name: String,
 }
 
 impl Token {
@@ -29,7 +33,7 @@ impl Token {
             if c.is_ascii_whitespace() {
                 return Err(InvalidToken {
                     token: token.to_string(),
-                    invalid_pos: 0
+                    invalid_pos: 0,
                 });
             }
 
@@ -37,26 +41,24 @@ impl Token {
                 if c.is_ascii_whitespace() {
                     return Err(InvalidToken {
                         token: token.to_string(),
-                        invalid_pos: i
+                        invalid_pos: i,
                     });
                 }
             }
 
             Ok(Token {
-                name: token.to_string()
+                name: token.to_string(),
             })
         } else {
-            Err(InvalidToken{
+            Err(InvalidToken {
                 token: token.to_string(),
-                invalid_pos: 0
+                invalid_pos: 0,
             })
         }
     }
 
     pub fn trusted(name: String) -> Self {
-        Token {
-            name
-        }
+        Token { name }
     }
 }
 

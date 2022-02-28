@@ -4,13 +4,17 @@ use std::fmt;
 pub struct InvalidName {
     name: String,
     invalid_char: Option<char>,
-    invalid_pos: usize
+    invalid_pos: usize,
 }
 
 impl fmt::Debug for InvalidName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(invalid_char) = self.invalid_char {
-            write!(f, "`{}` is not a valid XML name token; invalid character `{}` at position `{}`.", &self.name, invalid_char, self.invalid_pos)
+            write!(
+                f,
+                "`{}` is not a valid XML name token; invalid character `{}` at position `{}`.",
+                &self.name, invalid_char, self.invalid_pos
+            )
         } else {
             write!(f, "The empty string is not a valid XML name token.")
         }
@@ -19,7 +23,7 @@ impl fmt::Debug for InvalidName {
 
 #[derive(Clone)]
 pub struct Name {
-    name: String
+    name: String,
 }
 
 impl Name {
@@ -31,7 +35,7 @@ impl Name {
                 return Err(InvalidName {
                     name: name.to_string(),
                     invalid_char: Some(c),
-                    invalid_pos: 0
+                    invalid_pos: 0,
                 });
             }
 
@@ -40,27 +44,25 @@ impl Name {
                     return Err(InvalidName {
                         name: name.to_string(),
                         invalid_char: Some(c),
-                        invalid_pos: i
+                        invalid_pos: i,
                     });
                 }
             }
 
             Ok(Name {
-                name: name.to_string()
+                name: name.to_string(),
             })
         } else {
-            Err(InvalidName{
+            Err(InvalidName {
                 name: name.to_string(),
                 invalid_char: None,
-                invalid_pos: 0
+                invalid_pos: 0,
             })
         }
     }
 
     pub fn trusted(name: String) -> Self {
-        Name {
-            name
-        }
+        Name { name }
     }
 }
 
@@ -74,7 +76,7 @@ impl AsRef<str> for Name {
 pub struct InvalidNonColonName {
     name: String,
     invalid_char: Option<char>,
-    invalid_pos: usize
+    invalid_pos: usize,
 }
 
 impl fmt::Debug for InvalidNonColonName {
@@ -82,14 +84,17 @@ impl fmt::Debug for InvalidNonColonName {
         if let Some(invalid_char) = self.invalid_char {
             write!(f, "`{}` is not a valid XML non-colon name token; invalid character `{}` at position `{}`.", &self.name, invalid_char, self.invalid_pos)
         } else {
-            write!(f, "The empty string is not a valid XML non-colon name token.")
+            write!(
+                f,
+                "The empty string is not a valid XML non-colon name token."
+            )
         }
     }
 }
 
 #[derive(Clone)]
 pub struct NonColonName {
-    name: String
+    name: String,
 }
 
 impl NonColonName {
@@ -101,7 +106,7 @@ impl NonColonName {
                 return Err(InvalidNonColonName {
                     name: name.to_string(),
                     invalid_char: Some(c),
-                    invalid_pos: 0
+                    invalid_pos: 0,
                 });
             }
 
@@ -110,27 +115,25 @@ impl NonColonName {
                     return Err(InvalidNonColonName {
                         name: name.to_string(),
                         invalid_char: Some(c),
-                        invalid_pos: i
+                        invalid_pos: i,
                     });
                 }
             }
 
             Ok(NonColonName {
-                name: name.to_string()
+                name: name.to_string(),
             })
         } else {
             Err(InvalidNonColonName {
                 name: name.to_string(),
                 invalid_char: None,
-                invalid_pos: 0
+                invalid_pos: 0,
             })
         }
     }
 
     pub fn trusted(name: String) -> Self {
-        NonColonName {
-            name
-        }
+        NonColonName { name }
     }
 }
 
@@ -144,7 +147,7 @@ impl AsRef<str> for NonColonName {
 pub struct InvalidQualifiedName {
     name: String,
     invalid_char: Option<char>,
-    invalid_pos: usize
+    invalid_pos: usize,
 }
 
 impl fmt::Debug for InvalidQualifiedName {
@@ -152,7 +155,10 @@ impl fmt::Debug for InvalidQualifiedName {
         if let Some(invalid_char) = self.invalid_char {
             write!(f, "`{}` is not a valid XML qualified name token; invalid character `{}` at position `{}`.", &self.name, invalid_char, self.invalid_pos)
         } else {
-            write!(f, "The empty string is not a valid XML qualified name token.")
+            write!(
+                f,
+                "The empty string is not a valid XML qualified name token."
+            )
         }
     }
 }
@@ -160,7 +166,7 @@ impl fmt::Debug for InvalidQualifiedName {
 #[derive(Clone)]
 pub struct QualifiedName {
     name: String,
-    colon_pos: Option<usize>
+    colon_pos: Option<usize>,
 }
 
 impl QualifiedName {
@@ -173,7 +179,7 @@ impl QualifiedName {
                 return Err(InvalidQualifiedName {
                     name: name.to_string(),
                     invalid_char: Some(c),
-                    invalid_pos: 0
+                    invalid_pos: 0,
                 });
             }
 
@@ -186,7 +192,7 @@ impl QualifiedName {
                     return Err(InvalidQualifiedName {
                         name: name.to_string(),
                         invalid_char: Some(c),
-                        invalid_pos: i
+                        invalid_pos: i,
                     });
                 }
 
@@ -195,7 +201,7 @@ impl QualifiedName {
                         return Err(InvalidQualifiedName {
                             name: name.to_string(),
                             invalid_char: Some(c),
-                            invalid_pos: i
+                            invalid_pos: i,
                         });
                     } else {
                         colon_pos = Some(i);
@@ -211,7 +217,7 @@ impl QualifiedName {
             Err(InvalidQualifiedName {
                 name: name.to_string(),
                 invalid_char: None,
-                invalid_pos: 0
+                invalid_pos: 0,
             })
         }
     }
@@ -221,9 +227,7 @@ impl QualifiedName {
     }
 
     pub fn prefix(&self) -> Option<&str> {
-        self.colon_pos.map(|colon_pos| {
-            &self.name[0..colon_pos]
-        })
+        self.colon_pos.map(|colon_pos| &self.name[0..colon_pos])
     }
 
     pub fn local_name(&self) -> &str {
