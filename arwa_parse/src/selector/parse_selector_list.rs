@@ -1,32 +1,25 @@
-use super::{parse_complex_selector, skip_whitespace, ParseError, SelectorList};
+use super::{parse_complex_selector, ParseError, Remainder, SelectorList};
 
-pub fn parse_selector_list(
-    input_remainder: &str,
-    offset: usize,
-) -> Result<(SelectorList, &str), ParseError> {
+pub fn parse_selector_list(remainder: Remainder) -> Result<(SelectorList, Remainder), ParseError> {
     let mut selector_list = Vec::new();
 
-    let remainder = skip_whitespace(input_remainder);
+    let remainder = remainder.skip_whitespace();
 
-    let (complex_selector, remainder) =
-        parse_complex_selector(remainder, offset + input_remainder.len() - remainder.len())?;
+    let (complex_selector, remainder) = parse_complex_selector(remainder)?;
 
     selector_list.push(complex_selector);
 
-    let mut remainder = skip_whitespace(remainder);
+    let mut remainder = remainder.skip_whitespace();
 
     loop {
-        let mut chars = remainder.chars();
+        if remainder.starts_with(',') {
+            remainder = remainder.skip(1);
 
-        if chars.next() == Some(',') {
-            let r = chars.as_str();
-
-            let (complex_selector, r) =
-                parse_complex_selector(r, offset + input_remainder.len() - r.len())?;
+            let (complex_selector, r) = parse_complex_selector(remainder)?;
 
             selector_list.push(complex_selector);
 
-            remainder = skip_whitespace(r);
+            remainder = r.skip_whitespace();
         } else {
             break;
         }
@@ -44,11 +37,35 @@ mod tests {
 
     #[test]
     fn valid_one_complex_selector() {
+        let (selector, remainder) = parse_selector_list("* ".into()).unwrap();
+
         assert_eq!(
-            parse_selector_list("* ", 0),
-            Ok((
-                SelectorList {
-                    selector_list: vec![ComplexSelector {
+            selector,
+            SelectorList {
+                selector_list: vec![ComplexSelector {
+                    head: CompoundSelector {
+                        type_selector: Some(TypeSelector::Universal),
+                        id_selector: None,
+                        class_selectors: vec![],
+                        attribute_selectors: vec![],
+                        pseudo_class_selectors: vec![]
+                    },
+                    tail: vec![]
+                }]
+            }
+        );
+        assert_eq!(remainder, "");
+    }
+
+    #[test]
+    fn valid_two_complex_selector() {
+        let (selector, remainder) = parse_selector_list("*, * ".into()).unwrap();
+
+        assert_eq!(
+            selector,
+            SelectorList {
+                selector_list: vec![
+                    ComplexSelector {
                         head: CompoundSelector {
                             type_selector: Some(TypeSelector::Universal),
                             id_selector: None,
@@ -57,59 +74,35 @@ mod tests {
                             pseudo_class_selectors: vec![]
                         },
                         tail: vec![]
-                    }]
-                },
-                ""
-            ))
-        )
-    }
-
-    #[test]
-    fn valid_two_complex_selector() {
-        assert_eq!(
-            parse_selector_list("*, * ", 0),
-            Ok((
-                SelectorList {
-                    selector_list: vec![
-                        ComplexSelector {
-                            head: CompoundSelector {
-                                type_selector: Some(TypeSelector::Universal),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            },
-                            tail: vec![]
+                    },
+                    ComplexSelector {
+                        head: CompoundSelector {
+                            type_selector: Some(TypeSelector::Universal),
+                            id_selector: None,
+                            class_selectors: vec![],
+                            attribute_selectors: vec![],
+                            pseudo_class_selectors: vec![]
                         },
-                        ComplexSelector {
-                            head: CompoundSelector {
-                                type_selector: Some(TypeSelector::Universal),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            },
-                            tail: vec![]
-                        }
-                    ]
-                },
-                ""
-            ))
-        )
+                        tail: vec![]
+                    }
+                ]
+            }
+        );
+        assert_eq!(remainder, "");
     }
 
     #[test]
     fn empty() {
-        assert!(parse_selector_list("", 0).is_err())
+        assert!(parse_selector_list("".into()).is_err())
     }
 
     #[test]
     fn empty_first_list_element() {
-        assert!(parse_selector_list(", *", 0).is_err())
+        assert!(parse_selector_list(", *".into()).is_err())
     }
 
     #[test]
     fn empty_second_list_element() {
-        assert!(parse_selector_list("*, , *", 0).is_err())
+        assert!(parse_selector_list("*, , *".into()).is_err())
     }
 }

@@ -1,62 +1,40 @@
 use super::{
     case_insensitive_eq, parse_a_n_plus_b, parse_a_n_plus_b_of, parse_function_invocation,
     parse_identifier, parse_identifier_or_string, parse_relative_selector_list,
-    parse_selector_list, ParseError, PseudoClassSelector,
+    parse_selector_list, ParseError, PseudoClassSelector, Remainder,
 };
 
 pub fn parse_pseudo_class_selector(
-    input_remainder: &str,
-    offset: usize,
-) -> Result<(PseudoClassSelector, &str), ParseError> {
-    let (identifier, remainder) = parse_identifier(input_remainder, offset)?;
+    input_remainder: Remainder,
+) -> Result<(PseudoClassSelector, Remainder), ParseError> {
+    let (identifier, remainder) = parse_identifier(input_remainder)?;
     let identifier = &input_remainder[..identifier.len()];
 
     if case_insensitive_eq(identifier, "is") {
-        let (selector, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_selector_list,
-        )?;
+        let (selector, remainder) = parse_function_invocation(remainder, parse_selector_list)?;
 
         Ok((PseudoClassSelector::Is(selector), remainder))
     } else if case_insensitive_eq(identifier, "not") {
-        let (selector, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_selector_list,
-        )?;
+        let (selector, remainder) = parse_function_invocation(remainder, parse_selector_list)?;
 
         Ok((PseudoClassSelector::Not(selector), remainder))
     } else if case_insensitive_eq(identifier, "where") {
-        let (selector, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_selector_list,
-        )?;
+        let (selector, remainder) = parse_function_invocation(remainder, parse_selector_list)?;
 
         Ok((PseudoClassSelector::Where(selector), remainder))
     } else if case_insensitive_eq(identifier, "has") {
-        let (relative_selector, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_relative_selector_list,
-        )?;
+        let (relative_selector, remainder) =
+            parse_function_invocation(remainder, parse_relative_selector_list)?;
 
         Ok((PseudoClassSelector::Has(relative_selector), remainder))
     } else if case_insensitive_eq(identifier, "dir") {
-        let (relative_selector, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_identifier,
-        )?;
+        let (relative_selector, remainder) =
+            parse_function_invocation(remainder, parse_identifier)?;
 
         Ok((PseudoClassSelector::Dir(relative_selector), remainder))
     } else if case_insensitive_eq(identifier, "lang") {
-        let (relative_selector, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_identifier_or_string,
-        )?;
+        let (relative_selector, remainder) =
+            parse_function_invocation(remainder, parse_identifier_or_string)?;
 
         Ok((PseudoClassSelector::Lang(relative_selector), remainder))
     } else if case_insensitive_eq(identifier, "any-link") {
@@ -85,11 +63,7 @@ pub fn parse_pseudo_class_selector(
         Ok((PseudoClassSelector::FocusWithin, remainder))
     } else if case_insensitive_eq(identifier, "current") {
         let (selector, remainder) = if remainder.starts_with('(') {
-            let (selector, remainder) = parse_function_invocation(
-                remainder,
-                offset + input_remainder.len() - remainder.len(),
-                parse_selector_list,
-            )?;
+            let (selector, remainder) = parse_function_invocation(remainder, parse_selector_list)?;
 
             (Some(selector), remainder)
         } else {
@@ -142,19 +116,11 @@ pub fn parse_pseudo_class_selector(
     } else if case_insensitive_eq(identifier, "empty") {
         Ok((PseudoClassSelector::Empty, remainder))
     } else if case_insensitive_eq(identifier, "nth-child") {
-        let (a_n_plus_b_of, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_a_n_plus_b_of,
-        )?;
+        let (a_n_plus_b_of, remainder) = parse_function_invocation(remainder, parse_a_n_plus_b_of)?;
 
         Ok((PseudoClassSelector::NthChild(a_n_plus_b_of), remainder))
     } else if case_insensitive_eq(identifier, "nth-last-child") {
-        let (a_n_plus_b_of, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_a_n_plus_b_of,
-        )?;
+        let (a_n_plus_b_of, remainder) = parse_function_invocation(remainder, parse_a_n_plus_b_of)?;
 
         Ok((PseudoClassSelector::NthLastChild(a_n_plus_b_of), remainder))
     } else if case_insensitive_eq(identifier, "first-child") {
@@ -164,19 +130,11 @@ pub fn parse_pseudo_class_selector(
     } else if case_insensitive_eq(identifier, "only-child") {
         Ok((PseudoClassSelector::LastChild, remainder))
     } else if case_insensitive_eq(identifier, "nth-of-type") {
-        let (a_n_plus_b, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_a_n_plus_b,
-        )?;
+        let (a_n_plus_b, remainder) = parse_function_invocation(remainder, parse_a_n_plus_b)?;
 
         Ok((PseudoClassSelector::NthOfType(a_n_plus_b), remainder))
     } else if case_insensitive_eq(identifier, "nth-last-of-type") {
-        let (a_n_plus_b, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_a_n_plus_b,
-        )?;
+        let (a_n_plus_b, remainder) = parse_function_invocation(remainder, parse_a_n_plus_b)?;
 
         Ok((PseudoClassSelector::NthLastOfType(a_n_plus_b), remainder))
     } else if case_insensitive_eq(identifier, "first-of-type") {
@@ -186,25 +144,17 @@ pub fn parse_pseudo_class_selector(
     } else if case_insensitive_eq(identifier, "only-of-type") {
         Ok((PseudoClassSelector::OnlyOfType, remainder))
     } else if case_insensitive_eq(identifier, "nth-col") {
-        let (a_n_plus_b, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_a_n_plus_b,
-        )?;
+        let (a_n_plus_b, remainder) = parse_function_invocation(remainder, parse_a_n_plus_b)?;
 
         Ok((PseudoClassSelector::NthCol(a_n_plus_b), remainder))
     } else if case_insensitive_eq(identifier, "nth-last-col") {
-        let (a_n_plus_b, remainder) = parse_function_invocation(
-            remainder,
-            offset + input_remainder.len() - remainder.len(),
-            parse_a_n_plus_b,
-        )?;
+        let (a_n_plus_b, remainder) = parse_function_invocation(remainder, parse_a_n_plus_b)?;
 
         Ok((PseudoClassSelector::NthLastCol(a_n_plus_b), remainder))
     } else {
         Err(ParseError {
             message: format!("unknown pseudo-class identifier `{}`", identifier),
-            position: offset + input_remainder.len() - remainder.len(),
+            offset: remainder.offset(),
         })
     }
 }
@@ -219,288 +169,340 @@ mod tests {
 
     #[test]
     fn valid_non_function_pseudo_class() {
-        assert_eq!(
-            parse_pseudo_class_selector("checked rest", 0),
-            Ok((PseudoClassSelector::Checked, " rest"))
-        );
+        let (selector, remainder) = parse_pseudo_class_selector("checked rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Checked);
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_upper_case_non_function_pseudo_class() {
-        assert_eq!(
-            parse_pseudo_class_selector("CHECKED rest", 0),
-            Ok((PseudoClassSelector::Checked, " rest"))
-        );
+        let (selector, remainder) = parse_pseudo_class_selector("CHECKED rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Checked);
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn unknown_non_function_pseudo_class() {
-        assert!(parse_pseudo_class_selector("unknown rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("unknown rest".into()).is_err());
     }
 
     #[test]
     fn valid_is_selector() {
+        let (selector, remainder) = parse_pseudo_class_selector("is(*) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("is(*) rest", 0),
-            Ok((
-                PseudoClassSelector::Is(SelectorList {
-                    selector_list: vec![ComplexSelector {
-                        head: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        },
-                        tail: vec![]
-                    }]
-                }),
-                " rest"
-            ))
+            selector,
+            PseudoClassSelector::Is(SelectorList {
+                selector_list: vec![ComplexSelector {
+                    head: CompoundSelector {
+                        type_selector: Some(TypeSelector::Universal),
+                        id_selector: None,
+                        class_selectors: vec![],
+                        attribute_selectors: vec![],
+                        pseudo_class_selectors: vec![]
+                    },
+                    tail: vec![]
+                }]
+            })
         );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn is_no_invocation() {
-        assert!(parse_pseudo_class_selector("is rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("is rest".into()).is_err());
     }
 
     #[test]
     fn is_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("is( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("is( rest".into()).is_err());
     }
 
     #[test]
     fn is_no_selector() {
-        assert!(parse_pseudo_class_selector("is() rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("is() rest".into()).is_err());
     }
 
     #[test]
     fn valid_not_selector() {
+        let (selector, remainder) = parse_pseudo_class_selector("not(*) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("not(*) rest", 0),
-            Ok((
-                PseudoClassSelector::Not(SelectorList {
-                    selector_list: vec![ComplexSelector {
-                        head: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        },
-                        tail: vec![]
-                    }]
-                }),
-                " rest"
-            ))
+            selector,
+            PseudoClassSelector::Not(SelectorList {
+                selector_list: vec![ComplexSelector {
+                    head: CompoundSelector {
+                        type_selector: Some(TypeSelector::Universal),
+                        id_selector: None,
+                        class_selectors: vec![],
+                        attribute_selectors: vec![],
+                        pseudo_class_selectors: vec![]
+                    },
+                    tail: vec![]
+                }]
+            })
         );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn not_no_invocation() {
-        assert!(parse_pseudo_class_selector("not rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("not rest".into()).is_err());
     }
 
     #[test]
     fn not_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("not( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("not( rest".into()).is_err());
     }
 
     #[test]
     fn not_no_selector() {
-        assert!(parse_pseudo_class_selector("not() rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("not() rest".into()).is_err());
     }
 
     #[test]
     fn valid_where_selector() {
+        let (selector, remainder) = parse_pseudo_class_selector("where(*) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("where(*) rest", 0),
-            Ok((
-                PseudoClassSelector::Where(SelectorList {
-                    selector_list: vec![ComplexSelector {
-                        head: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        },
-                        tail: vec![]
-                    }]
-                }),
-                " rest"
-            ))
+            selector,
+            PseudoClassSelector::Where(SelectorList {
+                selector_list: vec![ComplexSelector {
+                    head: CompoundSelector {
+                        type_selector: Some(TypeSelector::Universal),
+                        id_selector: None,
+                        class_selectors: vec![],
+                        attribute_selectors: vec![],
+                        pseudo_class_selectors: vec![]
+                    },
+                    tail: vec![]
+                }]
+            })
         );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn where_no_invocation() {
-        assert!(parse_pseudo_class_selector("where rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("where rest".into()).is_err());
     }
 
     #[test]
     fn where_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("where( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("where( rest".into()).is_err());
     }
 
     #[test]
     fn where_no_selector() {
-        assert!(parse_pseudo_class_selector("where() rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("where() rest".into()).is_err());
     }
 
     #[test]
     fn valid_has_descendant_selector() {
+        let (selector, remainder) = parse_pseudo_class_selector("has(*) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("has(*) rest", 0),
-            Ok((
-                PseudoClassSelector::Has(RelativeSelectorList {
-                    relative_selector_list: vec![RelativeComplexSelector {
-                        parts: vec![CombinedSelector {
-                            combinator: Combinator::Descendant,
-                            selector: CompoundSelector {
-                                type_selector: Some(TypeSelector::Universal),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            }
-                        }]
+            selector,
+            PseudoClassSelector::Has(RelativeSelectorList {
+                relative_selector_list: vec![RelativeComplexSelector {
+                    parts: vec![CombinedSelector {
+                        combinator: Combinator::Descendant,
+                        selector: CompoundSelector {
+                            type_selector: Some(TypeSelector::Universal),
+                            id_selector: None,
+                            class_selectors: vec![],
+                            attribute_selectors: vec![],
+                            pseudo_class_selectors: vec![]
+                        }
                     }]
-                }),
-                " rest"
-            ))
+                }]
+            })
         );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_has_child_selector() {
+        let (selector, remainder) = parse_pseudo_class_selector("has(> *) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("has(> *) rest", 0),
-            Ok((
-                PseudoClassSelector::Has(RelativeSelectorList {
-                    relative_selector_list: vec![RelativeComplexSelector {
-                        parts: vec![CombinedSelector {
-                            combinator: Combinator::Child,
-                            selector: CompoundSelector {
-                                type_selector: Some(TypeSelector::Universal),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            }
-                        }]
+            selector,
+            PseudoClassSelector::Has(RelativeSelectorList {
+                relative_selector_list: vec![RelativeComplexSelector {
+                    parts: vec![CombinedSelector {
+                        combinator: Combinator::Child,
+                        selector: CompoundSelector {
+                            type_selector: Some(TypeSelector::Universal),
+                            id_selector: None,
+                            class_selectors: vec![],
+                            attribute_selectors: vec![],
+                            pseudo_class_selectors: vec![]
+                        }
                     }]
-                }),
-                " rest"
-            ))
+                }]
+            })
         );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn has_no_invocation() {
-        assert!(parse_pseudo_class_selector("has rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("has rest".into()).is_err());
     }
 
     #[test]
     fn has_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("has( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("has( rest".into()).is_err());
     }
 
     #[test]
     fn has_no_selector() {
-        assert!(parse_pseudo_class_selector("has() rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("has() rest".into()).is_err());
     }
 
     #[test]
     fn valid_dir_selector() {
-        assert_eq!(
-            parse_pseudo_class_selector("dir(ltr) rest", 0),
-            Ok((PseudoClassSelector::Dir(4..7), " rest"))
-        );
+        let (selector, remainder) = parse_pseudo_class_selector("dir(ltr) rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Dir(4..7));
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_dir_selector_with_whitespace() {
-        assert_eq!(
-            parse_pseudo_class_selector("dir( ltr ) rest", 0),
-            Ok((PseudoClassSelector::Dir(5..8), " rest"))
-        );
+        let (selector, remainder) = parse_pseudo_class_selector("dir( ltr ) rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Dir(5..8));
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn dir_string() {
-        assert!(parse_pseudo_class_selector("dir('ltr') rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("dir('ltr') rest".into()).is_err());
     }
 
     #[test]
     fn dir_no_invocation() {
-        assert!(parse_pseudo_class_selector("dir rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("dir rest".into()).is_err());
     }
 
     #[test]
     fn dir_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("dir( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("dir( rest".into()).is_err());
     }
 
     #[test]
     fn dir_empty_invocation() {
-        assert!(parse_pseudo_class_selector("dir( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("dir( ) rest".into()).is_err());
     }
 
     #[test]
     fn valid_lang_selector_with_identifier() {
-        assert_eq!(
-            parse_pseudo_class_selector("lang(en) rest", 0),
-            Ok((PseudoClassSelector::Lang(5..7), " rest"))
-        );
+        let (selector, remainder) = parse_pseudo_class_selector("lang(en) rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Lang(5..7));
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_lang_selector_with_single_quoted_string() {
-        assert_eq!(
-            parse_pseudo_class_selector("lang('en') rest", 0),
-            Ok((PseudoClassSelector::Lang(5..9), " rest"))
-        );
+        let (selector, remainder) = parse_pseudo_class_selector("lang('en') rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Lang(5..9));
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_lang_selector_with_double_quoted_string() {
-        assert_eq!(
-            parse_pseudo_class_selector("lang(\"en\") rest", 0),
-            Ok((PseudoClassSelector::Lang(5..9), " rest"))
-        );
+        let (selector, remainder) =
+            parse_pseudo_class_selector("lang(\"en\") rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Lang(5..9));
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn lang_no_invocation() {
-        assert!(parse_pseudo_class_selector("lang rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("lang rest".into()).is_err());
     }
 
     #[test]
     fn lang_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("lang( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("lang( rest".into()).is_err());
     }
 
     #[test]
     fn lang_empty_invocation() {
-        assert!(parse_pseudo_class_selector("lang( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("lang( ) rest".into()).is_err());
     }
 
     #[test]
     fn valid_current_no_invocation() {
-        assert_eq!(
-            parse_pseudo_class_selector("current rest", 0),
-            Ok((PseudoClassSelector::Current(None), " rest"))
-        );
+        let (selector, remainder) = parse_pseudo_class_selector("current rest".into()).unwrap();
+
+        assert_eq!(selector, PseudoClassSelector::Current(None));
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_current_with_selector() {
+        let (selector, remainder) = parse_pseudo_class_selector("current(*) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("current(*) rest", 0),
-            Ok((
-                PseudoClassSelector::Current(Some(SelectorList {
+            selector,
+            PseudoClassSelector::Current(Some(SelectorList {
+                selector_list: vec![ComplexSelector {
+                    head: CompoundSelector {
+                        type_selector: Some(TypeSelector::Universal),
+                        id_selector: None,
+                        class_selectors: vec![],
+                        attribute_selectors: vec![],
+                        pseudo_class_selectors: vec![]
+                    },
+                    tail: vec![]
+                }]
+            }))
+        );
+        assert_eq!(remainder, " rest");
+    }
+
+    #[test]
+    fn current_unclosed_invocation() {
+        assert!(parse_pseudo_class_selector("current( rest".into()).is_err());
+    }
+
+    #[test]
+    fn current_no_selector() {
+        assert!(parse_pseudo_class_selector("current() rest".into()).is_err());
+    }
+
+    #[test]
+    fn valid_nth_child() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-child(2n+1) rest".into()).unwrap();
+
+        assert_eq!(
+            selector,
+            PseudoClassSelector::NthChild(ANPlusBOf {
+                a_n_plus_b: ANPlusB::ANPlusB(2, 1),
+                of: None
+            })
+        );
+        assert_eq!(remainder, " rest");
+    }
+
+    #[test]
+    fn valid_nth_child_with_of() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-child(2n+1 of *) rest".into()).unwrap();
+
+        assert_eq!(
+            selector,
+            PseudoClassSelector::NthChild(ANPlusBOf {
+                a_n_plus_b: ANPlusB::ANPlusB(2, 1),
+                of: Some(SelectorList {
                     selector_list: vec![ComplexSelector {
                         head: CompoundSelector {
                             type_selector: Some(TypeSelector::Universal),
@@ -511,253 +513,213 @@ mod tests {
                         },
                         tail: vec![]
                     }]
-                })),
-                " rest"
-            ))
+                })
+            })
         );
-    }
-
-    #[test]
-    fn current_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("current( rest", 0).is_err());
-    }
-
-    #[test]
-    fn current_no_selector() {
-        assert!(parse_pseudo_class_selector("current() rest", 0).is_err());
-    }
-
-    #[test]
-    fn valid_nth_child() {
-        assert_eq!(
-            parse_pseudo_class_selector("nth-child(2n+1) rest", 0),
-            Ok((
-                PseudoClassSelector::NthChild(ANPlusBOf {
-                    a_n_plus_b: ANPlusB::ANPlusB(2, 1),
-                    of: None
-                }),
-                " rest"
-            ))
-        )
-    }
-
-    #[test]
-    fn valid_nth_child_with_of() {
-        assert_eq!(
-            parse_pseudo_class_selector("nth-child(2n+1 of *) rest", 0),
-            Ok((
-                PseudoClassSelector::NthChild(ANPlusBOf {
-                    a_n_plus_b: ANPlusB::ANPlusB(2, 1),
-                    of: Some(SelectorList {
-                        selector_list: vec![ComplexSelector {
-                            head: CompoundSelector {
-                                type_selector: Some(TypeSelector::Universal),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            },
-                            tail: vec![]
-                        }]
-                    })
-                }),
-                " rest"
-            ))
-        )
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn nth_child_no_invocation() {
-        assert!(parse_pseudo_class_selector("nth-child rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-child rest".into()).is_err());
     }
 
     #[test]
     fn nth_child_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("nth-child( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-child( rest".into()).is_err());
     }
 
     #[test]
     fn nth_child_empty_invocation() {
-        assert!(parse_pseudo_class_selector("nth-child( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-child( ) rest".into()).is_err());
     }
 
     #[test]
     fn valid_nth_last_child() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-last-child(2n+1) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("nth-last-child(2n+1) rest", 0),
-            Ok((
-                PseudoClassSelector::NthLastChild(ANPlusBOf {
-                    a_n_plus_b: ANPlusB::ANPlusB(2, 1),
-                    of: None
-                }),
-                " rest"
-            ))
-        )
+            selector,
+            PseudoClassSelector::NthLastChild(ANPlusBOf {
+                a_n_plus_b: ANPlusB::ANPlusB(2, 1),
+                of: None
+            })
+        );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_nth_last_child_with_of() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-last-child(2n+1 of *) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("nth-last-child(2n+1 of *) rest", 0),
-            Ok((
-                PseudoClassSelector::NthLastChild(ANPlusBOf {
-                    a_n_plus_b: ANPlusB::ANPlusB(2, 1),
-                    of: Some(SelectorList {
-                        selector_list: vec![ComplexSelector {
-                            head: CompoundSelector {
-                                type_selector: Some(TypeSelector::Universal),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            },
-                            tail: vec![]
-                        }]
-                    })
-                }),
-                " rest"
-            ))
-        )
+            selector,
+            PseudoClassSelector::NthLastChild(ANPlusBOf {
+                a_n_plus_b: ANPlusB::ANPlusB(2, 1),
+                of: Some(SelectorList {
+                    selector_list: vec![ComplexSelector {
+                        head: CompoundSelector {
+                            type_selector: Some(TypeSelector::Universal),
+                            id_selector: None,
+                            class_selectors: vec![],
+                            attribute_selectors: vec![],
+                            pseudo_class_selectors: vec![]
+                        },
+                        tail: vec![]
+                    }]
+                })
+            })
+        );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn nth_last_child_no_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-child rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-child rest".into()).is_err());
     }
 
     #[test]
     fn nth_last_child_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-child( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-child( rest".into()).is_err());
     }
 
     #[test]
     fn nth_last_child_empty_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-child( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-child( ) rest".into()).is_err());
     }
 
     #[test]
     fn valid_nth_of_type() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-of-type(2n+1) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("nth-of-type(2n+1) rest", 0),
-            Ok((
-                PseudoClassSelector::NthOfType(ANPlusB::ANPlusB(2, 1)),
-                " rest"
-            ))
-        )
+            selector,
+            PseudoClassSelector::NthOfType(ANPlusB::ANPlusB(2, 1))
+        );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn nth_of_type_with_of() {
-        assert!(parse_pseudo_class_selector("nth-of-type(2n+1 of *) rest", 0).is_err())
+        assert!(parse_pseudo_class_selector("nth-of-type(2n+1 of *) rest".into()).is_err())
     }
 
     #[test]
     fn nth_of_type_no_invocation() {
-        assert!(parse_pseudo_class_selector("nth-of-type rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-of-type rest".into()).is_err());
     }
 
     #[test]
     fn nth_of_type_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("nth-of-type( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-of-type( rest".into()).is_err());
     }
 
     #[test]
     fn nth_of_type_empty_invocation() {
-        assert!(parse_pseudo_class_selector("nth-of-type( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-of-type( ) rest".into()).is_err());
     }
 
     #[test]
     fn valid_nth_last_of_type() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-last-of-type(2n+1) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("nth-last-of-type(2n+1) rest", 0),
-            Ok((
-                PseudoClassSelector::NthLastOfType(ANPlusB::ANPlusB(2, 1)),
-                " rest"
-            ))
-        )
+            selector,
+            PseudoClassSelector::NthLastOfType(ANPlusB::ANPlusB(2, 1))
+        );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn nth_last_of_type_with_of() {
-        assert!(parse_pseudo_class_selector("nth-last-of-type(2n+1 of *) rest", 0).is_err())
+        assert!(parse_pseudo_class_selector("nth-last-of-type(2n+1 of *) rest".into()).is_err())
     }
 
     #[test]
     fn nth_last_of_type_no_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-of-type rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-of-type rest".into()).is_err());
     }
 
     #[test]
     fn nth_last_of_type_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-of-type( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-of-type( rest".into()).is_err());
     }
 
     #[test]
     fn nth_last_of_type_empty_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-of-type( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-of-type( ) rest".into()).is_err());
     }
 
     #[test]
     fn valid_nth_col() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-col(2n+1) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("nth-col(2n+1) rest", 0),
-            Ok((PseudoClassSelector::NthCol(ANPlusB::ANPlusB(2, 1)), " rest"))
-        )
+            selector,
+            PseudoClassSelector::NthCol(ANPlusB::ANPlusB(2, 1))
+        );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn nth_col_with_of() {
-        assert!(parse_pseudo_class_selector("nth-col(2n+1 of *) rest", 0).is_err())
+        assert!(parse_pseudo_class_selector("nth-col(2n+1 of *) rest".into()).is_err())
     }
 
     #[test]
     fn nth_col_no_invocation() {
-        assert!(parse_pseudo_class_selector("nth-col rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-col rest".into()).is_err());
     }
 
     #[test]
     fn nth_col_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("nth-col( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-col( rest".into()).is_err());
     }
 
     #[test]
     fn nth_col_empty_invocation() {
-        assert!(parse_pseudo_class_selector("nth-col( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-col( ) rest".into()).is_err());
     }
 
     #[test]
     fn valid_nth_last_col() {
+        let (selector, remainder) =
+            parse_pseudo_class_selector("nth-last-col(2n+1) rest".into()).unwrap();
+
         assert_eq!(
-            parse_pseudo_class_selector("nth-last-col(2n+1) rest", 0),
-            Ok((
-                PseudoClassSelector::NthLastCol(ANPlusB::ANPlusB(2, 1)),
-                " rest"
-            ))
-        )
+            selector,
+            PseudoClassSelector::NthLastCol(ANPlusB::ANPlusB(2, 1))
+        );
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn nth_last_col_with_of() {
-        assert!(parse_pseudo_class_selector("nth-last-col(2n+1 of *) rest", 0).is_err())
+        assert!(parse_pseudo_class_selector("nth-last-col(2n+1 of *) rest".into()).is_err())
     }
 
     #[test]
     fn nth_last_col_no_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-col rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-col rest".into()).is_err());
     }
 
     #[test]
     fn nth_last_col_unclosed_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-col( rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-col( rest".into()).is_err());
     }
 
     #[test]
     fn nth_last_col_empty_invocation() {
-        assert!(parse_pseudo_class_selector("nth-last-col( ) rest", 0).is_err());
+        assert!(parse_pseudo_class_selector("nth-last-col( ) rest".into()).is_err());
     }
 
     #[test]
     fn empty() {
-        assert!(parse_pseudo_class_selector("", 0).is_err())
+        assert!(parse_pseudo_class_selector("".into()).is_err())
     }
 }

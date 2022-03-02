@@ -1,13 +1,12 @@
 use super::{
-    is_whitespace, parse_compound_selector, skip_whitespace, Combinator, CombinedSelector,
-    ComplexSelector, ParseError,
+    is_whitespace, parse_compound_selector, Combinator, CombinedSelector, ComplexSelector,
+    ParseError, Remainder,
 };
 
 pub fn parse_complex_selector(
-    input_remainder: &str,
-    offset: usize,
-) -> Result<(ComplexSelector, &str), ParseError> {
-    let (head, remainder) = parse_compound_selector(input_remainder, offset)?;
+    remainder: Remainder,
+) -> Result<(ComplexSelector, Remainder), ParseError> {
+    let (head, remainder) = parse_compound_selector(remainder)?;
 
     let mut tail = Vec::new();
     let mut remainder = remainder;
@@ -19,27 +18,27 @@ pub fn parse_complex_selector(
             break;
         };
 
-        remainder = skip_whitespace(remainder);
+        remainder = remainder.skip_whitespace();
 
         if remainder.is_empty() || remainder.starts_with(',') {
             break;
         }
 
         let (combinator, r) = if remainder.starts_with('>') {
-            (Combinator::Child, &remainder[1..])
+            (Combinator::Child, remainder.skip(1))
         } else if remainder.starts_with('+') {
-            (Combinator::NextSibling, &remainder[1..])
+            (Combinator::NextSibling, remainder.skip(1))
         } else if remainder.starts_with('~') {
-            (Combinator::SubsequentSibling, &remainder[1..])
+            (Combinator::SubsequentSibling, remainder.skip(1))
         } else if remainder.starts_with("||") {
-            (Combinator::Column, &remainder[2..])
+            (Combinator::Column, remainder.skip(2))
         } else if has_whitespace {
             (Combinator::Descendant, remainder)
         } else {
             break;
         };
 
-        let (selector, r) = parse_compound_selector(r, offset + input_remainder.len() - r.len())?;
+        let (selector, r) = parse_compound_selector(r)?;
 
         remainder = r;
 
@@ -61,265 +60,265 @@ mod tests {
 
     #[test]
     fn valid_single_compound_selector() {
+        let (selector, remainder) = parse_complex_selector("*, rest".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("*, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
-                        type_selector: Some(TypeSelector::Universal),
-                        id_selector: None,
-                        class_selectors: vec![],
-                        attribute_selectors: vec![],
-                        pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![]
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
                 },
-                ", rest"
-            ))
-        )
+                tail: vec![]
+            }
+        );
+        assert_eq!(remainder, ", rest");
     }
 
     #[test]
     fn valid_single_compound_selector_no_rest() {
+        let (selector, remainder) = parse_complex_selector("* ".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("* ", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
-                        type_selector: Some(TypeSelector::Universal),
-                        id_selector: None,
-                        class_selectors: vec![],
-                        attribute_selectors: vec![],
-                        pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![]
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
                 },
-                ""
-            ))
-        )
+                tail: vec![]
+            }
+        );
+        assert_eq!(remainder, "");
     }
 
     #[test]
     fn valid_compound_descendant_of_compound() {
+        let (selector, remainder) = parse_complex_selector("* *, rest".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("* *, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
+                },
+                tail: vec![CombinedSelector {
+                    combinator: Combinator::Descendant,
+                    selector: CompoundSelector {
                         type_selector: Some(TypeSelector::Universal),
                         id_selector: None,
                         class_selectors: vec![],
                         attribute_selectors: vec![],
                         pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![CombinedSelector {
-                        combinator: Combinator::Descendant,
-                        selector: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        }
-                    }]
-                },
-                ", rest"
-            ))
-        )
+                    }
+                }]
+            }
+        );
+        assert_eq!(remainder, ", rest");
     }
 
     #[test]
     fn valid_compound_child_of_compound() {
+        let (selector, remainder) = parse_complex_selector("*>*, rest".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("*>*, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
+                },
+                tail: vec![CombinedSelector {
+                    combinator: Combinator::Child,
+                    selector: CompoundSelector {
                         type_selector: Some(TypeSelector::Universal),
                         id_selector: None,
                         class_selectors: vec![],
                         attribute_selectors: vec![],
                         pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![CombinedSelector {
-                        combinator: Combinator::Child,
-                        selector: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        }
-                    }]
-                },
-                ", rest"
-            ))
-        )
+                    }
+                }]
+            }
+        );
+        assert_eq!(remainder, ", rest");
     }
 
     fn valid_compound_child_of_compound_with_whitespace() {
+        let (selector, remainder) = parse_complex_selector("* > *, rest".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("* > *, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
+                },
+                tail: vec![CombinedSelector {
+                    combinator: Combinator::Child,
+                    selector: CompoundSelector {
                         type_selector: Some(TypeSelector::Universal),
                         id_selector: None,
                         class_selectors: vec![],
                         attribute_selectors: vec![],
                         pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![CombinedSelector {
-                        combinator: Combinator::Child,
-                        selector: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        }
-                    }]
-                },
-                ", rest"
-            ))
-        )
+                    }
+                }]
+            }
+        );
+        assert_eq!(remainder, ", rest");
     }
 
     #[test]
     fn valid_compound_next_sibling_of_compound() {
+        let (selector, remainder) = parse_complex_selector("*+*, rest".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("*+*, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
+                },
+                tail: vec![CombinedSelector {
+                    combinator: Combinator::NextSibling,
+                    selector: CompoundSelector {
                         type_selector: Some(TypeSelector::Universal),
                         id_selector: None,
                         class_selectors: vec![],
                         attribute_selectors: vec![],
                         pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![CombinedSelector {
-                        combinator: Combinator::NextSibling,
-                        selector: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        }
-                    }]
-                },
-                ", rest"
-            ))
-        )
+                    }
+                }]
+            }
+        );
+        assert_eq!(remainder, ", rest");
     }
 
     #[test]
     fn valid_compound_subsequent_sibling_of_compound() {
+        let (selector, remainder) = parse_complex_selector("*~*, rest".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("*~*, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
+                },
+                tail: vec![CombinedSelector {
+                    combinator: Combinator::SubsequentSibling,
+                    selector: CompoundSelector {
                         type_selector: Some(TypeSelector::Universal),
                         id_selector: None,
                         class_selectors: vec![],
                         attribute_selectors: vec![],
                         pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![CombinedSelector {
-                        combinator: Combinator::SubsequentSibling,
-                        selector: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
-                            id_selector: None,
-                            class_selectors: vec![],
-                            attribute_selectors: vec![],
-                            pseudo_class_selectors: vec![]
-                        }
-                    }]
-                },
-                ", rest"
-            ))
-        )
+                    }
+                }]
+            }
+        );
+        assert_eq!(remainder, ", rest");
     }
 
     #[test]
     fn valid_compound_column_of_compound() {
+        let (selector, remainder) = parse_complex_selector("*||*, rest".into()).unwrap();
+
         assert_eq!(
-            parse_complex_selector("*||*, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Universal),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
+                },
+                tail: vec![CombinedSelector {
+                    combinator: Combinator::Column,
+                    selector: CompoundSelector {
                         type_selector: Some(TypeSelector::Universal),
                         id_selector: None,
                         class_selectors: vec![],
                         attribute_selectors: vec![],
                         pseudo_class_selectors: vec![]
-                    },
-                    tail: vec![CombinedSelector {
-                        combinator: Combinator::Column,
+                    }
+                }]
+            }
+        );
+        assert_eq!(remainder, ", rest");
+    }
+
+    #[test]
+    fn valid_compound_descendant_of_compound_child_of_compound() {
+        let (selector, remainder) = parse_complex_selector("a b > c, rest".into()).unwrap();
+
+        assert_eq!(
+            selector,
+            ComplexSelector {
+                head: CompoundSelector {
+                    type_selector: Some(TypeSelector::Identifier(0..1)),
+                    id_selector: None,
+                    class_selectors: vec![],
+                    attribute_selectors: vec![],
+                    pseudo_class_selectors: vec![]
+                },
+                tail: vec![
+                    CombinedSelector {
+                        combinator: Combinator::Descendant,
                         selector: CompoundSelector {
-                            type_selector: Some(TypeSelector::Universal),
+                            type_selector: Some(TypeSelector::Identifier(2..3)),
                             id_selector: None,
                             class_selectors: vec![],
                             attribute_selectors: vec![],
                             pseudo_class_selectors: vec![]
                         }
-                    }]
-                },
-                ", rest"
-            ))
-        )
-    }
-
-    #[test]
-    fn valid_compound_descendant_of_compound_child_of_compound() {
-        assert_eq!(
-            parse_complex_selector("a b > c, rest", 0),
-            Ok((
-                ComplexSelector {
-                    head: CompoundSelector {
-                        type_selector: Some(TypeSelector::Identifier(0..1)),
-                        id_selector: None,
-                        class_selectors: vec![],
-                        attribute_selectors: vec![],
-                        pseudo_class_selectors: vec![]
                     },
-                    tail: vec![
-                        CombinedSelector {
-                            combinator: Combinator::Descendant,
-                            selector: CompoundSelector {
-                                type_selector: Some(TypeSelector::Identifier(2..3)),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            }
-                        },
-                        CombinedSelector {
-                            combinator: Combinator::Child,
-                            selector: CompoundSelector {
-                                type_selector: Some(TypeSelector::Identifier(6..7)),
-                                id_selector: None,
-                                class_selectors: vec![],
-                                attribute_selectors: vec![],
-                                pseudo_class_selectors: vec![]
-                            }
+                    CombinedSelector {
+                        combinator: Combinator::Child,
+                        selector: CompoundSelector {
+                            type_selector: Some(TypeSelector::Identifier(6..7)),
+                            id_selector: None,
+                            class_selectors: vec![],
+                            attribute_selectors: vec![],
+                            pseudo_class_selectors: vec![]
                         }
-                    ]
-                },
-                ", rest"
-            ))
-        )
+                    }
+                ]
+            }
+        );
+        assert_eq!(remainder, ", rest");
     }
 
     #[test]
     fn empty() {
-        assert!(parse_complex_selector("", 0).is_err())
+        assert!(parse_complex_selector("".into()).is_err())
     }
 
     #[test]
     fn invalid_first_char() {
-        assert!(parse_complex_selector("> *", 0).is_err())
+        assert!(parse_complex_selector("> *".into()).is_err())
     }
 }

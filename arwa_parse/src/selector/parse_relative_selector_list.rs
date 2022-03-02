@@ -1,34 +1,27 @@
-use super::{parse_relative_complex_selector, skip_whitespace, ParseError, RelativeSelectorList};
+use super::{parse_relative_complex_selector, ParseError, RelativeSelectorList, Remainder};
 
 pub fn parse_relative_selector_list(
-    input_remainder: &str,
-    offset: usize,
-) -> Result<(RelativeSelectorList, &str), ParseError> {
+    remainder: Remainder,
+) -> Result<(RelativeSelectorList, Remainder), ParseError> {
     let mut relative_selector_list = Vec::new();
 
-    let remainder = skip_whitespace(input_remainder);
+    let remainder = remainder.skip_whitespace();
 
-    let (complex_selector, remainder) = parse_relative_complex_selector(
-        remainder,
-        offset + input_remainder.len() - remainder.len(),
-    )?;
+    let (complex_selector, remainder) = parse_relative_complex_selector(remainder)?;
 
     relative_selector_list.push(complex_selector);
 
-    let mut remainder = skip_whitespace(remainder);
+    let mut remainder = remainder.skip_whitespace();
 
     loop {
-        let mut chars = remainder.chars();
+        if remainder.chars().next() == Some(',') {
+            let r = remainder.skip(1);
 
-        if chars.next() == Some(',') {
-            let r = chars.as_str();
-
-            let (complex_selector, r) =
-                parse_relative_complex_selector(r, offset + input_remainder.len() - r.len())?;
+            let (complex_selector, r) = parse_relative_complex_selector(r)?;
 
             relative_selector_list.push(complex_selector);
 
-            remainder = skip_whitespace(r);
+            remainder = r.skip_whitespace();
         } else {
             break;
         }
@@ -50,11 +43,37 @@ mod tests {
 
     #[test]
     fn valid_one_complex_selector() {
+        let (selector, remainder) = parse_relative_selector_list("* ".into()).unwrap();
+
         assert_eq!(
-            parse_relative_selector_list("* ", 0),
-            Ok((
-                RelativeSelectorList {
-                    relative_selector_list: vec![RelativeComplexSelector {
+            selector,
+            RelativeSelectorList {
+                relative_selector_list: vec![RelativeComplexSelector {
+                    parts: vec![CombinedSelector {
+                        combinator: Combinator::Descendant,
+                        selector: CompoundSelector {
+                            type_selector: Some(TypeSelector::Universal),
+                            id_selector: None,
+                            class_selectors: vec![],
+                            attribute_selectors: vec![],
+                            pseudo_class_selectors: vec![]
+                        }
+                    }]
+                }]
+            }
+        );
+        assert_eq!(remainder, "");
+    }
+
+    #[test]
+    fn valid_two_complex_selector() {
+        let (selector, remainder) = parse_relative_selector_list("*, > * ".into()).unwrap();
+
+        assert_eq!(
+            selector,
+            RelativeSelectorList {
+                relative_selector_list: vec![
+                    RelativeComplexSelector {
                         parts: vec![CombinedSelector {
                             combinator: Combinator::Descendant,
                             selector: CompoundSelector {
@@ -65,63 +84,37 @@ mod tests {
                                 pseudo_class_selectors: vec![]
                             }
                         }]
-                    }]
-                },
-                ""
-            ))
-        )
-    }
-
-    #[test]
-    fn valid_two_complex_selector() {
-        assert_eq!(
-            parse_relative_selector_list("*, > * ", 0),
-            Ok((
-                RelativeSelectorList {
-                    relative_selector_list: vec![
-                        RelativeComplexSelector {
-                            parts: vec![CombinedSelector {
-                                combinator: Combinator::Descendant,
-                                selector: CompoundSelector {
-                                    type_selector: Some(TypeSelector::Universal),
-                                    id_selector: None,
-                                    class_selectors: vec![],
-                                    attribute_selectors: vec![],
-                                    pseudo_class_selectors: vec![]
-                                }
-                            }]
-                        },
-                        RelativeComplexSelector {
-                            parts: vec![CombinedSelector {
-                                combinator: Combinator::Child,
-                                selector: CompoundSelector {
-                                    type_selector: Some(TypeSelector::Universal),
-                                    id_selector: None,
-                                    class_selectors: vec![],
-                                    attribute_selectors: vec![],
-                                    pseudo_class_selectors: vec![]
-                                }
-                            }]
-                        }
-                    ]
-                },
-                ""
-            ))
-        )
+                    },
+                    RelativeComplexSelector {
+                        parts: vec![CombinedSelector {
+                            combinator: Combinator::Child,
+                            selector: CompoundSelector {
+                                type_selector: Some(TypeSelector::Universal),
+                                id_selector: None,
+                                class_selectors: vec![],
+                                attribute_selectors: vec![],
+                                pseudo_class_selectors: vec![]
+                            }
+                        }]
+                    }
+                ]
+            }
+        );
+        assert_eq!(remainder, "");
     }
 
     #[test]
     fn empty() {
-        assert!(parse_relative_selector_list("", 0).is_err())
+        assert!(parse_relative_selector_list("".into()).is_err())
     }
 
     #[test]
     fn empty_first_list_element() {
-        assert!(parse_relative_selector_list(", *", 0).is_err())
+        assert!(parse_relative_selector_list(", *".into()).is_err())
     }
 
     #[test]
     fn empty_second_list_element() {
-        assert!(parse_relative_selector_list("*, , *", 0).is_err())
+        assert!(parse_relative_selector_list("*, , *".into()).is_err())
     }
 }

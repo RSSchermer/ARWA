@@ -56,8 +56,8 @@ impl fmt::Display for InvalidSelector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "`{}` is not a valid selector: {} (at position {})",
-            &self.selector_string, &self.error.message, self.error.position
+            "`{}` is not a valid selector: {} (at offset {})",
+            &self.selector_string, &self.error.message, self.error.offset
         )
     }
 }

@@ -1,53 +1,45 @@
-use super::{skip_whitespace, ParseError};
+use super::{ParseError, Remainder};
 
 pub fn parse_function_invocation<F, T>(
-    input_remainder: &str,
-    offset: usize,
+    remainder: Remainder,
     argument_parser: F,
-) -> Result<(T, &str), ParseError>
+) -> Result<(T, Remainder), ParseError>
 where
-    F: FnOnce(&str, usize) -> Result<(T, &str), ParseError>,
+    F: FnOnce(Remainder) -> Result<(T, Remainder), ParseError>,
 {
-    let mut chars = input_remainder.chars();
-
-    if let Some(c) = chars.next() {
+    if let Some(c) = remainder.chars().next() {
         if c == '(' {
-            let remainder = skip_whitespace(chars.as_str());
+            let remainder = remainder.skip(1).skip_whitespace();
 
-            let (argument, remainder) =
-                argument_parser(remainder, offset + input_remainder.len() - remainder.len())?;
+            let (argument, remainder) = argument_parser(remainder)?;
 
-            let remainder = skip_whitespace(remainder);
+            let remainder = remainder.skip_whitespace();
 
-            let mut chars = remainder.chars();
-
-            if let Some(c) = chars.next() {
-                let remainder = chars.as_str();
-
+            if let Some(c) = remainder.chars().next() {
                 if c == ')' {
-                    Ok((argument, remainder))
+                    Ok((argument, remainder.skip(1)))
                 } else {
                     Err(ParseError {
                         message: format!("expected `)`, found `{}`", c),
-                        position: offset + input_remainder.len() - remainder.len(),
+                        offset: remainder.offset(),
                     })
                 }
             } else {
                 Err(ParseError {
                     message: "unexpected end; expected `)`".to_string(),
-                    position: offset + input_remainder.len(),
+                    offset: remainder.offset(),
                 })
             }
         } else {
             Err(ParseError {
                 message: format!("expected `(`, found `{}`", c),
-                position: offset,
+                offset: remainder.offset(),
             })
         }
     } else {
         Err(ParseError {
             message: "unexpected end; expected `(`".to_string(),
-            position: offset + input_remainder.len(),
+            offset: remainder.offset(),
         })
     }
 }
@@ -59,34 +51,37 @@ mod tests {
 
     #[test]
     fn valid_invocation() {
-        assert_eq!(
-            parse_function_invocation("(something) rest", 0, parse_identifier),
-            Ok((1..10, " rest"))
-        );
+        let (selector, remainder) =
+            parse_function_invocation("(something) rest".into(), parse_identifier).unwrap();
+
+        assert_eq!(selector, 1..10);
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn valid_invocation_with_whitespace() {
-        assert_eq!(
-            parse_function_invocation("( something ) rest", 0, parse_identifier),
-            Ok((2..11, " rest"))
-        );
+        let (selector, remainder) =
+            parse_function_invocation("( something ) rest".into(), parse_identifier).unwrap();
+
+        assert_eq!(selector, 2..11);
+        assert_eq!(remainder, " rest");
     }
 
     #[test]
     fn with_out_opening_paren() {
-        assert!(parse_function_invocation("something)", 0, parse_identifier).is_err());
+        assert!(parse_function_invocation("something)".into(), parse_identifier).is_err());
     }
 
     #[test]
     fn with_out_closing_paren() {
-        assert!(parse_function_invocation("(something rest", 0, parse_identifier).is_err());
+        assert!(parse_function_invocation("(something rest".into(), parse_identifier).is_err());
     }
 
     #[test]
     fn unparsed_argument_remainder() {
         assert!(
-            parse_function_invocation("(something something_else)", 0, parse_identifier).is_err()
+            parse_function_invocation("(something something_else)".into(), parse_identifier)
+                .is_err()
         );
     }
 }
