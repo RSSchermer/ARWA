@@ -12,7 +12,7 @@ use crate::event::typed_event_iterator;
 use crate::lang::LanguageTag;
 use crate::media::{AudioTracks, MediaStream, TextTrack, TextTracks, VideoTracks};
 use crate::security::CORS;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 use crate::{dom_exception_wrapper, normalize_exception_message};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -115,11 +115,8 @@ pub trait MediaElement: media_element_seal::Seal + Sized {
         Url::parse(self.as_web_sys_html_media_element().src().as_ref()).ok()
     }
 
-    fn set_src<T>(&self, src: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.as_web_sys_html_media_element().set_src(src.as_str());
+    fn set_src(&self, src: &Url) {
+        self.as_web_sys_html_media_element().set_src(src.as_ref());
     }
 
     fn current_src(&self) -> Option<Url> {

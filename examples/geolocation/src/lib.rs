@@ -1,39 +1,35 @@
-#![feature(async_closure)]
-use std::convert::TryInto;
-
-use arwa::html::{DynamicHtmlElement, HtmlElement};
-use arwa::{console, document, navigator, Document, PositionOptions};
+use arwa::dom::{selector, Element, ParentNode};
+use arwa::window::window;
+use arwa::{console, spawn_local};
 use futures::{future, StreamExt};
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::spawn_local;
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    let document = document().unwrap();
-    let navigator = navigator().unwrap();
+    let window = window().unwrap();
+    let document = window.document();
+    let navigator = window.navigator();
     let geolocation = navigator.geolocation().unwrap();
 
-    let position_container: DynamicHtmlElement = document
-        .query_id("position_container")
-        .expect("No element with id `position_container`")
-        .try_into()
-        .expect("Element is not an html element");
+    let position_container = document
+        .query_selector_first(&selector!("#position_container"))
+        .expect("No element with id `position_container`");
 
     spawn_local(
         geolocation
-            .watch_position(PositionOptions::new())
+            .watch_position(Default::default())
             .for_each(move |result| {
                 match result {
                     Ok(position) => {
                         let coordinates = position.coordinates();
 
-                        position_container.set_inner_text(&format!(
+                        position_container.deserialize_inner(&format!(
                             "Lat: {}, Long: {}",
                             coordinates.latitude(),
                             coordinates.longitude()
                         ));
                     }
-                    Err(err) => console::log!("Error: {:?}", err),
+                    Err(err) => console::error!(err),
                 };
 
                 future::ready(())

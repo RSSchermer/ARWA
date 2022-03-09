@@ -4,7 +4,7 @@ use crate::dom::impl_try_from_element;
 use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::lang::LanguageTag;
 use crate::media::{TextTrack, TextTrackReadyState};
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 #[derive(Clone)]
 pub struct HtmlTrackElement {
@@ -28,11 +28,8 @@ impl HtmlTrackElement {
         Url::parse(self.inner.src().as_ref()).ok()
     }
 
-    pub fn set_src<T>(&self, src: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_src(src.as_str());
+    pub fn set_src(&self, src: &Url) {
+        self.inner.set_src(src.as_ref());
     }
 
     pub fn src_lang(&self) -> Option<LanguageTag> {

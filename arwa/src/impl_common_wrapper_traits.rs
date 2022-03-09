@@ -11,6 +11,14 @@ macro_rules! impl_common_wrapper_traits {
                 self.inner.as_ref()
             }
         }
+
+        impl $crate::console::ToArgument for $tpe {
+            fn to_argument(&self) -> $crate::console::Argument {
+                let as_js_value: &wasm_bindgen::JsValue = self.as_ref();
+
+                $crate::console::ToArgument::to_argument(as_js_value)
+            }
+        }
     };
 }
 

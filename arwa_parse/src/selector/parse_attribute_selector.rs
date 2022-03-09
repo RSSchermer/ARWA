@@ -275,6 +275,7 @@ mod tests {
         assert_eq!(remainder, " rest");
     }
 
+    #[allow(non_snake_case)]
     #[test]
     fn valid_identifier_with_whitespace_I() {
         let (selector, remainder) =
@@ -309,6 +310,7 @@ mod tests {
         assert_eq!(remainder, " rest");
     }
 
+    #[allow(non_snake_case)]
     #[test]
     fn valid_identifier_with_whitespace_S() {
         let (selector, remainder) =

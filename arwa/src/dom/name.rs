@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::console::{Argument, ToArgument};
+
 pub use arwa_parse::xml_name::InvalidName;
 
 #[doc(hidden)]
@@ -31,7 +33,7 @@ impl Name {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed_name(name: StaticallyParsedName) -> Self {
+    pub fn from_statically_parsed(name: StaticallyParsedName) -> Self {
         Name {
             internal: NameInternal::Static(name),
         }
@@ -50,6 +52,14 @@ impl AsRef<str> for Name {
             NameInternal::Static(name) => name.as_ref(),
             NameInternal::Dynamic(name) => name.as_ref(),
         }
+    }
+}
+
+impl ToArgument for Name {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

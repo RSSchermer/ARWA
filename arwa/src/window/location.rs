@@ -1,7 +1,7 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::security::SecurityError;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 pub struct WindowLocation {
     inner: web_sys::Location,
@@ -26,30 +26,21 @@ impl WindowLocation {
             .map_err(|e| SecurityError::new(e.unchecked_into()))
     }
 
-    pub fn assign<T>(&self, url: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.assign(url.as_str()).unwrap_throw()
+    pub fn assign(&self, url: &Url) {
+        self.inner.assign(url.as_ref()).unwrap_throw()
     }
 
-    pub fn try_assign<T>(&self, url: T) -> Result<(), SecurityError>
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
+    pub fn try_assign(&self, url: &Url) -> Result<(), SecurityError> {
         self.inner
-            .assign(url.as_str())
+            .assign(url.as_ref())
             .map_err(|err| SecurityError::new(err.unchecked_into()))
     }
 
     // TODO: the spec explicitly says that replace does not do security checks, whereas MDN implies
     // that it does. Figure out which is source is correct when it comes to actual browser behavior.
 
-    pub fn replace<T>(&self, url: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.assign(url.as_str()).unwrap_throw();
+    pub fn replace(&self, url: &Url) {
+        self.inner.assign(url.as_ref()).unwrap_throw();
     }
 
     pub fn reload(&self) {

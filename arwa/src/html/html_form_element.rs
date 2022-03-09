@@ -6,7 +6,7 @@ use crate::dom::impl_try_from_element;
 use crate::html::{
     impl_html_element_traits, impl_known_element, AutoComplete, DynamicFormListedElement,
 };
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum FormEncoding {
@@ -74,11 +74,8 @@ impl HtmlFormElement {
         Url::parse(self.inner.action().as_ref()).ok()
     }
 
-    pub fn set_action<T>(&self, action: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_action(action.as_str());
+    pub fn set_action(&self, action: &Url) {
+        self.inner.set_action(action.as_ref());
     }
 
     pub fn autocomplete(&self) -> AutoComplete {

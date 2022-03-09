@@ -10,7 +10,7 @@ use crate::html::{
     ConstraintValidationTarget, DynamicFormListedElement, FormEncoding, FormListedElement,
     FormMethod, FormSubmitterElement, HtmlFormElement, LabelableElement, Labels, ValidityState,
 };
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 use crate::InvalidCast;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -115,11 +115,8 @@ impl FormSubmitterElement for HtmlButtonElement {
         Url::parse(self.inner.form_action().as_ref()).ok()
     }
 
-    fn set_form_action<T>(&self, form_action: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_form_action(form_action.as_str());
+    fn set_form_action(&self, form_action: &Url) {
+        self.inner.set_form_action(form_action.as_ref());
     }
 
     fn form_encoding(&self) -> Option<FormEncoding> {

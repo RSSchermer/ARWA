@@ -2,7 +2,7 @@ use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
 use crate::fetch::{Body, BodySource, Headers, RequestMethod};
 use crate::security::ReferrerPolicy;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 use crate::{impl_common_wrapper_traits, type_error_wrapper};
 
 // Note: decided to duplicate the various web_sys enums, because though at first glance they seem
@@ -270,18 +270,12 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn init<T>(url: T, descriptor: RequestDescriptor) -> Self
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        create_request_internal(url.as_str(), descriptor).unwrap_throw()
+    pub fn init(url: &Url, descriptor: RequestDescriptor) -> Self {
+        create_request_internal(url.as_ref(), descriptor).unwrap_throw()
     }
 
-    pub fn try_init<T>(url: T, descriptor: RequestDescriptor) -> Result<Self, RequestInitError>
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        create_request_internal(url.as_str(), descriptor)
+    pub fn try_init(url: &Url, descriptor: RequestDescriptor) -> Result<Self, RequestInitError> {
+        create_request_internal(url.as_ref(), descriptor)
             .map_err(|err| RequestInitError::new(err.unchecked_into()))
     }
 

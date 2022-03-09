@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 
 #[derive(Clone)]
@@ -7,7 +8,7 @@ pub struct InvalidName {
     invalid_pos: usize,
 }
 
-impl fmt::Debug for InvalidName {
+impl fmt::Display for InvalidName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(invalid_char) = self.invalid_char {
             write!(
@@ -20,6 +21,14 @@ impl fmt::Debug for InvalidName {
         }
     }
 }
+
+impl fmt::Debug for InvalidName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for InvalidName {}
 
 #[derive(Clone)]
 pub struct Name {
@@ -79,7 +88,7 @@ pub struct InvalidNonColonName {
     invalid_pos: usize,
 }
 
-impl fmt::Debug for InvalidNonColonName {
+impl fmt::Display for InvalidNonColonName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(invalid_char) = self.invalid_char {
             write!(f, "`{}` is not a valid XML non-colon name token; invalid character `{}` at position `{}`.", &self.name, invalid_char, self.invalid_pos)
@@ -91,6 +100,14 @@ impl fmt::Debug for InvalidNonColonName {
         }
     }
 }
+
+impl fmt::Debug for InvalidNonColonName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for InvalidNonColonName {}
 
 #[derive(Clone)]
 pub struct NonColonName {
@@ -150,7 +167,7 @@ pub struct InvalidQualifiedName {
     invalid_pos: usize,
 }
 
-impl fmt::Debug for InvalidQualifiedName {
+impl fmt::Display for InvalidQualifiedName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(invalid_char) = self.invalid_char {
             write!(f, "`{}` is not a valid XML qualified name token; invalid character `{}` at position `{}`.", &self.name, invalid_char, self.invalid_pos)
@@ -162,6 +179,14 @@ impl fmt::Debug for InvalidQualifiedName {
         }
     }
 }
+
+impl fmt::Debug for InvalidQualifiedName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for InvalidQualifiedName {}
 
 #[derive(Clone)]
 pub struct QualifiedName {
@@ -187,7 +212,7 @@ impl QualifiedName {
                 colon_pos = Some(0);
             }
 
-            for (i, c) in chars.next() {
+            for (i, c) in chars {
                 if !valid_tail_char(&c) {
                     return Err(InvalidQualifiedName {
                         name: name.to_string(),
@@ -270,4 +295,94 @@ fn valid_tail_char(c: &char) -> bool {
         || ('0'..='9').contains(c)
         || ('\u{0300}'..='\u{036F}').contains(c)
         || ('\u{203F}'..='\u{2040}').contains(c)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn valid_name() {
+        assert!(Name::parse(":v4lid_name-").is_ok())
+    }
+
+    #[test]
+    fn name_empty() {
+        assert!(Name::parse("").is_err())
+    }
+
+    #[test]
+    fn name_invalid_first_char() {
+        assert!(Name::parse("-inv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn name_invalid_second_char() {
+        assert!(Name::parse("i%nv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn valid_non_colon_name() {
+        assert!(NonColonName::parse("v4lid_name-").is_ok())
+    }
+
+    #[test]
+    fn non_colon_name_empty() {
+        assert!(NonColonName::parse("").is_err())
+    }
+
+    #[test]
+    fn non_colon_name_invalid_first_char() {
+        assert!(NonColonName::parse("-inv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn non_colon_name_invalid_second_char() {
+        assert!(NonColonName::parse("i%nv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn non_colon_name_colon_first_char() {
+        assert!(NonColonName::parse(":inv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn non_colon_name_colon_second_char() {
+        assert!(NonColonName::parse("i:nv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn valid_qualified_name() {
+        assert!(QualifiedName::parse("qualified:v4lid_name-").is_ok())
+    }
+
+    #[test]
+    fn valid_qualified_name_no_prefix_with_colon() {
+        assert!(QualifiedName::parse(":v4lid_name-").is_ok())
+    }
+
+    #[test]
+    fn valid_qualified_name_no_prefix_no_colon() {
+        assert!(QualifiedName::parse("v4lid_name-").is_ok())
+    }
+
+    #[test]
+    fn qualified_name_empty() {
+        assert!(QualifiedName::parse("").is_err())
+    }
+
+    #[test]
+    fn qualified_name_invalid_first_char() {
+        assert!(QualifiedName::parse("-inv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn qualified_name_invalid_second_char() {
+        assert!(QualifiedName::parse("i%nv4lid_name-").is_err())
+    }
+
+    #[test]
+    fn qualified_name_second_colon() {
+        assert!(QualifiedName::parse("one:two:v4lid_name-").is_err())
+    }
 }

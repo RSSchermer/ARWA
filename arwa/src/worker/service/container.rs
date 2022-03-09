@@ -13,7 +13,7 @@ use crate::event::{
 };
 use crate::message::{message_event_target_seal, MessageEventTarget};
 use crate::unchecked_cast_array::unchecked_cast_array;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 use crate::worker::service::{
     ServiceWorker, ServiceWorkerRegistration, ServiceWorkerRegistrationError,
 };
@@ -75,10 +75,11 @@ impl ServiceWorkerContainer {
         self.inner.controller().map(|s| s.into())
     }
 
-    pub fn register<T>(&self, script_url: T, options: ServiceWorkerOptions) -> ServiceWorkerRegister
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
+    pub fn register(
+        &self,
+        script_url: &Url,
+        options: ServiceWorkerOptions,
+    ) -> ServiceWorkerRegister {
         let ServiceWorkerOptions {
             scope,
             worker_type,
@@ -100,7 +101,7 @@ impl ServiceWorkerContainer {
         ServiceWorkerRegister {
             init: Some(RegisterInit {
                 container: self.inner.clone(),
-                script_url: script_url.as_str().to_string(),
+                script_url: script_url.to_string(),
                 opts,
             }),
             inner: None,
@@ -110,14 +111,11 @@ impl ServiceWorkerContainer {
     // Note: while get_registration make the scope url argument optional, we don't here. A scope of
     // `None` should be equivalent to `ready`.
 
-    pub fn registration_for<T>(&self, scope: T) -> ServiceWorkerRegistrationFor
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
+    pub fn registration_for(&self, scope: &Url) -> ServiceWorkerRegistrationFor {
         ServiceWorkerRegistrationFor {
             init: Some(RegistrationForInit {
                 container: self.inner.clone(),
-                scope: scope.as_str().to_string(),
+                scope: scope.to_string(),
             }),
             inner: None,
         }

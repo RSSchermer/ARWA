@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::fmt::Write;
 use std::str::FromStr;
 
@@ -8,7 +9,7 @@ use crate::dom::impl_try_from_element;
 use crate::html::AreaRelationshipTypes;
 use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::security::ReferrerPolicy;
-use crate::url::{absolute_url_or_relative_url_seal::Seal, AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AreaShapeType {
@@ -68,11 +69,8 @@ impl HtmlAreaElement {
         Url::parse(self.inner.href().as_ref()).ok()
     }
 
-    pub fn set_href<T>(&self, href: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_href(href.as_str());
+    pub fn set_href(&self, href: &Url) {
+        self.inner.set_href(href.as_ref());
     }
 
     pub fn ping(&self) -> Vec<Url> {
@@ -93,17 +91,17 @@ impl HtmlAreaElement {
     pub fn set_ping<I>(&self, mut ping: I)
     where
         I: Iterator,
-        I::Item: AbsoluteOrRelativeUrl,
+        I::Item: Borrow<Url>,
     {
         let mut serialized = String::new();
 
         if let Some(url) = ping.next() {
-            serialized.push_str(url.as_str());
+            serialized.push_str(url.borrow().as_ref());
         }
 
         for url in ping {
             serialized.push(' ');
-            serialized.push_str(url.as_str());
+            serialized.push_str(url.borrow().as_ref());
         }
 
         self.inner.set_ping(&serialized);

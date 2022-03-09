@@ -9,7 +9,7 @@ use crate::dom::impl_try_from_element;
 use crate::html::{impl_html_element_traits, impl_known_element, LinkRelationshipTypes};
 use crate::lang::LanguageTag;
 use crate::media_type::MediaType;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 pub enum PotentialRequestDestination {
     Fetch,
@@ -53,11 +53,8 @@ impl HtmlLinkElement {
         Url::parse(self.inner.href().as_ref()).ok()
     }
 
-    pub fn set_href<T>(&self, href: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_href(href.as_str());
+    pub fn set_href(&self, href: &Url) {
+        self.inner.set_href(href.as_ref());
     }
 
     pub fn href_lang(&self) -> Option<LanguageTag> {

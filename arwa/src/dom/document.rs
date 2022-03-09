@@ -68,9 +68,16 @@ pub trait Document: document_seal::Seal + Sized {
             .map(|e| e.into())
     }
 
-    fn document_uri(&self) -> String {
-        // No indication in the WHATWG spec that this can actually fail, unwrap for now.
-        self.as_web_sys_document().document_uri().unwrap_throw()
+    fn url(&self) -> Url {
+        // Some experimentation in Chromium and Firefox suggests all document seem to have a valid
+        // URL, defaults to `about:blank`.
+        Url::parse(
+            self.as_web_sys_document()
+                .document_uri()
+                .unwrap_throw()
+                .as_ref(),
+        )
+        .unwrap_throw()
     }
 
     fn has_focus(&self) -> bool {
@@ -493,4 +500,5 @@ macro_rules! impl_document_traits {
     };
 }
 
+use crate::url::Url;
 pub(crate) use impl_document_traits;

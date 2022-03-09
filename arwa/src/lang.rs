@@ -3,6 +3,10 @@ use std::fmt;
 
 use wasm_bindgen::UnwrapThrowExt;
 
+use crate::console::{Argument, ToArgument};
+
+pub use arwa_macro::lang;
+
 #[doc(hidden)]
 pub struct StaticallyParsedLanguageTag {
     #[doc(hidden)]
@@ -197,6 +201,14 @@ impl AsRef<str> for LanguageTag {
             LanguageTagInternal::Dynamic(tag) => tag.as_ref(),
             LanguageTagInternal::Static(tag) => tag.as_ref(),
         }
+    }
+}
+
+impl ToArgument for LanguageTag {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

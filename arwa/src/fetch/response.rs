@@ -6,7 +6,7 @@ use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use crate::fetch::{Body, BodySource, Headers, Status};
 use crate::impl_common_wrapper_traits;
 use crate::type_error_wrapper;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 pub enum ResponseType {
     Default,
@@ -65,11 +65,8 @@ impl Response {
             .map_err(|err| ResponseInitError::new(err.unchecked_into()))
     }
 
-    pub fn redirect<T>(url: T, status: Status) -> Response
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        web_sys::Response::redirect_with_status(url.as_str(), status.into())
+    pub fn redirect(url: &Url, status: Status) -> Response {
+        web_sys::Response::redirect_with_status(url.as_ref(), status.into())
             .unwrap_throw()
             .into()
     }

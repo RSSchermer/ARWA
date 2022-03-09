@@ -10,7 +10,7 @@ use crate::dom::impl_try_from_element;
 use crate::dom_exception_wrapper;
 use crate::html::{impl_html_element_traits, impl_known_element};
 use crate::security::{ReferrerPolicy, CORS};
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ImageDecoding {
@@ -65,11 +65,8 @@ impl HtmlImgElement {
         Url::parse(self.inner.src().as_ref()).ok()
     }
 
-    pub fn set_src<T>(&self, src: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_src(src.as_str());
+    pub fn set_src(&self, src: &Url) {
+        self.inner.set_src(src.as_ref());
     }
 
     pub fn current_src(&self) -> Option<Url> {

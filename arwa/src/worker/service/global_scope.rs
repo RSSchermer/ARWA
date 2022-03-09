@@ -17,7 +17,7 @@ use crate::message::{
 };
 use crate::type_error_wrapper;
 use crate::unchecked_cast_array::unchecked_cast_array;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 use crate::worker::impl_worker_global_scope_traits;
 use crate::InvalidCast;
 
@@ -125,14 +125,11 @@ impl Clients {
         }
     }
 
-    pub fn open_window<T>(&self, url: T) -> OpenWindowClient
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
+    pub fn open_window(&self, url: &Url) -> OpenWindowClient {
         OpenWindowClient {
             init: Some(OpenWindowClientInit {
                 clients: self.inner.clone(),
-                url: url.as_str().to_string(),
+                url: url.to_string(),
             }),
             inner: None,
         }
@@ -426,14 +423,11 @@ impl WindowClient {
         }
     }
 
-    pub fn navigate<T>(&self, url: T) -> NavigateWindowClient
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
+    pub fn navigate(&self, url: &Url) -> NavigateWindowClient {
         NavigateWindowClient {
             init: Some(NavigateWindowClientInit {
                 window_client: self.inner.clone(),
-                url: url.as_str().to_string(),
+                url: url.to_string(),
             }),
             inner: None,
         }

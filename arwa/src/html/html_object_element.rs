@@ -12,7 +12,7 @@ use crate::html::{
     HtmlFormElement, ValidityState,
 };
 use crate::media_type::MediaType;
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 use crate::window::Window;
 use crate::InvalidCast;
 
@@ -34,11 +34,8 @@ impl HtmlObjectElement {
         Url::parse(self.inner.data().as_ref()).ok()
     }
 
-    pub fn set_data<T>(&self, data: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_data(data.as_str());
+    pub fn set_data(&self, data: &Url) {
+        self.inner.set_data(data.as_ref());
     }
 
     pub fn media_type(&self) -> Option<MediaType> {

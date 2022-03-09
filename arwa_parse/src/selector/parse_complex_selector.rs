@@ -156,6 +156,7 @@ mod tests {
         assert_eq!(remainder, ", rest");
     }
 
+    #[test]
     fn valid_compound_child_of_compound_with_whitespace() {
         let (selector, remainder) = parse_complex_selector("* > *, rest".into()).unwrap();
 

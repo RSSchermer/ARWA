@@ -43,8 +43,8 @@ pub use self::node::*;
 mod non_colon_name;
 pub use self::non_colon_name::*;
 
-mod non_document_node;
-pub use self::non_document_node::*;
+mod owned_node;
+pub use self::owned_node::*;
 
 mod element_sibling;
 pub use self::element_sibling::*;
@@ -93,3 +93,13 @@ pub use selector::*;
 
 mod visibility_change_event;
 pub use self::visibility_change_event::*;
+
+pub use arwa_macro::name;
+
+pub use arwa_macro::non_colon_name;
+
+pub use arwa_macro::qualified_name;
+
+pub use arwa_macro::selector;
+
+pub use arwa_macro::token;

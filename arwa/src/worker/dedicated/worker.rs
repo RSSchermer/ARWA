@@ -4,7 +4,7 @@ use crate::event::{impl_event_target_traits, impl_try_from_event_target};
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
-use crate::url::AbsoluteOrRelativeUrl;
+use crate::url::Url;
 use crate::worker::{worker_seal, CreateWorkerError, Worker, WorkerOptions};
 
 #[derive(Clone)]
@@ -13,17 +13,11 @@ pub struct DedicatedWorker {
 }
 
 impl DedicatedWorker {
-    pub fn create<T>(url: T, options: WorkerOptions) -> Self
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
+    pub fn create(url: &Url, options: WorkerOptions) -> Self {
         create_dedicated_worker_internal(url, options).unwrap_throw()
     }
 
-    pub fn try_create<T>(url: T, options: WorkerOptions) -> Result<Self, CreateWorkerError>
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
+    pub fn try_create(url: &Url, options: WorkerOptions) -> Result<Self, CreateWorkerError> {
         create_dedicated_worker_internal(url, options)
             .map_err(|err| CreateWorkerError::new(err.unchecked_into()))
     }
@@ -68,15 +62,12 @@ impl AsRef<web_sys::Worker> for DedicatedWorker {
 impl_event_target_traits!(DedicatedWorker);
 impl_try_from_event_target!(DedicatedWorker, Worker);
 
-fn create_dedicated_worker_internal<T>(
-    url: T,
+fn create_dedicated_worker_internal(
+    url: &Url,
     options: WorkerOptions,
-) -> Result<DedicatedWorker, JsValue>
-where
-    T: AbsoluteOrRelativeUrl,
-{
+) -> Result<DedicatedWorker, JsValue> {
     let result =
-        web_sys::Worker::new_with_options(url.as_str(), &options.into_web_sys_worker_options());
+        web_sys::Worker::new_with_options(url.as_ref(), &options.into_web_sys_worker_options());
 
     result.map(|w| w.into())
 }

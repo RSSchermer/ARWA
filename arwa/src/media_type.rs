@@ -8,6 +8,8 @@ use std::fmt;
 
 pub use mime_4::Value;
 
+use crate::console::{Argument, ToArgument};
+
 #[doc(hidden)]
 pub use mime_4::media_type as mime_4_media_type;
 
@@ -63,6 +65,14 @@ impl MediaType {
 impl AsRef<str> for MediaType {
     fn as_ref(&self) -> &str {
         self.inner.as_ref()
+    }
+}
+
+impl ToArgument for MediaType {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

@@ -1,4 +1,9 @@
-#![feature(async_iterator, get_mut_unchecked, iter_intersperse)]
+#![feature(
+    async_iterator,
+    generic_associated_types,
+    get_mut_unchecked,
+    iter_intersperse
+)]
 
 pub mod collection;
 pub mod connection;
@@ -29,6 +34,8 @@ pub mod ui;
 pub mod url;
 pub mod window;
 pub mod worker;
+
+pub use wasm_bindgen_futures::spawn_local;
 
 mod exception_wrapper;
 pub(crate) use self::exception_wrapper::*;

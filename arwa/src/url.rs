@@ -8,28 +8,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::type_error_wrapper;
 
-pub(crate) mod absolute_url_or_relative_url_seal {
-    pub trait Seal {
-        #[doc(hidden)]
-        fn as_str(&self) -> &str;
-    }
-}
-
-pub trait AbsoluteOrRelativeUrl: absolute_url_or_relative_url_seal::Seal {}
-
-impl absolute_url_or_relative_url_seal::Seal for Url {
-    fn as_str(&self) -> &str {
-        self.as_ref()
-    }
-}
-impl AbsoluteOrRelativeUrl for Url {}
-
-impl absolute_url_or_relative_url_seal::Seal for RelativeUrl {
-    fn as_str(&self) -> &str {
-        self.as_ref()
-    }
-}
-impl AbsoluteOrRelativeUrl for RelativeUrl {}
+pub use arwa_macro::url;
 
 #[doc(hidden)]
 #[derive(Clone)]
@@ -47,13 +26,13 @@ pub struct StaticallyParsedUrl {
     #[doc(hidden)]
     pub port: Option<u16>,
     #[doc(hidden)]
-    pub path_range: Option<Range<usize>>,
+    pub path_start: usize,
     #[doc(hidden)]
-    pub query_range: Option<Range<usize>>,
+    pub query_start: Option<usize>,
     #[doc(hidden)]
-    pub fragment_range: Option<Range<usize>>,
+    pub fragment_start: Option<usize>,
     #[doc(hidden)]
-    pub origin: Origin<'static>,
+    pub origin_kind: OriginKind,
 }
 
 impl StaticallyParsedUrl {
@@ -92,20 +71,40 @@ impl StaticallyParsedUrl {
         }
     }
 
-    fn path(&self) -> Option<&str> {
-        self.path_range.as_ref().map(|r| &self.raw[r.clone()])
+    fn path(&self) -> &str {
+        match (self.query_start, self.fragment_start) {
+            (None, None) => &self.raw[self.path_start..],
+            (Some(next_component_start), _) | (None, Some(next_component_start)) => {
+                &self.raw[self.path_start..next_component_start]
+            }
+        }
     }
 
     fn query(&self) -> Option<&str> {
-        self.query_range.as_ref().map(|r| &self.raw[r.clone()])
+        match (self.query_start, self.fragment_start) {
+            (None, _) => None,
+            (Some(query_start), None) => Some(&self.raw[query_start..]),
+            (Some(query_start), Some(fragment_start)) => {
+                Some(&self.raw[query_start..fragment_start])
+            }
+        }
     }
 
     fn fragment(&self) -> Option<&str> {
-        self.fragment_range.as_ref().map(|r| &self.raw[r.clone()])
+        self.fragment_start.map(|start| &self.raw[start..])
     }
 
     fn origin(&self) -> Origin {
-        self.origin
+        match self.origin_kind {
+            OriginKind::Opaque => Origin::Opaque,
+            OriginKind::Tuple => {
+                let scheme = self.scheme();
+                let host = self.host().unwrap_throw();
+                let port = self.port_or_known_default().unwrap_throw();
+
+                Origin::Tuple(scheme, host, port)
+            }
+        }
     }
 }
 
@@ -115,8 +114,9 @@ impl AsRef<str> for StaticallyParsedUrl {
     }
 }
 
+#[doc(hidden)]
 #[derive(Clone, Copy)]
-enum OriginInternal {
+pub enum OriginKind {
     Opaque,
     Tuple,
 }
@@ -130,7 +130,7 @@ struct ParsedDynamicCache {
     path: LazyCell<String>,
     query: LazyCell<String>,
     fragment: LazyCell<String>,
-    origin: LazyCell<OriginInternal>,
+    origin: LazyCell<OriginKind>,
 }
 
 impl ParsedDynamicCache {
@@ -214,14 +214,8 @@ impl DynamicallyParsedUrl {
         }
     }
 
-    fn path(&self) -> Option<&str> {
-        let path = self.cache.path.borrow_with(|| self.parsed.pathname());
-
-        if path.is_empty() {
-            None
-        } else {
-            Some(path)
-        }
+    fn path(&self) -> &str {
+        self.cache.path.borrow_with(|| self.parsed.pathname())
     }
 
     fn query(&self) -> Option<&str> {
@@ -247,15 +241,15 @@ impl DynamicallyParsedUrl {
     fn origin(&self) -> Origin {
         let origin = self.cache.origin.borrow_with(|| {
             if self.parsed.origin().is_empty() {
-                OriginInternal::Opaque
+                OriginKind::Opaque
             } else {
-                OriginInternal::Tuple
+                OriginKind::Tuple
             }
         });
 
         match origin {
-            OriginInternal::Opaque => Origin::Opaque,
-            OriginInternal::Tuple => {
+            OriginKind::Opaque => Origin::Opaque,
+            OriginKind::Tuple => {
                 let scheme = self.scheme();
                 let host = self.host().unwrap_throw();
                 let port = self.port_or_known_default().unwrap_throw();
@@ -363,7 +357,7 @@ impl Url {
         }
     }
 
-    pub fn path(&self) -> Option<&str> {
+    pub fn path(&self) -> &str {
         match &self.internal {
             UrlInternal::Dynamic(url) => url.path(),
             UrlInternal::Static(url) => url.path(),
@@ -371,7 +365,13 @@ impl Url {
     }
 
     pub fn path_segments(&self) -> impl Iterator<Item = &str> {
-        self.path().unwrap_or("").split('/')
+        let path = self.path();
+
+        if path.starts_with('/') {
+            path[1..].split('/')
+        } else {
+            path.split('/')
+        }
     }
 
     pub fn query(&self) -> Option<&str> {
@@ -381,8 +381,8 @@ impl Url {
         }
     }
 
-    pub fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        query_pairs(self.query())
+    pub fn query_pairs(&self) -> impl Iterator<Item = (Cow<str>, Cow<str>)> {
+        form_urlencoded::parse(self.query().map(|q| &q[1..]).unwrap_or("").as_bytes())
     }
 
     pub fn fragment(&self) -> Option<&str> {
@@ -468,242 +468,4 @@ impl fmt::Display for Url {
     }
 }
 
-#[doc(hidden)]
-#[derive(Clone)]
-pub struct StaticallyParsedRelativeUrl {
-    #[doc(hidden)]
-    pub raw: &'static str,
-    #[doc(hidden)]
-    pub path_range: Option<Range<usize>>,
-    #[doc(hidden)]
-    pub query_range: Option<Range<usize>>,
-    #[doc(hidden)]
-    pub fragment_range: Option<Range<usize>>,
-}
-
-impl StaticallyParsedRelativeUrl {
-    fn path(&self) -> Option<&str> {
-        self.path_range.as_ref().map(|r| &self.raw[r.clone()])
-    }
-
-    fn query(&self) -> Option<&str> {
-        self.query_range.as_ref().map(|r| &self.raw[r.clone()])
-    }
-
-    fn fragment(&self) -> Option<&str> {
-        self.fragment_range.as_ref().map(|r| &self.raw[r.clone()])
-    }
-}
-
-impl AsRef<str> for StaticallyParsedRelativeUrl {
-    fn as_ref(&self) -> &str {
-        self.raw
-    }
-}
-
-struct RelativeParsedDynamicCache {
-    query: LazyCell<String>,
-    fragment: LazyCell<String>,
-}
-
-impl RelativeParsedDynamicCache {
-    fn uninitialized() -> Self {
-        RelativeParsedDynamicCache {
-            query: LazyCell::new(),
-            fragment: LazyCell::new(),
-        }
-    }
-}
-
-pub struct DynamicallyParsedRelativeUrl {
-    raw: String,
-    path_end: usize,
-    parsed: web_sys::Url,
-    cache: RelativeParsedDynamicCache,
-}
-
-impl DynamicallyParsedRelativeUrl {
-    fn path(&self) -> Option<&str> {
-        if self.path_end > 0 {
-            Some(&self.raw[0..self.path_end])
-        } else {
-            None
-        }
-    }
-
-    fn query(&self) -> Option<&str> {
-        let query = self.cache.query.borrow_with(|| self.parsed.search());
-
-        if query.is_empty() {
-            None
-        } else {
-            Some(query)
-        }
-    }
-
-    fn fragment(&self) -> Option<&str> {
-        let fragment = self.cache.fragment.borrow_with(|| self.parsed.hash());
-
-        if fragment.is_empty() {
-            None
-        } else {
-            Some(fragment)
-        }
-    }
-}
-
-impl AsRef<str> for DynamicallyParsedRelativeUrl {
-    fn as_ref(&self) -> &str {
-        &self.raw
-    }
-}
-
-enum RelativeUrlInternal {
-    Static(StaticallyParsedRelativeUrl),
-    Dynamic(DynamicallyParsedRelativeUrl),
-}
-
-impl From<StaticallyParsedRelativeUrl> for RelativeUrlInternal {
-    fn from(url: StaticallyParsedRelativeUrl) -> Self {
-        RelativeUrlInternal::Static(url)
-    }
-}
-
-impl From<DynamicallyParsedRelativeUrl> for RelativeUrlInternal {
-    fn from(url: DynamicallyParsedRelativeUrl) -> Self {
-        RelativeUrlInternal::Dynamic(url)
-    }
-}
-
-pub struct RelativeUrl {
-    internal: RelativeUrlInternal,
-}
-
-impl RelativeUrl {
-    pub fn parse(relative_url: &str) -> Result<RelativeUrl, InvalidUrl> {
-        web_sys::Url::new_with_base(&relative_url, "http://dummy")
-            .map(|parsed| RelativeUrl {
-                internal: DynamicallyParsedRelativeUrl {
-                    raw: relative_url.to_string(),
-                    path_end: relative_url.find(&['?', '#']).unwrap_or(relative_url.len()),
-                    parsed,
-                    cache: RelativeParsedDynamicCache::uninitialized(),
-                }
-                .into(),
-            })
-            .map_err(|err| InvalidUrl::new(err.unchecked_into()))
-    }
-
-    /// Only meant to be called by the accompanying proc-macro, not part of the public API.
-    #[doc(hidden)]
-    pub fn from_statically_parsed(parsed: DynamicallyParsedRelativeUrl) -> Self {
-        RelativeUrl {
-            internal: parsed.into(),
-        }
-    }
-
-    pub fn path(&self) -> Option<&str> {
-        match &self.internal {
-            RelativeUrlInternal::Dynamic(url) => url.path(),
-            RelativeUrlInternal::Static(url) => url.path(),
-        }
-    }
-
-    pub fn path_segments(&self) -> impl Iterator<Item = &str> {
-        self.path().unwrap_or("").split('/')
-    }
-
-    pub fn query(&self) -> Option<&str> {
-        match &self.internal {
-            RelativeUrlInternal::Dynamic(url) => url.query(),
-            RelativeUrlInternal::Static(url) => url.query(),
-        }
-    }
-
-    pub fn query_pairs(&self) -> impl Iterator<Item = (&str, &str)> {
-        query_pairs(self.query())
-    }
-
-    pub fn fragment(&self) -> Option<&str> {
-        match &self.internal {
-            RelativeUrlInternal::Dynamic(url) => url.fragment(),
-            RelativeUrlInternal::Static(url) => url.fragment(),
-        }
-    }
-}
-
-impl AsRef<str> for RelativeUrl {
-    fn as_ref(&self) -> &str {
-        match &self.internal {
-            RelativeUrlInternal::Static(url) => url.as_ref(),
-            RelativeUrlInternal::Dynamic(url) => url.as_ref(),
-        }
-    }
-}
-
-impl PartialEq for RelativeUrl {
-    fn eq(&self, other: &RelativeUrl) -> bool {
-        self.as_ref() == other.as_ref()
-    }
-}
-
-impl PartialEq<str> for RelativeUrl {
-    fn eq(&self, s: &str) -> bool {
-        self.as_ref() == s
-    }
-}
-
-impl<'a> PartialEq<&'a str> for RelativeUrl {
-    #[inline]
-    fn eq(&self, s: &&'a str) -> bool {
-        self == *s
-    }
-}
-
-impl<'a> PartialEq<RelativeUrl> for &'a str {
-    #[inline]
-    fn eq(&self, url: &RelativeUrl) -> bool {
-        url == self
-    }
-}
-
-impl PartialEq<RelativeUrl> for str {
-    #[inline]
-    fn eq(&self, url: &RelativeUrl) -> bool {
-        url == self
-    }
-}
-
-impl fmt::Debug for RelativeUrl {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self.as_ref(), f)
-    }
-}
-
-impl fmt::Display for RelativeUrl {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self.as_ref(), f)
-    }
-}
-
 type_error_wrapper!(InvalidUrl);
-
-fn query_pairs(query: Option<&str>) -> impl Iterator<Item = (&str, &str)> {
-    form_urlencoded::parse(query.unwrap_or("").as_bytes()).map(|(k, v)| {
-        let k = if let Cow::Borrowed(k) = k {
-            k
-        } else {
-            unreachable!()
-        };
-
-        let v = if let Cow::Borrowed(v) = v {
-            v
-        } else {
-            unreachable!()
-        };
-
-        (k, v)
-    })
-}

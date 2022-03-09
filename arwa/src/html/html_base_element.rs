@@ -2,7 +2,7 @@ use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
 use crate::html::{impl_html_element_traits, impl_known_element};
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 #[derive(Clone)]
 pub struct HtmlBaseElement {
@@ -22,11 +22,8 @@ impl HtmlBaseElement {
         Url::parse(self.inner.href().as_ref()).ok()
     }
 
-    pub fn set_href<T>(&self, href: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_href(href.as_str());
+    pub fn set_href(&self, href: &Url) {
+        self.inner.set_href(href.as_ref());
     }
 }
 

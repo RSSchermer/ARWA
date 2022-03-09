@@ -2,6 +2,8 @@ use std::fmt;
 
 use arwa_parse::xml_name;
 
+use crate::console::{Argument, ToArgument};
+
 pub use arwa_parse::xml_name::InvalidNonColonName;
 
 #[doc(hidden)]
@@ -33,7 +35,7 @@ impl NonColonName {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed_name(name: StaticallyParsedNonColonName) -> Self {
+    pub fn from_statically_parsed(name: StaticallyParsedNonColonName) -> Self {
         NonColonName {
             internal: NonColonNameInternal::Static(name),
         }
@@ -52,6 +54,14 @@ impl AsRef<str> for NonColonName {
             NonColonNameInternal::Static(name) => name.as_ref(),
             NonColonNameInternal::Dynamic(name) => name.as_ref(),
         }
+    }
+}
+
+impl ToArgument for NonColonName {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

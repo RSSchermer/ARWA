@@ -1,3 +1,5 @@
+#![feature(bool_to_option)]
+
 pub mod dom_token;
 pub mod request_method;
 pub mod selector;

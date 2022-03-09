@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::console::{Argument, ToArgument};
+
 pub use arwa_parse::xml_name::InvalidQualifiedName;
 
 #[doc(hidden)]
@@ -45,7 +47,7 @@ impl QualifiedName {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed_name(name: StaticallyParsedQualifiedName) -> Self {
+    pub fn from_statically_parsed(name: StaticallyParsedQualifiedName) -> Self {
         QualifiedName {
             internal: QualifiedNameInternal::Static(name),
         }
@@ -72,6 +74,14 @@ impl AsRef<str> for QualifiedName {
             QualifiedNameInternal::Static(name) => name.as_ref(),
             QualifiedNameInternal::Dynamic(name) => name.as_ref(),
         }
+    }
+}
+
+impl ToArgument for QualifiedName {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

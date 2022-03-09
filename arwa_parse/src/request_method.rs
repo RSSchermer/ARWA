@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 
 #[derive(Clone)]
@@ -6,7 +7,7 @@ pub struct InvalidRequestMethod {
     invalid_pos: usize,
 }
 
-impl fmt::Debug for InvalidRequestMethod {
+impl fmt::Display for InvalidRequestMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.token.is_empty() {
             write!(f, "The empty string is not a valid request method.")
@@ -19,6 +20,14 @@ impl fmt::Debug for InvalidRequestMethod {
         }
     }
 }
+
+impl fmt::Debug for InvalidRequestMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for InvalidRequestMethod {}
 
 #[derive(Clone)]
 pub struct RequestMethod {

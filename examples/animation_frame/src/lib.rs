@@ -3,15 +3,14 @@ use std::cell::RefCell;
 use std::convert::TryInto;
 use std::rc::Rc;
 
-use arwa::html::{DynamicHtmlElement, HtmlButtonElement, HtmlElement};
-use arwa::{
-    document, window, AnimationFrameCancelled, AnimationFrameHandle, Document, GlobalEventHandlers,
-    Window,
-};
-use futures::future;
+use arwa::dom::{selector, DynamicElement, Element, ParentNode};
+use arwa::html::HtmlButtonElement;
+use arwa::spawn_local;
+use arwa::ui::UiEventTarget;
+use arwa::window::{window, Window};
+use futures::future::{AbortHandle, Abortable, Aborted};
 use futures::{FutureExt, StreamExt};
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::spawn_local;
 
 // We want to loop a call to the same function on each animation frame, while tracking some state.
 // Self referential functions with state can be a bit hairy in Rust. We'll use the unstable nightly
@@ -20,39 +19,39 @@ use wasm_bindgen_futures::spawn_local;
 // your game loop for example, where instead of a frame count you would track your game state.
 struct FrameLoop {
     count: usize,
-    display_container: DynamicHtmlElement,
+    display_container: DynamicElement,
     frame_provider: Window,
-    cancellation_handle: Rc<RefCell<Option<AnimationFrameHandle>>>,
+    abort_handle: Rc<RefCell<AbortHandle>>,
 }
 
-impl FnOnce<(Result<f64, AnimationFrameCancelled>,)> for FrameLoop {
+impl FnOnce<(Result<f64, Aborted>,)> for FrameLoop {
     type Output = ();
 
-    extern "rust-call" fn call_once(
-        mut self,
-        args: (Result<f64, AnimationFrameCancelled>,),
-    ) -> Self::Output {
+    extern "rust-call" fn call_once(mut self, args: (Result<f64, Aborted>,)) -> Self::Output {
         // Only loop if the frame has not been cancelled.
         if let Ok(time) = args.0 {
             // Update the count and our displayed text.
             self.count += 1;
 
-            self.display_container.set_inner_text(&format!(
+            self.display_container.deserialize_inner(&format!(
                 "Frames counted: {}; Elapsed time (ms): {}",
                 self.count, time
             ));
 
+            let (abort_handle, abort_registration) = AbortHandle::new_pair();
+
             // Create a request the next frame.
             let next = self.frame_provider.request_animation_frame();
+            let next_abortable = Abortable::new(next, abort_registration);
 
             // Update our cancellation handle to be the handle for the new frame request.
-            self.cancellation_handle.replace(Some(next.handle()));
+            self.abort_handle.replace(abort_handle);
 
             // Dispatch the request with another call to this function chained onto it.
-            spawn_local(next.map(self));
+            spawn_local(next_abortable.map(self));
         } else {
             self.display_container
-                .set_inner_text("Loop cancelled! Refresh the page to start it back up.");
+                .deserialize_inner("Loop cancelled! Refresh the page to start it back up.");
         }
     }
 }
@@ -60,46 +59,43 @@ impl FnOnce<(Result<f64, AnimationFrameCancelled>,)> for FrameLoop {
 #[wasm_bindgen(start)]
 pub fn start() {
     let window = window().unwrap();
-    let document = document().unwrap();
+    let document = window.document();
 
     // Obtain a reference to our "display container" element.
-    let display_container: DynamicHtmlElement = document
-        .query_id("display_container")
-        .expect("No element with id `display_container`.")
-        .try_into()
-        .expect("Element is not an html element.");
+    let display_container = document
+        .query_selector_first(&selector!("#display_container"))
+        .expect("No element with id `display_container`.");
+
+    // Set up an abort handle with which we may cancel the loop.
+    let (abort_handle, abort_registration) = AbortHandle::new_pair();
+    let abort_handle = Rc::new(RefCell::new(abort_handle));
 
     // Initialize our frame loop.
     let frame_loop = FrameLoop {
         count: 0,
         display_container,
         frame_provider: window.clone(),
-        cancellation_handle: Rc::new(RefCell::new(None)),
+        abort_handle: abort_handle.clone(),
     };
-
-    // Acquire a reference to the current request's cancellation handle so that we may cancel the
-    // loop if we wish (see below).
-    let cancellation_handle = frame_loop.cancellation_handle.clone();
 
     // Create our initial animation frame request.
     let request = window.request_animation_frame();
+    let abortable_request = Abortable::new(request, abort_registration);
 
     // Dispatch our request with the initial call to our frame loop chained onto it.
-    spawn_local(request.map(frame_loop));
+    spawn_local(abortable_request.map(frame_loop));
 
     // Obtain a reference to the cancellation button.
     let button: HtmlButtonElement = document
-        .query_id("cancel_button")
+        .query_selector_first(&selector!("#cancel_button"))
         .expect("No element with id `cancel_button`.")
         .try_into()
         .expect("Element is not a button element.");
 
     // Respond to click events on the button by cancelling the loop.
-    spawn_local(button.on_click().for_each(move |_| {
-        if let Some(handle) = &*cancellation_handle.borrow() {
-            handle.cancel();
-        }
+    spawn_local(button.on_click().take(1).for_each(move |_| {
+        abort_handle.borrow().abort();
 
-        future::ready(())
+        futures::future::ready(())
     }));
 }

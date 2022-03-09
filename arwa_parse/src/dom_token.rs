@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 
 #[derive(Clone)]
@@ -6,7 +7,7 @@ pub struct InvalidToken {
     invalid_pos: usize,
 }
 
-impl fmt::Debug for InvalidToken {
+impl fmt::Display for InvalidToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.token.is_empty() {
             write!(f, "The empty string is not a valid DOM token.")
@@ -19,6 +20,14 @@ impl fmt::Debug for InvalidToken {
         }
     }
 }
+
+impl fmt::Debug for InvalidToken {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl Error for InvalidToken {}
 
 #[derive(Clone)]
 pub struct Token {

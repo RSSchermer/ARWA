@@ -1,8 +1,8 @@
-use std::async_iter::AsyncIterator;
 use std::borrow::Cow;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
+use futures::stream::Stream;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
@@ -166,7 +166,7 @@ impl<T> OnEvent<T> {
     }
 }
 
-impl<T> AsyncIterator for OnEvent<T>
+impl<T> Stream for OnEvent<T>
 where
     T: Event + 'static,
 {
@@ -234,7 +234,7 @@ impl<T> OnEventWithOptions<T> {
     }
 }
 
-impl<T> AsyncIterator for OnEventWithOptions<T>
+impl<T> Stream for OnEventWithOptions<T>
 where
     T: Event + 'static,
 {
@@ -292,7 +292,7 @@ macro_rules! typed_event_iterator {
             }
         }
 
-        impl<T> std::async_iter::AsyncIterator for $iterator<T>
+        impl<T> futures::stream::Stream for $iterator<T>
         where
             T: $crate::event::EventTarget + 'static,
         {
@@ -311,7 +311,7 @@ macro_rules! typed_event_iterator {
             inner: $crate::event::OnEventWithOptions<$event<T>>,
         }
 
-        impl<T> std::async_iter::AsyncIterator for $iterator_with_options<T>
+        impl<T> futures::stream::Stream for $iterator_with_options<T>
         where
             T: $crate::event::EventTarget + 'static,
         {

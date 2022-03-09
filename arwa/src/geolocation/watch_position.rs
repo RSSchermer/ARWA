@@ -1,7 +1,7 @@
-use std::async_iter::AsyncIterator;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
+use futures::stream::Stream;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
@@ -46,7 +46,7 @@ impl WatchPosition {
     }
 }
 
-impl AsyncIterator for WatchPosition {
+impl Stream for WatchPosition {
     type Item = Result<Position, PositionError>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

@@ -56,12 +56,21 @@ impl From<PositionOptions> for web_sys::PositionOptions {
             Duration::Infinity => unimplemented!("web-sys does not yet support Infinity"),
         };
 
-        match timeout {
-            Duration::Milliseconds(milliseconds) => result.timeout(milliseconds),
-            Duration::Infinity => unimplemented!("web-sys does not yet support Infinity"),
-        };
+        if let Duration::Milliseconds(milliseconds) = timeout {
+            result.timeout(milliseconds);
+        }
 
         result
+    }
+}
+
+impl Default for PositionOptions {
+    fn default() -> Self {
+        PositionOptions {
+            enable_high_accuracy: false,
+            maximum_age: Duration::Milliseconds(0),
+            timeout: Duration::Infinity,
+        }
     }
 }
 

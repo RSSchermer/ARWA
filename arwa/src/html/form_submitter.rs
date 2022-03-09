@@ -1,5 +1,5 @@
 use crate::html::{FormEncoding, FormMethod};
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 
 pub(crate) mod form_submitter_element_seal {
     pub trait Seal {}
@@ -16,9 +16,7 @@ pub trait FormSubmitterElement: form_submitter_element_seal::Seal {
 
     fn form_action(&self) -> Option<Url>;
 
-    fn set_form_action<T>(&self, form_action: T)
-    where
-        T: AbsoluteOrRelativeUrl;
+    fn set_form_action(&self, form_action: &Url);
 
     fn form_target(&self) -> String;
 

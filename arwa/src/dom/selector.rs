@@ -1,9 +1,10 @@
 use std::fmt;
 
-#[derive(Clone)]
-pub struct InvalidSelector {
-    selector: String,
-}
+use arwa_parse::selector::Selector as DynamicallyParsedSelector;
+
+use crate::console::{Argument, ToArgument};
+
+pub use arwa_parse::selector::InvalidSelector;
 
 #[doc(hidden)]
 pub struct StaticallyParsedSelector {
@@ -19,7 +20,7 @@ impl AsRef<str> for StaticallyParsedSelector {
 
 enum SelectorInternal {
     Static(StaticallyParsedSelector),
-    Dynamic,
+    Dynamic(DynamicallyParsedSelector),
 }
 
 pub struct Selector {
@@ -28,24 +29,33 @@ pub struct Selector {
 
 impl Selector {
     pub fn parse(selector: &str) -> Result<Self, InvalidSelector> {
-        todo!()
+        DynamicallyParsedSelector::parse(selector).map(|selector| Selector {
+            internal: SelectorInternal::Dynamic(selector),
+        })
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed_selector(selector: StaticallyParsedSelector) -> Self {
+    pub fn from_statically_parsed(selector: StaticallyParsedSelector) -> Self {
         Selector {
             internal: SelectorInternal::Static(selector),
         }
-    }
-
-    pub(crate) fn trusted(selector: String) -> Self {
-        todo!()
     }
 }
 
 impl AsRef<str> for Selector {
     fn as_ref(&self) -> &str {
-        todo!()
+        match &self.internal {
+            SelectorInternal::Static(selector) => selector.as_ref(),
+            SelectorInternal::Dynamic(selector) => selector.as_ref(),
+        }
+    }
+}
+
+impl ToArgument for Selector {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

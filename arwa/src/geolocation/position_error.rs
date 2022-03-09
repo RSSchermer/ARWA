@@ -1,7 +1,9 @@
 use std::error::Error;
 use std::fmt;
 
+use crate::console::{Argument, ToArgument};
 use crate::normalize_exception_message;
+use wasm_bindgen::JsValue;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PositionErrorKind {
@@ -47,3 +49,11 @@ impl fmt::Debug for PositionError {
 }
 
 impl Error for PositionError {}
+
+impl ToArgument for PositionError {
+    fn to_argument(&self) -> Argument {
+        let js_value: &JsValue = self.inner.as_ref();
+
+        ToArgument::to_argument(js_value)
+    }
+}

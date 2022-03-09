@@ -14,7 +14,7 @@ use crate::html::{
     FormMethod, FormSubmitterElement, HtmlDatalistElement, HtmlFormElement, LabelableElement,
     Labels, ValidityState,
 };
-use crate::url::{AbsoluteOrRelativeUrl, Url};
+use crate::url::Url;
 use crate::InvalidCast;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -193,11 +193,8 @@ impl HtmlInputElement {
         Url::parse(self.inner.src().as_ref()).ok()
     }
 
-    pub fn set_src<T>(&self, src: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_src(src.as_str());
+    pub fn set_src(&self, src: &Url) {
+        self.inner.set_src(src.as_ref());
     }
 
     pub fn autocomplete(&self) -> AutoComplete {
@@ -355,11 +352,8 @@ impl FormSubmitterElement for HtmlInputElement {
         Url::parse(self.inner.form_action().as_ref()).ok()
     }
 
-    fn set_form_action<T>(&self, form_action: T)
-    where
-        T: AbsoluteOrRelativeUrl,
-    {
-        self.inner.set_form_action(form_action.as_str());
+    fn set_form_action(&self, form_action: &Url) {
+        self.inner.set_form_action(form_action.as_ref());
     }
 
     fn form_encoding(&self) -> Option<FormEncoding> {

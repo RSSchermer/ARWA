@@ -34,6 +34,14 @@ macro_rules! dom_exception_wrapper {
                 &self.inner
             }
         }
+
+        impl $crate::console::ToArgument for $wrapper_type {
+            fn to_argument(&self) -> $crate::console::Argument {
+                let js_value: &wasm_bindgen::JsValue = self.inner.as_ref();
+
+                $crate::console::ToArgument::to_argument(js_value)
+            }
+        }
     };
 }
 
@@ -73,6 +81,14 @@ macro_rules! type_error_wrapper {
         impl AsRef<js_sys::TypeError> for $wrapper_type {
             fn as_ref(&self) -> &js_sys::TypeError {
                 &self.inner
+            }
+        }
+
+        impl $crate::console::ToArgument for $wrapper_type {
+            fn to_argument(&self) -> $crate::console::Argument {
+                let js_value: &wasm_bindgen::JsValue = self.inner.as_ref();
+
+                $crate::console::ToArgument::to_argument(js_value)
             }
         }
     };

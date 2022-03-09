@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::console::{Argument, ToArgument};
+
 pub use arwa_parse::request_method::InvalidRequestMethod;
 
 #[doc(hidden)]
@@ -106,6 +108,14 @@ impl AsRef<str> for RequestMethod {
             RequestMethodInternal::Static(request_method) => request_method.as_ref(),
             RequestMethodInternal::Dynamic(request_method) => request_method.as_ref(),
         }
+    }
+}
+
+impl ToArgument for RequestMethod {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

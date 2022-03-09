@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::console::{Argument, ToArgument};
+
 pub use arwa_parse::dom_token::InvalidToken;
 
 #[doc(hidden)]
@@ -31,7 +33,7 @@ impl Token {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed_token(token: StaticallyParsedToken) -> Self {
+    pub fn from_statically_parsed(token: StaticallyParsedToken) -> Self {
         Token {
             internal: TokenInternal::Static(token),
         }
@@ -50,6 +52,14 @@ impl AsRef<str> for Token {
             TokenInternal::Static(token) => token.as_ref(),
             TokenInternal::Dynamic(token) => token.as_ref(),
         }
+    }
+}
+
+impl ToArgument for Token {
+    fn to_argument(&self) -> Argument {
+        let as_str: &str = self.as_ref();
+
+        ToArgument::to_argument(as_str)
     }
 }
 

@@ -11,6 +11,7 @@ license = "MIT"
 readme = "../README.md"
 
 [dependencies]
+arwa_macro = { version = "0.1.0", path = "../arwa_macro" }
 arwa_parse = { version = "0.1.0", path = "../arwa_parse" }
 bitflags = "1.2.1"
 delegate = "0.3.0"

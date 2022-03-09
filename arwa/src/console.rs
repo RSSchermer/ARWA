@@ -1,576 +1,921 @@
 use wasm_bindgen::JsValue;
 
+pub use crate::log;
+
+pub use crate::info;
+
+pub use crate::warn;
+
+pub use crate::error;
+
+pub use crate::debug;
+
+pub use crate::group;
+
+pub use crate::group_collapsed;
+
+pub use crate::trace;
+
+pub use crate::assert;
+
+pub use crate::time_log;
+
 #[doc(hidden)]
 pub use web_sys::console as web_sys_console;
 
 #[doc(hidden)]
 pub use js_sys::Array as JsArray;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum LogLevel {
-    Log,
-    Info,
-    Debug,
-    Warning,
-    Error,
+enum ArgumentInternal<'a> {
+    Owned(JsValue),
+    Borrowed(&'a JsValue),
 }
 
-pub struct Writer {
-    log_level: LogLevel,
+pub struct Argument<'a> {
+    internal: ArgumentInternal<'a>,
 }
 
-impl Writer {
-    pub fn new(log_level: LogLevel) -> Self {
-        Writer { log_level }
-    }
-
-    pub fn log_level(&self) -> LogLevel {
-        self.log_level
-    }
-
-    pub fn set_log_level(&mut self, log_level: LogLevel) {
-        self.log_level = log_level;
-    }
-
-    pub fn group(&self, label: Option<&str>) {
-        if let Some(label) = label {
-            web_sys::console::group_1(&label.into());
-        } else {
-            web_sys::console::group_0();
+impl<'a> Argument<'a> {
+    fn owned(js_value: JsValue) -> Self {
+        Argument {
+            internal: ArgumentInternal::Owned(js_value),
         }
     }
 
-    pub fn group_collapsed(&self, label: Option<&str>) {
-        if let Some(label) = label {
-            web_sys::console::group_collapsed_1(&label.into());
-        } else {
-            web_sys::console::group_collapsed_0();
+    fn borrowed(js_value: &'a JsValue) -> Self {
+        Argument {
+            internal: ArgumentInternal::Borrowed(js_value),
         }
     }
+}
 
-    pub fn group_end(&self) {
-        web_sys::console::group_end();
-    }
-
-    pub fn write_1(&self, value: &JsValue) {
-        match self.log_level {
-            LogLevel::Log => self.log_1(value),
-            LogLevel::Info => self.info_1(value),
-            LogLevel::Debug => self.debug_1(value),
-            LogLevel::Warning => self.warn_1(value),
-            LogLevel::Error => self.error_1(value),
+impl Argument<'_> {
+    #[doc(hidden)]
+    pub fn as_js_value(&self) -> &JsValue {
+        match &self.internal {
+            ArgumentInternal::Owned(js_value) => js_value,
+            ArgumentInternal::Borrowed(js_value) => js_value,
         }
     }
+}
 
-    pub fn write_2(&self, v0: &JsValue, v1: &JsValue) {
-        match self.log_level {
-            LogLevel::Log => self.log_2(v0, v1),
-            LogLevel::Info => self.info_2(v0, v1),
-            LogLevel::Debug => self.debug_2(v0, v1),
-            LogLevel::Warning => self.warn_2(v0, v1),
-            LogLevel::Error => self.error_2(v0, v1),
-        }
-    }
+pub trait ToArgument {
+    fn to_argument(&self) -> Argument;
+}
 
-    pub fn write_3(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue) {
-        match self.log_level {
-            LogLevel::Log => self.log_3(v0, v1, v2),
-            LogLevel::Info => self.info_3(v0, v1, v2),
-            LogLevel::Debug => self.debug_3(v0, v1, v2),
-            LogLevel::Warning => self.warn_3(v0, v1, v2),
-            LogLevel::Error => self.error_3(v0, v1, v2),
-        }
-    }
-
-    pub fn write_4(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue) {
-        match self.log_level {
-            LogLevel::Log => self.log_4(v0, v1, v2, v3),
-            LogLevel::Info => self.info_4(v0, v1, v2, v3),
-            LogLevel::Debug => self.debug_4(v0, v1, v2, v3),
-            LogLevel::Warning => self.warn_4(v0, v1, v2, v3),
-            LogLevel::Error => self.error_4(v0, v1, v2, v3),
-        }
-    }
-
-    pub fn write_5(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue, v4: &JsValue) {
-        match self.log_level {
-            LogLevel::Log => self.log_5(v0, v1, v2, v3, v4),
-            LogLevel::Info => self.info_5(v0, v1, v2, v3, v4),
-            LogLevel::Debug => self.debug_5(v0, v1, v2, v3, v4),
-            LogLevel::Warning => self.warn_5(v0, v1, v2, v3, v4),
-            LogLevel::Error => self.error_5(v0, v1, v2, v3, v4),
-        }
-    }
-
-    pub fn write_6(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-    ) {
-        match self.log_level {
-            LogLevel::Log => self.log_6(v0, v1, v2, v3, v4, v5),
-            LogLevel::Info => self.info_6(v0, v1, v2, v3, v4, v5),
-            LogLevel::Debug => self.debug_6(v0, v1, v2, v3, v4, v5),
-            LogLevel::Warning => self.warn_6(v0, v1, v2, v3, v4, v5),
-            LogLevel::Error => self.error_6(v0, v1, v2, v3, v4, v5),
-        }
-    }
-
-    pub fn write_7(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-        v6: &JsValue,
-    ) {
-        match self.log_level {
-            LogLevel::Log => self.log_7(v0, v1, v2, v3, v4, v5, v6),
-            LogLevel::Info => self.info_7(v0, v1, v2, v3, v4, v5, v6),
-            LogLevel::Debug => self.debug_7(v0, v1, v2, v3, v4, v5, v6),
-            LogLevel::Warning => self.warn_7(v0, v1, v2, v3, v4, v5, v6),
-            LogLevel::Error => self.error_7(v0, v1, v2, v3, v4, v5, v6),
-        }
-    }
-
-    pub fn write_all(&self, values: &JsArray) {
-        match self.log_level {
-            LogLevel::Log => self.log_all(values),
-            LogLevel::Info => self.info_all(values),
-            LogLevel::Debug => self.debug_all(values),
-            LogLevel::Warning => self.warn_all(values),
-            LogLevel::Error => self.error_all(values),
-        }
-    }
-
-    pub fn log_1(&self, value: &JsValue) {
-        web_sys::console::log_1(value);
-    }
-
-    pub fn log_2(&self, v0: &JsValue, v1: &JsValue) {
-        web_sys::console::log_2(v0, v1);
-    }
-
-    pub fn log_3(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue) {
-        web_sys::console::log_3(v0, v1, v2);
-    }
-
-    pub fn log_4(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue) {
-        web_sys::console::log_4(v0, v1, v2, v3);
-    }
-
-    pub fn log_5(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue, v4: &JsValue) {
-        web_sys::console::log_5(v0, v1, v2, v3, v4);
-    }
-
-    pub fn log_6(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-    ) {
-        web_sys::console::log_6(v0, v1, v2, v3, v4, v5);
-    }
-
-    pub fn log_7(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-        v6: &JsValue,
-    ) {
-        web_sys::console::log_7(v0, v1, v2, v3, v4, v5, v6);
-    }
-
-    pub fn log_all(&self, values: &JsArray) {
-        web_sys::console::log(values);
-    }
-
-    pub fn info_1(&self, value: &JsValue) {
-        web_sys::console::info_1(value);
-    }
-
-    pub fn info_2(&self, v0: &JsValue, v1: &JsValue) {
-        web_sys::console::info_2(v0, v1);
-    }
-
-    pub fn info_3(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue) {
-        web_sys::console::info_3(v0, v1, v2);
-    }
-
-    pub fn info_4(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue) {
-        web_sys::console::info_4(v0, v1, v2, v3);
-    }
-
-    pub fn info_5(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue, v4: &JsValue) {
-        web_sys::console::info_5(v0, v1, v2, v3, v4);
-    }
-
-    pub fn info_6(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-    ) {
-        web_sys::console::info_6(v0, v1, v2, v3, v4, v5);
-    }
-
-    pub fn info_7(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-        v6: &JsValue,
-    ) {
-        web_sys::console::info_7(v0, v1, v2, v3, v4, v5, v6);
-    }
-
-    pub fn info_all(&self, values: &JsArray) {
-        web_sys::console::info(values);
-    }
-
-    pub fn warn_1(&self, value: &JsValue) {
-        web_sys::console::warn_1(value);
-    }
-
-    pub fn warn_2(&self, v0: &JsValue, v1: &JsValue) {
-        web_sys::console::warn_2(v0, v1);
-    }
-
-    pub fn warn_3(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue) {
-        web_sys::console::warn_3(v0, v1, v2);
-    }
-
-    pub fn warn_4(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue) {
-        web_sys::console::warn_4(v0, v1, v2, v3);
-    }
-
-    pub fn warn_5(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue, v4: &JsValue) {
-        web_sys::console::warn_5(v0, v1, v2, v3, v4);
-    }
-
-    pub fn warn_6(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-    ) {
-        web_sys::console::warn_6(v0, v1, v2, v3, v4, v5);
-    }
-
-    pub fn warn_7(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-        v6: &JsValue,
-    ) {
-        web_sys::console::warn_7(v0, v1, v2, v3, v4, v5, v6);
-    }
-
-    pub fn warn_all(&self, values: &JsArray) {
-        web_sys::console::warn(values);
-    }
-
-    pub fn error_1(&self, value: &JsValue) {
-        web_sys::console::error_1(value);
-    }
-
-    pub fn error_2(&self, v0: &JsValue, v1: &JsValue) {
-        web_sys::console::error_2(v0, v1);
-    }
-
-    pub fn error_3(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue) {
-        web_sys::console::error_3(v0, v1, v2);
-    }
-
-    pub fn error_4(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue) {
-        web_sys::console::error_4(v0, v1, v2, v3);
-    }
-
-    pub fn error_5(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue, v4: &JsValue) {
-        web_sys::console::error_5(v0, v1, v2, v3, v4);
-    }
-
-    pub fn error_6(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-    ) {
-        web_sys::console::error_6(v0, v1, v2, v3, v4, v5);
-    }
-
-    pub fn error_7(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-        v6: &JsValue,
-    ) {
-        web_sys::console::error_7(v0, v1, v2, v3, v4, v5, v6);
-    }
-
-    pub fn error_all(&self, values: &JsArray) {
-        web_sys::console::error(values);
-    }
-
-    pub fn debug_1(&self, value: &JsValue) {
-        web_sys::console::debug_1(value);
-    }
-
-    pub fn debug_2(&self, v0: &JsValue, v1: &JsValue) {
-        web_sys::console::debug_2(v0, v1);
-    }
-
-    pub fn debug_3(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue) {
-        web_sys::console::debug_3(v0, v1, v2);
-    }
-
-    pub fn debug_4(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue) {
-        web_sys::console::debug_4(v0, v1, v2, v3);
-    }
-
-    pub fn debug_5(&self, v0: &JsValue, v1: &JsValue, v2: &JsValue, v3: &JsValue, v4: &JsValue) {
-        web_sys::console::debug_5(v0, v1, v2, v3, v4);
-    }
-
-    pub fn debug_6(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-    ) {
-        web_sys::console::debug_6(v0, v1, v2, v3, v4, v5);
-    }
-
-    pub fn debug_7(
-        &self,
-        v0: &JsValue,
-        v1: &JsValue,
-        v2: &JsValue,
-        v3: &JsValue,
-        v4: &JsValue,
-        v5: &JsValue,
-        v6: &JsValue,
-    ) {
-        web_sys::console::debug_7(v0, v1, v2, v3, v4, v5, v6);
-    }
-
-    pub fn debug_all(&self, values: &JsArray) {
-        web_sys::console::debug(values);
+impl ToArgument for JsValue {
+    fn to_argument(&self) -> Argument {
+        Argument::borrowed(self)
     }
 }
 
-pub trait Write {
-    fn write(&self, writer: &mut Writer);
-}
-
-impl Write for JsValue {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(self);
+impl ToArgument for str {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from_str(self))
     }
 }
 
-impl Write for &'_ str {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for String {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(self))
     }
 }
 
-impl Write for String {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&self.into());
+impl ToArgument for i8 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl Write for bool {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for i16 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl Write for i8 {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for i32 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl Write for u8 {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for i64 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl Write for i16 {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for i128 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl Write for u16 {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for isize {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl Write for i32 {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for u8 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl Write for u32 {
-    fn write(&self, writer: &mut Writer) {
-        writer.write_1(&(*self).into());
+impl ToArgument for u16 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
     }
 }
 
-impl<T> Write for &'_ T
+impl ToArgument for u32 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
+    }
+}
+
+impl ToArgument for u64 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
+    }
+}
+
+impl ToArgument for u128 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
+    }
+}
+
+impl ToArgument for usize {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
+    }
+}
+
+impl ToArgument for f32 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
+    }
+}
+
+impl ToArgument for f64 {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
+    }
+}
+
+impl ToArgument for bool {
+    fn to_argument(&self) -> Argument {
+        Argument::owned(JsValue::from(*self))
+    }
+}
+
+impl<'a, T> ToArgument for &'a T
 where
-    T: Write,
+    T: ToArgument + ?Sized,
 {
-    fn write(&self, writer: &mut Writer) {
-        (*self).write(writer);
+    fn to_argument(&self) -> Argument {
+        ToArgument::to_argument(*self)
     }
 }
 
-// TODO: more core/std types? Derive macro?
+impl<'a, T> ToArgument for &'a mut T
+where
+    T: ToArgument + ?Sized,
+{
+    fn to_argument(&self) -> Argument {
+        ToArgument::to_argument(*self)
+    }
+}
+
+pub fn clear() {
+    web_sys_console::clear();
+}
+
+pub fn group_end() {
+    web_sys_console::group_end();
+}
+
+pub fn count(label: &str) {
+    web_sys_console::count_with_label(label);
+}
+
+pub fn count_reset(label: &str) {
+    web_sys_console::count_reset_with_label(label);
+}
+
+pub fn dir<T>(value: T)
+where
+    T: ToArgument,
+{
+    web_sys_console::dir_1(value.to_argument().as_js_value());
+}
+
+pub fn dir_xml<T>(value: T)
+where
+    T: ToArgument,
+{
+    web_sys_console::dirxml_1(value.to_argument().as_js_value());
+}
+
+pub fn time(label: &str) {
+    web_sys_console::time_with_label(label);
+}
+
+pub fn time_end(label: &str) {
+    web_sys_console::time_end_with_label(label);
+}
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! log {
-    ($t:expr) => {
-        {
-            let mut writer = $crate::console::Writer::new($crate::console::LogLevel::Log);
-
-            $crate::console::Write::write(&$t, &mut writer);
-        }
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::log_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
     };
-    ($t:tt, $($i:tt)+) => {
-        {
-            let formatted = format_args!($t, $($i)*).to_string();
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::log_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::log_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::log_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::log_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::log_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::log_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
 
-            $crate::console::log!(formatted);
-        }
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::log(&array);
     };
 }
-
-pub use crate::log;
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! info {
-    ($t:expr) => {
-        {
-            let mut writer = $crate::console::Writer::new($crate::console::LogLevel::Info);
-
-            $crate::console::Write::write(&$t, &mut writer);
-        }
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::info_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
     };
-    ($t:tt, $($i:tt)+) => {
-        {
-            let formatted = format_args!($t, $($i)*).to_string();
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::info_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::info_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::info_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::info_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::info_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::info_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
 
-            $crate::console::info!(formatted);
-        }
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::info(&array);
     };
 }
-
-pub use crate::info;
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! debug {
-    ($t:expr) => {
-        {
-            let mut writer = $crate::console::Writer::new($crate::console::LogLevel::Debug);
-
-            $crate::console::Write::write(&$t, &mut writer);
-        }
-    };
-    ($t:tt, $($i:tt)+) => {
-        {
-            let formatted = format_args!($t, $($i)*).to_string();
-
-            $crate::console::debug!(formatted);
-        }
-    };
-}
-
-pub use crate::debug;
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! warn {
-    ($t:expr) => {
-        {
-            let mut writer = $crate::console::Writer::new($crate::console::LogLevel::Warning);
-
-            $crate::console::Write::write(&$t, &mut writer);
-        }
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::warn_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
     };
-    ($t:tt, $($i:tt)+) => {
-        {
-            let formatted = format_args!($t, $($i)*).to_string();
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::warn_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::warn_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::warn_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::warn_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::warn_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::warn_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
 
-            $crate::console::warn!(formatted);
-        }
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::warn(&array);
     };
 }
-
-pub use crate::warn;
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! error {
-    ($t:expr) => {
-        {
-            let mut writer = $crate::console::Writer::new($crate::console::LogLevel::Error);
-
-            $crate::console::Write::write(&$t, &mut writer);
-        }
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::error_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
     };
-    ($t:tt, $($i:tt)+) => {
-        {
-            let formatted = format_args!($t, $($i)*).to_string();
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::error_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::error_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::error_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::error_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::error_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::error_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
 
-            $crate::console::error!(formatted);
-        }
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::error(&array);
     };
 }
 
-pub use crate::error;
+#[doc(hidden)]
+#[macro_export]
+macro_rules! debug {
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::debug_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
+    };
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::debug_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::debug_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::debug_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::debug_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::debug_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::debug_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
+
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::debug(&array);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! group {
+    () => {
+        $crate::console::web_sys_console::group_0();
+    };
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::group_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
+    };
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::group_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::group_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::group_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::group_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::group_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::group_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
+
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::group(&array);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! group_collapsed {
+    () => {
+        $crate::console::web_sys_console::group_collapsed_0();
+    };
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::group_collapsed_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
+    };
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::group_collapsed_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::group_collapsed_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::group_collapsed_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::group_collapsed_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::group_collapsed_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::group_collapsed_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
+
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::group_collapsed(&array);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! trace {
+    () => {
+        $crate::console::web_sys_console::trace_0();
+    };
+    ($v:expr $(,)?) => {
+        $crate::console::web_sys_console::trace_1($crate::console::ToArgument::to_argument(&$v).as_js_value());
+    };
+    ($v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::trace_2(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::trace_3(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::trace_4(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::trace_5(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::trace_6(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::trace_7(
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
+
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::trace(&array);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! assert {
+    ($condition:expr) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_0($condition);
+    };
+    ($condition:expr, $v:expr $(,)?) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_1(
+            $condition,
+            $crate::console::ToArgument::to_argument(&$v).as_js_value()
+        );
+    };
+    ($condition:expr, $v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_2(
+            $condition,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($condition:expr, $v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_3(
+            $condition,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($condition:expr, $v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_4(
+            $condition,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($condition:expr, $v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_5(
+            $condition,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($condition:expr, $v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_6(
+            $condition,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($condition:expr, $v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::assert_with_condition_and_data_7(
+            $condition,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($condition:expr, $($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
+
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::assert_with_condition_and_data($condition, &array);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! time_log {
+    ($label:literal) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_0($label);
+    };
+    ($label:literal, $v:expr $(,)?) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_1(
+            $label,
+            $crate::console::ToArgument::to_argument(&$v).as_js_value()
+        );
+    };
+    ($label:literal, $v0:expr, $v1:expr $(,)?) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_2(
+            $label,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+        );
+    };
+    ($label:literal, $v0:expr, $v1:expr, $v2:expr $(,)?) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_3(
+            $label,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+        );
+    };
+    ($label:literal, $v0:expr, $v1:expr, $v2:expr, $v3:expr $(,)?) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_4(
+            $label,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+        );
+    };
+    ($label:literal, $v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr $(,)?) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_5(
+            $label,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+        );
+    };
+    ($label:literal, $v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr $(,)?) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_6(
+            $label,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+        );
+    };
+    ($label:literal, $v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr $(,)?) => {
+        $crate::console::web_sys_console::time_log_with_label_and_data_7(
+            $label,
+            $crate::console::ToArgument::to_argument(&$v0).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v1).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v2).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v3).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v4).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v5).as_js_value(),
+            $crate::console::ToArgument::to_argument(&$v6).as_js_value(),
+        );
+    };
+    ($label:literal, $($v:expr),* $(,)?) => {
+        let array = $crate::console::JsArray::new();
+
+        $(array.push(&$crate::console::ToArgument::to_argument(&$v).as_js_value());)*
+
+        $crate::console::web_sys_console::time_log_with_label_and_data($condition, &array);
+    };
+}
