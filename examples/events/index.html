@@ -4,5 +4,17 @@
   </head>
   <body>
     <button id="button" >Click me and watch the console!</button>
+
+    <p>
+      The button below will disconnect the "clicker button" above from the DOM. After this, it is no longer referenced
+      by the DOM, nor by our code. This means it should be garbage collected on the browser's next garbage collection
+      cycle. When this happens the event stream will terminate itself and the associated structures on the
+      Rust/WASM-side can be dropped. In `src/lib.rs` we use `map` to attach a little logging function onto the end of
+      the event stream to notify us when that happens. Try clicking the button below while watching the console. Note
+      that it can take a while before this happens, especially since in this tiny demo application, there is no real
+      memory usage pressure on the garbage collector (on my Chromium it seems to happen after roughly 5 seconds).
+    </p>
+
+    <button id="remove_event_target_button" >Remove event target</button>
   </body>
 </html>

@@ -1,37 +1,63 @@
 use std::borrow::Cow;
 use std::pin::Pin;
+use std::str::FromStr;
 use std::task::{Context, Poll, Waker};
 
 use futures::stream::Stream;
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
 use crate::event::Event;
+use crate::finalization_registry::FinalizationRegistry;
 
-// TODO: currently these spawn infinite tasks (unless combined with some terminating combinator
-// e.g. `Once` or `TakeUntil`). However, if the reference to the EventTarget held by a stream is
-// the only remaining reference, then we know the stream can be fused, the closure can be dropped,
-// and we can return `Ready(None)` the next time the stream is polled. We should be able to achieve
-// this through a combination of the new `WeakRef` and `FinalizationRegistry` web-APIs, where we
-// only hold on to a `WeakRef` to the event target and register a finalizer on the event target that
-// will clean up the closure and set the stream to a "terminated" state. However, as of yet,
-// wasm-bindgen does not expose these APIs.
+thread_local! {
+    static ON_EVENT_REGISTRY: FinalizationRegistry = {
+        let callback = |held_value: JsValue| {
+            // This is obviously not great, but I cannot currently find another way to get a usize
+            // back from a JsValue.
+            let big_int: BigInt = held_value.unchecked_into();
+            let string: String = ToString::to_string(&big_int);
+            let ptr_bits = usize::from_str(&string).unwrap_throw();
+
+            // This is safe because registration only ever happens after the stream has been pinned,
+            // and it unregisters on drop, so the pointer is always valid for the entire
+            // registration window.
+            let internal = unsafe { &mut *<* mut Internal<JsValue>>::from_bits(ptr_bits) };
+
+            internal.terminated = true;
+
+            if let Some(waker) = internal.state.waker.take() {
+                waker.wake();
+            }
+        };
+
+        let boxed = Box::new(callback) as Box<dyn FnMut(JsValue)>;
+        let closure = Closure::wrap(boxed);
+        let registry = FinalizationRegistry::new(&closure);
+
+        closure.forget();
+
+        registry
+    };
+}
 
 struct Internal<T> {
-    target: web_sys::EventTarget,
+    target: WeakRef,
     event_type: Cow<'static, str>,
     callback: Option<Closure<dyn FnMut(web_sys::Event)>>,
     use_capture: bool, // We need this to drop properly
+    terminated: bool,
     state: CallbackState<T>,
 }
 
 impl<T> Internal<T> {
     fn uninitialized(target: web_sys::EventTarget, event_type: Cow<'static, str>) -> Self {
         Internal {
-            target,
+            target: WeakRef::new(target.as_ref()),
             event_type,
             callback: None,
             use_capture: false,
+            terminated: false,
             state: CallbackState::uninitialized(),
         }
     }
@@ -51,6 +77,14 @@ where
 
         if internal.callback.is_some() {
             panic!("Cannot initialize an event stream twice.");
+        }
+
+        let target = internal.target.deref();
+
+        if target.is_undefined() {
+            internal.terminated = true;
+
+            return;
         }
 
         let state_ptr = (&mut internal.state) as *mut CallbackState<T>;
@@ -97,8 +131,9 @@ where
         add_event_lister_options.capture(use_capture);
         add_event_lister_options.passive(options.passive);
 
-        internal
-            .target
+        let target: web_sys::EventTarget = target.unchecked_into();
+
+        target
             .add_event_listener_with_callback_and_add_event_listener_options(
                 &internal.event_type,
                 closure.as_ref().unchecked_ref(),
@@ -110,6 +145,13 @@ where
         // target.
         internal.callback = Some(closure);
         internal.use_capture = use_capture;
+
+        let ptr = internal as *mut Internal<T>;
+        let ptr_bits = ptr.to_bits();
+
+        ON_EVENT_REGISTRY.with(|r| {
+            r.register_with_unregister_token(target.as_ref(), &ptr_bits.into(), target.as_ref());
+        });
     }
 
     fn refresh_waker(&mut self, waker: Waker) {
@@ -123,14 +165,22 @@ where
 
 impl<T> Drop for Internal<T> {
     fn drop(&mut self) {
-        if let Some(callback) = &self.callback {
-            self.target
-                .remove_event_listener_with_callback_and_bool(
-                    &self.event_type,
-                    callback.as_ref().unchecked_ref(),
-                    self.use_capture,
-                )
-                .unwrap_throw();
+        let target = self.target.deref();
+
+        if !target.is_undefined() {
+            ON_EVENT_REGISTRY.with(|r| r.unregister(target.as_ref()));
+
+            if let Some(callback) = &self.callback {
+                let target: web_sys::EventTarget = target.unchecked_into();
+
+                target
+                    .remove_event_listener_with_callback_and_bool(
+                        &self.event_type,
+                        callback.as_ref().unchecked_ref(),
+                        self.use_capture,
+                    )
+                    .unwrap_throw();
+            }
         }
     }
 }
@@ -175,6 +225,10 @@ where
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Use `get_unchecked_mut` here to avoid having to restrict `T` to `Unpin`
         let on_event = unsafe { &mut self.get_unchecked_mut() };
+
+        if on_event.internal.terminated {
+            return Poll::Ready(None);
+        }
 
         // If the stream hasn't been initialized yet, initialize it
         if on_event.internal.is_uninitialized() {
@@ -243,6 +297,10 @@ where
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Use `get_unchecked_mut` here to avoid having to restrict `T` to `Unpin`
         let on_event = unsafe { self.get_unchecked_mut() };
+
+        if on_event.internal.terminated {
+            return Poll::Ready(None);
+        }
 
         // If the stream hasn't been initialized yet, initialize it
         if on_event.internal.is_uninitialized() {
@@ -327,4 +385,6 @@ macro_rules! typed_event_iterator {
     };
 }
 
+use crate::weak_ref::WeakRef;
+use js_sys::BigInt;
 pub(crate) use typed_event_iterator;

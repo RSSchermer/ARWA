@@ -2,7 +2,8 @@
     async_iterator,
     generic_associated_types,
     get_mut_unchecked,
-    iter_intersperse
+    iter_intersperse,
+    ptr_to_from_bits
 )]
 
 pub mod collection;
@@ -49,4 +50,6 @@ pub use self::invalid_cast::*;
 mod transferable;
 pub use self::transferable::*;
 
+mod finalization_registry;
 mod unchecked_cast_array;
+mod weak_ref;
