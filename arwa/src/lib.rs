@@ -1,10 +1,12 @@
 #![feature(
     async_iterator,
+    const_type_id,
     generic_associated_types,
     get_mut_unchecked,
     iter_intersperse,
     ptr_to_from_bits
 )]
+#![feature(ptr_metadata)]
 
 pub mod collection;
 pub mod connection;

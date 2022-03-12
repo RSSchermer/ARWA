@@ -66,6 +66,8 @@ features = [
     "CssStyleRule",
     "CssStyleSheet",
     "CssSupportsRule",
+    "CustomEvent",
+    "CustomEventInit",
     "DataTransfer",
     "DedicatedWorkerGlobalScope",
     "Document",

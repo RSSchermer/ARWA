@@ -1,10 +1,8 @@
 #![feature(async_closure, fn_traits, unboxed_closures)]
 use std::cell::RefCell;
-use std::convert::TryInto;
 use std::rc::Rc;
 
 use arwa::dom::{selector, DynamicElement, Element, ParentNode};
-use arwa::html::HtmlButtonElement;
 use arwa::spawn_local;
 use arwa::ui::UiEventTarget;
 use arwa::window::{window, Window};
@@ -86,11 +84,9 @@ pub fn start() {
     spawn_local(abortable_request.map(frame_loop));
 
     // Obtain a reference to the cancellation button.
-    let button: HtmlButtonElement = document
+    let button = document
         .query_selector_first(&selector!("#cancel_button"))
-        .expect("No element with id `cancel_button`.")
-        .try_into()
-        .expect("Element is not a button element.");
+        .expect("No element with id `cancel_button`.");
 
     // Respond to click events on the button by cancelling the loop.
     spawn_local(button.on_click().take(1).for_each(move |_| {

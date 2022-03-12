@@ -41,7 +41,7 @@ pub fn start() {
 
     let pause_button = document
         .query_selector_first(&selector!("#pause"))
-        .expect("No element with the id `play`");
+        .expect("No element with the id `pause`");
 
     spawn_local(pause_button.on_click().for_each(move |_| {
         audio.pause();

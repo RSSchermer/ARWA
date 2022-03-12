@@ -79,8 +79,26 @@ pub trait Event: event_seal::Seal {
     }
 }
 
+pub(crate) enum EventTypeInternal {
+    Str(&'static str),
+    TypeId(TypeId),
+}
+
+pub struct EventType {
+    pub(crate) internal: EventTypeInternal,
+}
+
+impl EventType {
+    pub(crate) fn to_cow(&self) -> Cow<'static, str> {
+        match self.internal {
+            EventTypeInternal::Str(str) => str.into(),
+            EventTypeInternal::TypeId(type_id) => type_id_to_event_name(type_id).into(),
+        }
+    }
+}
+
 pub trait TypedEvent: Event {
-    const TYPE_NAME: &'static str;
+    const EVENT_TYPE: EventType;
 }
 
 macro_rules! impl_typed_event_traits {
@@ -120,7 +138,9 @@ macro_rules! impl_typed_event_traits {
         where
             T: $crate::event::EventTarget,
         {
-            const TYPE_NAME: &'static str = $tpe_name;
+            const EVENT_TYPE: $crate::event::EventType = $crate::event::EventType {
+                internal: $crate::event::EventTypeInternal::Str($tpe_name),
+            };
         }
 
         impl<T> std::convert::TryFrom<$crate::event::DynamicEvent<T>> for $tpe<T> {
@@ -158,6 +178,14 @@ macro_rules! impl_typed_event_traits {
                 self.inner.as_ref()
             }
         }
+
+        impl<T> $crate::console::ToArgument for $tpe<T> {
+            fn to_argument(&self) -> $crate::console::Argument {
+                let as_js_value: &wasm_bindgen::JsValue = self.as_ref();
+
+                $crate::console::ToArgument::to_argument(as_js_value)
+            }
+        }
     };
     ($tpe:ident, $tpe_name:literal) => {
         $crate::event::impl_typed_event_traits!($tpe, $tpe, $tpe_name);
@@ -165,7 +193,12 @@ macro_rules! impl_typed_event_traits {
 }
 
 use crate::event::event_target_seal::Seal;
+use crate::event::type_id_event_name::type_id_to_event_name;
 pub(crate) use impl_typed_event_traits;
+use std::any::TypeId;
+use std::borrow::Cow;
+use crate::console::{ToArgument, Argument};
+use wasm_bindgen::JsValue;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum EventPhase {
@@ -238,5 +271,13 @@ impl<T> AsRef<js_sys::Object> for DynamicEvent<T> {
 impl<T> AsRef<wasm_bindgen::JsValue> for DynamicEvent<T> {
     fn as_ref(&self) -> &wasm_bindgen::JsValue {
         self.inner.as_ref()
+    }
+}
+
+impl<T> ToArgument for DynamicEvent<T> {
+    fn to_argument(&self) -> Argument {
+        let as_js_value: &JsValue = self.as_ref();
+
+        ToArgument::to_argument(as_js_value)
     }
 }

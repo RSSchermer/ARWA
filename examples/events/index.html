@@ -12,7 +12,9 @@
       Rust/WASM-side can be dropped. In `src/lib.rs` we use `map` to attach a little logging function onto the end of
       the event stream to notify us when that happens. Try clicking the button below while watching the console. Note
       that it can take a while before this happens, especially since in this tiny demo application, there is no real
-      memory usage pressure on the garbage collector (on my Chromium it seems to happen after roughly 5 seconds).
+      memory usage pressure on the garbage collector (on my Chromium it seems to happen after roughly 5 seconds, on my
+      FireFox it can take more than a minute); there are no real guarantees about if and when browser garbage collection
+      occurs.
     </p>
 
     <button id="remove_event_target_button" >Remove event target</button>

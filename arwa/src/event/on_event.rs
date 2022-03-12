@@ -1,12 +1,14 @@
 use std::borrow::Cow;
 use std::pin::Pin;
-use std::str::FromStr;
 use std::task::{Context, Poll, Waker};
+use std::mem;
 
+use js_sys::Uint8Array;
 use futures::stream::Stream;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
+use crate::weak_ref::WeakRef;
 use crate::event::Event;
 use crate::finalization_registry::FinalizationRegistry;
 
@@ -15,9 +17,13 @@ thread_local! {
         let callback = |held_value: JsValue| {
             // This is obviously not great, but I cannot currently find another way to get a usize
             // back from a JsValue.
-            let big_int: BigInt = held_value.unchecked_into();
-            let string: String = ToString::to_string(&big_int);
-            let ptr_bits = usize::from_str(&string).unwrap_throw();
+            let pointer_data: Uint8Array = held_value.unchecked_into();
+
+            let mut scratch = [0u8; mem::size_of::<usize>()];
+
+            pointer_data.copy_to(&mut scratch);
+
+            let ptr_bits = usize::from_ne_bytes(scratch);
 
             // This is safe because registration only ever happens after the stream has been pinned,
             // and it unregisters on drop, so the pointer is always valid for the entire
@@ -148,9 +154,12 @@ where
 
         let ptr = internal as *mut Internal<T>;
         let ptr_bits = ptr.to_bits();
+        let pointer_data = Uint8Array::new_with_length(mem::size_of::<usize>() as u32);
+
+        pointer_data.copy_from(&ptr_bits.to_ne_bytes());
 
         ON_EVENT_REGISTRY.with(|r| {
-            r.register_with_unregister_token(target.as_ref(), &ptr_bits.into(), target.as_ref());
+            r.register_with_unregister_token(target.as_ref(), pointer_data.as_ref(), target.as_ref());
         });
     }
 
@@ -385,6 +394,4 @@ macro_rules! typed_event_iterator {
     };
 }
 
-use crate::weak_ref::WeakRef;
-use js_sys::BigInt;
 pub(crate) use typed_event_iterator;

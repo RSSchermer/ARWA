@@ -1,8 +1,6 @@
 #![feature(async_closure)]
-use std::convert::TryInto;
 
 use arwa::dom::{selector, ChildNode, ParentNode};
-use arwa::html::HtmlButtonElement;
 use arwa::ui::UiEventTarget;
 use arwa::window::window;
 use arwa::{console, spawn_local};
@@ -30,7 +28,7 @@ pub fn start() {
 
     let remove_event_target_button = document
         .query_selector_first(&selector!("#remove_event_target_button"))
-        .expect("No element with id `button`.");
+        .expect("No element with id `remove_event_target_button`.");
 
     spawn_local(
         remove_event_target_button
