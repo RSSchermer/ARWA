@@ -253,6 +253,30 @@ pub trait EventTarget: event_target_seal::Seal + Sized {
         init.cancelable(cancelable);
         init.bubbles(bubbles);
         init.composed(composed);
+
+        // Note that storing the event_data in `detail` is not completely sound the way this is
+        // currently implemented. One might intercept a custom event generated like this, modify
+        // the contents of the Uint8Array in the `detail` property, and then subsequent use of the
+        // custom element that tries to deref the data pointer or running the finalizer will cause
+        // UB. This could be made sound though. `CustomEvent.detail` is specced to be a read-only
+        // property, which means the browser will not allow it to be modified (in non-strict mode
+        // setting it is a no-op, in strict mode setting it is an error). The `Uint8Array` we store
+        // in the property is however modifiable. Unfortunately `Object.freeze` is currently not
+        // allowed on typed buffers (because there is no distinction between buffers that actually
+        // own their data, and buffers that view data that is in some way shared). Rather than store
+        // the pointer data in a `Uint8Array`, we could format it into a javascript string (which is
+        // immutable) and parse it back, or we could store in a normal javascript `Array`, which can
+        // be frozen and read it back from there. I believe a setup like that would be sound, but it
+        // comes with more overhead. I prefer the unsound faster way for now, especially since,
+        // though it can be broken, I don't think one can trigger this behavior accidentally; you
+        // would have to be deliberately breaking it, in which case you would know what you were
+        // doing.
+        //
+        // Ideally, there'd be a way to create immutable typed buffers, I suspect that would be a
+        // more generally useful construct for javascript-WASM FFI: "Hey browser-host, I have a blob
+        // of bytes I'd like you to store on your garbage collected heap for a while. Don't worry
+        // about what it means, just let me read it back when I ask for it later. In the meanwhile
+        // don't let anyone touch it please!"
         init.detail(event_data.as_ref());
 
         let event =

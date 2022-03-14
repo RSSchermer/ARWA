@@ -15,8 +15,6 @@ use crate::finalization_registry::FinalizationRegistry;
 thread_local! {
     static ON_EVENT_REGISTRY: FinalizationRegistry = {
         let callback = |held_value: JsValue| {
-            // This is obviously not great, but I cannot currently find another way to get a usize
-            // back from a JsValue.
             let pointer_data: Uint8Array = held_value.unchecked_into();
 
             let mut scratch = [0u8; mem::size_of::<usize>()];
