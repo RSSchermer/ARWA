@@ -5,7 +5,7 @@ use web_sys::Node;
 
 use crate::dom::{impl_try_from_element, DynamicNode};
 use crate::event::{impl_typed_event_traits, typed_event_iterator};
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::unchecked_cast_array::unchecked_cast_array;
 
 #[derive(Clone)]
@@ -52,6 +52,7 @@ impl AsRef<web_sys::HtmlSlotElement> for HtmlSlotElement {
 impl_html_element_traits!(HtmlSlotElement);
 impl_try_from_element!(HtmlSlotElement);
 impl_known_element!(HtmlSlotElement, "SLOT");
+impl_extendable_element!(HtmlSlotElement, "slot");
 
 unchecked_cast_array!(DynamicNode, Node, SlotAssignedNodes);
 

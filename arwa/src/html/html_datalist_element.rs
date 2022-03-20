@@ -2,7 +2,9 @@ use wasm_bindgen::JsCast;
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element, HtmlOptionElement};
+use crate::html::{
+    impl_extendable_element, impl_html_element_traits, impl_known_element, HtmlOptionElement,
+};
 
 #[derive(Clone)]
 pub struct HtmlDatalistElement {
@@ -32,6 +34,7 @@ impl AsRef<web_sys::HtmlDataListElement> for HtmlDatalistElement {
 impl_html_element_traits!(HtmlDatalistElement);
 impl_try_from_element!(HtmlDatalistElement, HtmlDataListElement);
 impl_known_element!(HtmlDatalistElement, HtmlDataListElement, "DATALIST");
+impl_extendable_element!(HtmlDatalistElement, "datalist");
 
 pub struct DatalistOptions {
     inner: web_sys::HtmlCollection,

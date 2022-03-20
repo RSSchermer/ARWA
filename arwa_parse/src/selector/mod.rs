@@ -70,6 +70,7 @@ impl fmt::Debug for InvalidSelector {
 
 impl Error for InvalidSelector {}
 
+#[derive(Clone)]
 pub struct Selector {
     raw: String,
     parsed: SelectorList,

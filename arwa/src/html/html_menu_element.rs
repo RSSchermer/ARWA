@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlMenuElement {
@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlMenuElement> for HtmlMenuElement {
 impl_html_element_traits!(HtmlMenuElement);
 impl_try_from_element!(HtmlMenuElement);
 impl_known_element!(HtmlMenuElement, "MENU");
+impl_extendable_element!(HtmlMenuElement, "menu");

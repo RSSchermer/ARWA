@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlCaptionElement {
@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlTableCaptionElement> for HtmlCaptionElement {
 impl_html_element_traits!(HtmlCaptionElement);
 impl_try_from_element!(HtmlCaptionElement, HtmlTableCaptionElement);
 impl_known_element!(HtmlCaptionElement, HtmlTableCaptionElement, "CAPTION");
+impl_extendable_element!(HtmlCaptionElement, "caption");

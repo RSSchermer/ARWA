@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlPreElement {
@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlPreElement> for HtmlPreElement {
 impl_html_element_traits!(HtmlPreElement);
 impl_try_from_element!(HtmlPreElement);
 impl_known_element!(HtmlPreElement, "PRE");
+impl_extendable_element!(HtmlPreElement, "pre");

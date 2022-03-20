@@ -11,7 +11,7 @@ use crate::fetch::{
     cache_context_seal, fetch_context_seal, CacheContext, Fetch, FetchContext, Request,
 };
 use crate::history::History;
-use crate::html::{slot_change_event_target_seal, SlotChangeEventTarget};
+use crate::html::{slot_change_event_target_seal, CustomElementRegistry, SlotChangeEventTarget};
 use crate::message::{message_event_target_seal, MessageEventTarget};
 use crate::performance::Performance;
 use crate::scroll::{scrollable_seal, ScrollByOptions, ScrollToOptions, Scrollable};
@@ -62,6 +62,10 @@ impl Window {
     pub fn crypto(&self) -> Crypto {
         // It's unclear to me if/when window.crypto could fail from the spec, unwrap for now.
         self.inner.crypto().unwrap_throw().into()
+    }
+
+    pub fn custom_elements(&self) -> CustomElementRegistry {
+        self.inner.custom_elements().into()
     }
 
     pub fn history(&self) -> History {

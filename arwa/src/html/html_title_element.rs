@@ -1,7 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlTitleElement {
@@ -39,3 +39,4 @@ impl AsRef<web_sys::HtmlTitleElement> for HtmlTitleElement {
 impl_html_element_traits!(HtmlTitleElement);
 impl_try_from_element!(HtmlTitleElement);
 impl_known_element!(HtmlTitleElement, "TITLE");
+impl_extendable_element!(HtmlTitleElement, "title");

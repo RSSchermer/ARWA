@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::url::Url;
 
 #[derive(Clone)]
@@ -42,3 +42,4 @@ impl AsRef<web_sys::HtmlBaseElement> for HtmlBaseElement {
 impl_html_element_traits!(HtmlBaseElement);
 impl_try_from_element!(HtmlBaseElement);
 impl_known_element!(HtmlBaseElement, "BASE");
+impl_extendable_element!(HtmlBaseElement, "base");

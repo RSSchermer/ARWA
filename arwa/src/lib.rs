@@ -1,12 +1,4 @@
-#![feature(
-    async_iterator,
-    const_type_id,
-    generic_associated_types,
-    get_mut_unchecked,
-    iter_intersperse,
-    ptr_to_from_bits
-)]
-#![feature(ptr_metadata)]
+#![feature(const_type_id, get_mut_unchecked, iter_intersperse, ptr_to_from_bits)]
 
 pub mod collection;
 pub mod connection;
@@ -54,4 +46,5 @@ pub use self::transferable::*;
 
 mod finalization_registry;
 mod unchecked_cast_array;
+mod util;
 mod weak_ref;

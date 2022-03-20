@@ -1,5 +1,7 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element, HtmlFormElement};
+use crate::html::{
+    impl_extendable_element, impl_html_element_traits, impl_known_element, HtmlFormElement,
+};
 
 #[derive(Clone)]
 pub struct HtmlLegendElement {
@@ -27,3 +29,4 @@ impl AsRef<web_sys::HtmlLegendElement> for HtmlLegendElement {
 impl_html_element_traits!(HtmlLegendElement);
 impl_try_from_element!(HtmlLegendElement);
 impl_known_element!(HtmlLegendElement, "LEGEND");
+impl_extendable_element!(HtmlLegendElement, "legend");

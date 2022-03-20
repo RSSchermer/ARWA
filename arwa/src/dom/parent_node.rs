@@ -33,7 +33,7 @@ pub trait ParentNode: parent_node_seal::Seal + Sized {
     /// Recursively copies the source node's entire sub-tree.
     ///
     /// See also [duplicate].
-    fn duplicate_deep(source: Self) -> Self {
+    fn duplicate_deep(source: &Self) -> Self {
         let cloned_node = source
             .as_web_sys_node()
             .clone_node_with_deep(true)

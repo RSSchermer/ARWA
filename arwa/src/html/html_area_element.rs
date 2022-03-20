@@ -7,7 +7,7 @@ use wasm_bindgen::UnwrapThrowExt;
 
 use crate::dom::impl_try_from_element;
 use crate::html::AreaRelationshipTypes;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::security::ReferrerPolicy;
 use crate::url::Url;
 
@@ -210,3 +210,4 @@ impl AsRef<web_sys::HtmlAreaElement> for HtmlAreaElement {
 impl_html_element_traits!(HtmlAreaElement);
 impl_try_from_element!(HtmlAreaElement);
 impl_known_element!(HtmlAreaElement, "AREA");
+impl_extendable_element!(HtmlAreaElement, "area");

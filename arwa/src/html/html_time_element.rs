@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlTimeElement {
@@ -25,3 +25,4 @@ impl AsRef<web_sys::HtmlTimeElement> for HtmlTimeElement {
 impl_html_element_traits!(HtmlTimeElement);
 impl_try_from_element!(HtmlTimeElement);
 impl_known_element!(HtmlTimeElement, "TIME");
+impl_extendable_element!(HtmlTimeElement, "time");

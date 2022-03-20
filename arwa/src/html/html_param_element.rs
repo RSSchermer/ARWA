@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlParamElement {
@@ -37,3 +37,4 @@ impl AsRef<web_sys::HtmlParamElement> for HtmlParamElement {
 impl_html_element_traits!(HtmlParamElement);
 impl_try_from_element!(HtmlParamElement);
 impl_known_element!(HtmlParamElement, "PARAM");
+impl_extendable_element!(HtmlParamElement, "param");

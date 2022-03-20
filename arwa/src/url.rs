@@ -121,6 +121,7 @@ pub enum OriginKind {
     Tuple,
 }
 
+#[derive(Clone)]
 struct ParsedDynamicCache {
     scheme: LazyCell<String>,
     username: LazyCell<String>,
@@ -149,6 +150,7 @@ impl ParsedDynamicCache {
     }
 }
 
+#[derive(Clone)]
 struct DynamicallyParsedUrl {
     raw: String,
     parsed: web_sys::Url,
@@ -272,6 +274,7 @@ pub enum Origin<'a> {
     Tuple(&'a str, &'a str, u16),
 }
 
+#[derive(Clone)]
 enum UrlInternal {
     Dynamic(DynamicallyParsedUrl),
     Static(StaticallyParsedUrl),
@@ -289,6 +292,7 @@ impl From<StaticallyParsedUrl> for UrlInternal {
     }
 }
 
+#[derive(Clone)]
 pub struct Url {
     internal: UrlInternal,
 }
@@ -309,9 +313,9 @@ impl Url {
 
     /// Only meant to be called by the accompanying proc-macro, not part of the public API.
     #[doc(hidden)]
-    pub fn from_statically_parsed(parsed: StaticallyParsedUrl) -> Self {
+    pub const fn from_statically_parsed(parsed: StaticallyParsedUrl) -> Self {
         Url {
-            internal: parsed.into(),
+            internal: UrlInternal::Static(parsed),
         }
     }
 
@@ -433,17 +437,17 @@ impl PartialEq<str> for Url {
     }
 }
 
-impl<'a> PartialEq<&'a str> for Url {
+impl PartialEq<&'_ str> for Url {
     #[inline]
-    fn eq(&self, s: &&'a str) -> bool {
-        self == *s
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
     }
 }
 
-impl<'a> PartialEq<Url> for &'a str {
+impl PartialEq<Url> for &'_ str {
     #[inline]
-    fn eq(&self, url: &Url) -> bool {
-        url == self
+    fn eq(&self, other: &Url) -> bool {
+        other == self
     }
 }
 

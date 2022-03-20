@@ -1,5 +1,5 @@
 use crate::dom::{impl_shadow_host_for_element, impl_try_from_element};
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlBodyElement {
@@ -24,4 +24,5 @@ impl AsRef<web_sys::HtmlBodyElement> for HtmlBodyElement {
 impl_html_element_traits!(HtmlBodyElement);
 impl_try_from_element!(HtmlBodyElement);
 impl_known_element!(HtmlBodyElement, "BODY");
+impl_extendable_element!(HtmlBodyElement, "body");
 impl_shadow_host_for_element!(HtmlBodyElement);

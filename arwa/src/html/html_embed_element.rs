@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::media_type::MediaType;
 use crate::url::Url;
 
@@ -62,3 +62,4 @@ impl AsRef<web_sys::HtmlEmbedElement> for HtmlEmbedElement {
 impl_html_element_traits!(HtmlEmbedElement);
 impl_try_from_element!(HtmlEmbedElement);
 impl_known_element!(HtmlEmbedElement, "EMBED");
+impl_extendable_element!(HtmlEmbedElement, "embed");

@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlUlElement {
@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlUListElement> for HtmlUlElement {
 impl_html_element_traits!(HtmlUlElement);
 impl_try_from_element!(HtmlUlElement, HtmlUListElement);
 impl_known_element!(HtmlUlElement, HtmlUListElement, "UL");
+impl_extendable_element!(HtmlUlElement, "ul");

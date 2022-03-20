@@ -1,6 +1,12 @@
 mod constraint_validation;
 pub use self::constraint_validation::*;
 
+mod custom_element;
+pub use self::custom_element::*;
+
+mod custom_element_name;
+pub use self::custom_element_name::*;
+
 mod form_listed_element;
 pub use self::form_listed_element::*;
 
@@ -213,6 +219,8 @@ pub use self::link_types::*;
 
 mod media_element;
 pub use self::media_element::*;
+
+pub use arwa_macro::custom_element_name;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AutoComplete {

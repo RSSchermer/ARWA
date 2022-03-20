@@ -2,7 +2,9 @@ use wasm_bindgen::JsCast;
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element_with_tag_check;
-use crate::html::{impl_html_element_traits, impl_known_element, HtmlTrElement};
+use crate::html::{
+    impl_extendable_element, impl_html_element_traits, impl_known_element, HtmlTrElement,
+};
 
 mod table_section_element_seal {
     pub trait Seal {
@@ -71,6 +73,7 @@ impl AsRef<web_sys::HtmlTableSectionElement> for HtmlTheadElement {
 impl_html_element_traits!(HtmlTheadElement);
 impl_try_from_element_with_tag_check!(HtmlTheadElement, HtmlTableSectionElement, "THEAD");
 impl_known_element!(HtmlTheadElement, HtmlTableSectionElement, "THEAD");
+impl_extendable_element!(HtmlTheadElement, "thead");
 
 #[derive(Clone)]
 pub struct HtmlTbodyElement {
@@ -100,6 +103,7 @@ impl AsRef<web_sys::HtmlTableSectionElement> for HtmlTbodyElement {
 impl_html_element_traits!(HtmlTbodyElement);
 impl_try_from_element_with_tag_check!(HtmlTbodyElement, HtmlTableSectionElement, "TBODY");
 impl_known_element!(HtmlTbodyElement, HtmlTableSectionElement, "TBODY");
+impl_extendable_element!(HtmlTbodyElement, "tbody");
 
 #[derive(Clone)]
 pub struct HtmlTfootElement {
@@ -129,3 +133,4 @@ impl AsRef<web_sys::HtmlTableSectionElement> for HtmlTfootElement {
 impl_html_element_traits!(HtmlTfootElement);
 impl_try_from_element_with_tag_check!(HtmlTfootElement, HtmlTableSectionElement, "TFOOT");
 impl_known_element!(HtmlTfootElement, HtmlTableSectionElement, "TFOOT");
+impl_extendable_element!(HtmlTfootElement, "tfoot");

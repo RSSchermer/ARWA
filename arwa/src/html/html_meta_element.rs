@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlMetaElement {
@@ -37,3 +37,4 @@ impl AsRef<web_sys::HtmlMetaElement> for HtmlMetaElement {
 impl_html_element_traits!(HtmlMetaElement);
 impl_try_from_element!(HtmlMetaElement);
 impl_known_element!(HtmlMetaElement, "META");
+impl_extendable_element!(HtmlMetaElement, "meta");

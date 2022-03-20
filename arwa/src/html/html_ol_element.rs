@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum OrderedListType {
@@ -74,3 +74,4 @@ impl AsRef<web_sys::HtmlOListElement> for HtmlOlElement {
 impl_html_element_traits!(HtmlOlElement);
 impl_try_from_element!(HtmlOlElement, HtmlOListElement);
 impl_known_element!(HtmlOlElement, HtmlOListElement, "OL");
+impl_extendable_element!(HtmlOlElement, "ol");

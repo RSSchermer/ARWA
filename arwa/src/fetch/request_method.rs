@@ -5,6 +5,7 @@ use crate::console::{Argument, ToArgument};
 pub use arwa_parse::request_method::InvalidRequestMethod;
 
 #[doc(hidden)]
+#[derive(Clone)]
 pub struct StaticallyParsedRequestMethod {
     #[doc(hidden)]
     pub request_method: &'static str,
@@ -16,11 +17,13 @@ impl AsRef<str> for StaticallyParsedRequestMethod {
     }
 }
 
+#[derive(Clone)]
 enum RequestMethodInternal {
     Static(StaticallyParsedRequestMethod),
     Dynamic(arwa_parse::request_method::RequestMethod),
 }
 
+#[derive(Clone)]
 pub struct RequestMethod {
     internal: RequestMethodInternal,
 }
@@ -81,7 +84,7 @@ impl RequestMethod {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed(token: StaticallyParsedRequestMethod) -> Self {
+    pub const fn from_statically_parsed(token: StaticallyParsedRequestMethod) -> Self {
         RequestMethod {
             internal: RequestMethodInternal::Static(token),
         }
@@ -133,6 +136,20 @@ impl PartialEq<str> for RequestMethod {
         let self_as_str: &str = self.as_ref();
 
         self_as_str == other
+    }
+}
+
+impl PartialEq<&'_ str> for RequestMethod {
+    #[inline]
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<RequestMethod> for &'_ str {
+    #[inline]
+    fn eq(&self, other: &RequestMethod) -> bool {
+        other == self
     }
 }
 

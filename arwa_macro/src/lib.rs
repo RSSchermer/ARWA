@@ -1,5 +1,6 @@
 #![feature(proc_macro_diagnostic)]
 
+use arwa_parse::custom_element_name::CustomElementName;
 use arwa_parse::dom_token::Token;
 use arwa_parse::request_method::RequestMethod;
 use arwa_parse::selector::Selector;
@@ -9,6 +10,23 @@ use proc_macro::{Diagnostic, Level, TokenStream};
 use quote::quote;
 use syn::{parse_macro_input, LitStr};
 use url::{Origin, Url};
+
+#[proc_macro]
+pub fn custom_element_name(tokens_in: TokenStream) -> TokenStream {
+    let name_string = parse_macro_input!(tokens_in as LitStr);
+
+    if let Err(err) = CustomElementName::parse(&name_string.value()) {
+        Diagnostic::spanned(name_string.span().unwrap(), Level::Error, err.to_string()).emit();
+    }
+
+    let tokens_out = quote! {
+        arwa::html::CustomElementName::from_statically_parsed(arwa::html::StaticallyParsedCustomElementName {
+            name: #name_string
+        })
+    };
+
+    tokens_out.into()
+}
 
 #[proc_macro]
 pub fn lang(tokens_in: TokenStream) -> TokenStream {

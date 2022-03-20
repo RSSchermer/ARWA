@@ -192,12 +192,12 @@ macro_rules! impl_typed_event_traits {
     };
 }
 
+use crate::console::{Argument, ToArgument};
 use crate::event::event_target_seal::Seal;
 use crate::event::type_id_event_name::type_id_to_event_name;
 pub(crate) use impl_typed_event_traits;
 use std::any::TypeId;
 use std::borrow::Cow;
-use crate::console::{ToArgument, Argument};
 use wasm_bindgen::JsValue;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

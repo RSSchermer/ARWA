@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlDetailsElement {
@@ -33,3 +33,4 @@ impl AsRef<web_sys::HtmlDetailsElement> for HtmlDetailsElement {
 impl_html_element_traits!(HtmlDetailsElement);
 impl_try_from_element!(HtmlDetailsElement);
 impl_known_element!(HtmlDetailsElement, "DETAILS");
+impl_extendable_element!(HtmlDetailsElement, "details");

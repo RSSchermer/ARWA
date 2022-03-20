@@ -1,4 +1,4 @@
-use crate::html::{impl_html_media_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_media_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlAudioElement {
@@ -19,3 +19,4 @@ impl AsRef<web_sys::HtmlAudioElement> for HtmlAudioElement {
 
 impl_html_media_element_traits!(HtmlAudioElement);
 impl_known_element!(HtmlAudioElement, "AUDIO");
+impl_extendable_element!(HtmlAudioElement, "audio");

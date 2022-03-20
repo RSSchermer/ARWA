@@ -1,5 +1,5 @@
 use crate::dom::{impl_shadow_host_for_element, impl_try_from_element};
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlPElement {
@@ -21,4 +21,5 @@ impl AsRef<web_sys::HtmlParagraphElement> for HtmlPElement {
 impl_html_element_traits!(HtmlPElement);
 impl_try_from_element!(HtmlPElement, HtmlParagraphElement);
 impl_known_element!(HtmlPElement, HtmlParagraphElement, "P");
+impl_extendable_element!(HtmlPElement, "p");
 impl_shadow_host_for_element!(HtmlPElement);

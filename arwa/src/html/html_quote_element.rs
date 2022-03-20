@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlQuoteElement {
@@ -33,3 +33,4 @@ impl AsRef<web_sys::HtmlQuoteElement> for HtmlQuoteElement {
 impl_html_element_traits!(HtmlQuoteElement);
 impl_try_from_element!(HtmlQuoteElement);
 impl_known_element!(HtmlQuoteElement, "QUOTE");
+impl_extendable_element!(HtmlQuoteElement, "quote");

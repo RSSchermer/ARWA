@@ -3,8 +3,8 @@ use wasm_bindgen::JsCast;
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element;
 use crate::html::{
-    impl_html_element_traits, impl_known_element, HtmlCaptionElement, HtmlTbodyElement,
-    HtmlTfootElement, HtmlTheadElement, HtmlTrElement,
+    impl_extendable_element, impl_html_element_traits, impl_known_element, HtmlCaptionElement,
+    HtmlTbodyElement, HtmlTfootElement, HtmlTheadElement, HtmlTrElement,
 };
 
 #[derive(Clone)]
@@ -104,6 +104,7 @@ impl AsRef<web_sys::HtmlTableElement> for HtmlTableElement {
 impl_html_element_traits!(HtmlTableElement);
 impl_try_from_element!(HtmlTableElement);
 impl_known_element!(HtmlTableElement, "TABLE");
+impl_extendable_element!(HtmlTableElement, "table");
 
 pub struct TableBodies {
     inner: web_sys::HtmlCollection,

@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::{impl_try_from_element, impl_try_from_element_with_tag_check, Token};
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::InvalidCast;
 
 mod table_cell_element_seal {
@@ -42,6 +42,13 @@ pub trait TableCellElement: table_cell_element_seal::Seal {
         }
     }
 
+    fn headers(&self) -> TableCellHeaders {
+        TableCellHeaders {
+            cell: self.as_web_sys_html_table_cell_element().clone(),
+            cached: RefCell::new(TableCellHeadersCache::new()),
+        }
+    }
+
     // TODO: `scope` missing in web_sys
 }
 
@@ -56,6 +63,13 @@ struct TableCellHeadersCache {
 }
 
 impl TableCellHeadersCache {
+    fn new() -> Self {
+        TableCellHeadersCache {
+            raw: String::new(),
+            parsed: Vec::new(),
+        }
+    }
+
     fn refresh(&mut self, headers_string: String) {
         if self.raw != headers_string {
             let mut parsed_new = Vec::new();
@@ -288,6 +302,7 @@ impl TryFrom<DynamicTableCellElement> for HtmlTdElement {
 impl_html_element_traits!(HtmlTdElement);
 impl_try_from_element_with_tag_check!(HtmlTdElement, HtmlTableCellElement, "TD");
 impl_known_element!(HtmlTdElement, HtmlTableCellElement, "TD");
+impl_extendable_element!(HtmlTdElement, "td");
 
 #[derive(Clone)]
 pub struct HtmlThElement {
@@ -329,3 +344,4 @@ impl TryFrom<DynamicTableCellElement> for HtmlThElement {
 impl_html_element_traits!(HtmlThElement);
 impl_try_from_element_with_tag_check!(HtmlThElement, HtmlTableCellElement, "TH");
 impl_known_element!(HtmlThElement, HtmlTableCellElement, "TH");
+impl_extendable_element!(HtmlThElement, "th");

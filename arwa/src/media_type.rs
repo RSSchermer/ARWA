@@ -13,6 +13,7 @@ use crate::console::{Argument, ToArgument};
 #[doc(hidden)]
 pub use mime_4::media_type as mime_4_media_type;
 
+#[derive(Clone)]
 pub struct MediaType {
     inner: mime_4::MediaType,
 }
@@ -88,17 +89,17 @@ impl PartialEq<str> for MediaType {
     }
 }
 
-impl<'a> PartialEq<&'a str> for MediaType {
+impl PartialEq<&'_ str> for MediaType {
     #[inline]
-    fn eq(&self, s: &&'a str) -> bool {
-        self == *s
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
     }
 }
 
-impl<'a> PartialEq<MediaType> for &'a str {
+impl PartialEq<MediaType> for &'_ str {
     #[inline]
-    fn eq(&self, mt: &MediaType) -> bool {
-        mt == self
+    fn eq(&self, other: &MediaType) -> bool {
+        other == self
     }
 }
 

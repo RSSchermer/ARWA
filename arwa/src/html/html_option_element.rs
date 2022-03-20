@@ -1,7 +1,9 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element, HtmlFormElement};
+use crate::html::{
+    impl_extendable_element, impl_html_element_traits, impl_known_element, HtmlFormElement,
+};
 
 #[derive(Clone)]
 pub struct HtmlOptionElement {
@@ -61,3 +63,4 @@ impl AsRef<web_sys::HtmlOptionElement> for HtmlOptionElement {
 impl_html_element_traits!(HtmlOptionElement);
 impl_try_from_element!(HtmlOptionElement);
 impl_known_element!(HtmlOptionElement, "OPTION");
+impl_extendable_element!(HtmlOptionElement, "option");

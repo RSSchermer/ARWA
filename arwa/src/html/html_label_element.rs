@@ -2,7 +2,9 @@ use delegate::delegate;
 use wasm_bindgen::JsCast;
 
 use crate::dom::{impl_try_from_element, DynamicElement};
-use crate::html::{impl_html_element_traits, impl_known_element, HtmlFormElement};
+use crate::html::{
+    impl_extendable_element, impl_html_element_traits, impl_known_element, HtmlFormElement,
+};
 
 #[derive(Clone)]
 pub struct HtmlLabelElement {
@@ -44,3 +46,4 @@ impl AsRef<web_sys::HtmlLabelElement> for HtmlLabelElement {
 impl_html_element_traits!(HtmlLabelElement);
 impl_try_from_element!(HtmlLabelElement);
 impl_known_element!(HtmlLabelElement, "LABEL");
+impl_extendable_element!(HtmlLabelElement, "label");

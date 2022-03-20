@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlBrElement {
@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlBrElement> for HtmlBrElement {
 impl_html_element_traits!(HtmlBrElement);
 impl_try_from_element!(HtmlBrElement);
 impl_known_element!(HtmlBrElement, "BR");
+impl_extendable_element!(HtmlBrElement, "br");

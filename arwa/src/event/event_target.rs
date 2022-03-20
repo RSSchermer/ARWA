@@ -1,11 +1,11 @@
 use std::any::{Any, TypeId};
+use std::cell::{Cell, RefCell};
+use std::collections::VecDeque;
 use std::convert::TryInto;
 use std::mem;
-use std::cell::{RefCell, Cell};
-use std::collections::VecDeque;
 use std::rc::Rc;
 
-use js_sys::{Uint8Array, Promise};
+use js_sys::{Promise, Uint8Array};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
@@ -82,9 +82,7 @@ impl DispatchQueueState {
         debug_assert!(self.is_spinning.get());
 
         loop {
-            let DispatchTask {
-                target, event
-            } = match self.tasks.borrow_mut().pop_front() {
+            let DispatchTask { target, event } = match self.tasks.borrow_mut().pop_front() {
                 Some(task) => task,
                 None => break,
             };
@@ -203,7 +201,7 @@ pub trait EventTarget: event_target_seal::Seal + Sized {
 
         let task = DispatchTask {
             target: self.as_web_sys_event_target().clone(),
-            event: event.into()
+            event: event.into(),
         };
 
         DISPATCH_QUEUE.with(|queue| queue.push_task(task));
@@ -288,7 +286,7 @@ pub trait EventTarget: event_target_seal::Seal + Sized {
 
         let task = DispatchTask {
             target: self.as_web_sys_event_target().clone(),
-            event: event.into()
+            event: event.into(),
         };
 
         DISPATCH_QUEUE.with(|queue| queue.push_task(task));

@@ -1,5 +1,5 @@
 use crate::dom::{impl_shadow_host_for_element, impl_try_from_element};
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlDivElement {
@@ -21,4 +21,5 @@ impl AsRef<web_sys::HtmlDivElement> for HtmlDivElement {
 impl_html_element_traits!(HtmlDivElement);
 impl_try_from_element!(HtmlDivElement);
 impl_known_element!(HtmlDivElement, "DIV");
+impl_extendable_element!(HtmlDivElement, "div");
 impl_shadow_host_for_element!(HtmlDivElement);

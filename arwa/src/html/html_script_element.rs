@@ -2,7 +2,7 @@ use delegate::delegate;
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::media_type::MediaType;
 use crate::security::CORS;
 use crate::url::Url;
@@ -102,3 +102,4 @@ impl AsRef<web_sys::HtmlScriptElement> for HtmlScriptElement {
 impl_html_element_traits!(HtmlScriptElement);
 impl_try_from_element!(HtmlScriptElement);
 impl_known_element!(HtmlScriptElement, "SCRIPT");
+impl_extendable_element!(HtmlScriptElement, "script");

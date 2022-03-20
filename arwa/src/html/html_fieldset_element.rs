@@ -6,8 +6,8 @@ use wasm_bindgen::JsCast;
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element;
 use crate::html::{
-    form_listed_element_seal, impl_html_element_traits, impl_known_element,
-    DynamicFormListedElement, FormListedElement, HtmlFormElement,
+    form_listed_element_seal, impl_extendable_element, impl_html_element_traits,
+    impl_known_element, DynamicFormListedElement, FormListedElement, HtmlFormElement,
 };
 use crate::InvalidCast;
 
@@ -79,6 +79,7 @@ impl AsRef<web_sys::HtmlFieldSetElement> for HtmlFieldsetElement {
 impl_html_element_traits!(HtmlFieldsetElement);
 impl_try_from_element!(HtmlFieldsetElement, HtmlFieldSetElement);
 impl_known_element!(HtmlFieldsetElement, HtmlFieldSetElement, "FIELDSET");
+impl_extendable_element!(HtmlFieldsetElement, "fieldset");
 
 pub struct FieldsetElements {
     inner: web_sys::HtmlCollection,

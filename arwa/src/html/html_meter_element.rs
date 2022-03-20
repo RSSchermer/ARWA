@@ -2,7 +2,8 @@ use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
 use crate::html::{
-    impl_html_element_traits, impl_known_element, labelable_element_seal, LabelableElement, Labels,
+    impl_extendable_element, impl_html_element_traits, impl_known_element, labelable_element_seal,
+    LabelableElement, Labels,
 };
 
 #[derive(Clone)]
@@ -63,3 +64,4 @@ impl AsRef<web_sys::HtmlMeterElement> for HtmlMeterElement {
 impl_html_element_traits!(HtmlMeterElement);
 impl_try_from_element!(HtmlMeterElement);
 impl_known_element!(HtmlMeterElement, "METER");
+impl_extendable_element!(HtmlMeterElement, "meter");

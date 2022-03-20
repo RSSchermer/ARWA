@@ -5,6 +5,7 @@ members = [
     "arwa_parse",
     "examples/animation_frame",
     "examples/console",
+    "examples/custom_elements",
     "examples/custom_events",
     "examples/events",
     "examples/geolocation",

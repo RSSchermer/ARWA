@@ -7,9 +7,9 @@ use wasm_bindgen::JsCast;
 use crate::dom::impl_try_from_element;
 use crate::dom::DynamicDocument;
 use crate::html::{
-    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
-    impl_known_element, ConstraintValidationTarget, DynamicFormListedElement, FormListedElement,
-    HtmlFormElement, ValidityState,
+    constraint_validation_target_seal, form_listed_element_seal, impl_extendable_element,
+    impl_html_element_traits, impl_known_element, ConstraintValidationTarget,
+    DynamicFormListedElement, FormListedElement, HtmlFormElement, ValidityState,
 };
 use crate::media_type::MediaType;
 use crate::url::Url;
@@ -142,3 +142,4 @@ impl AsRef<web_sys::HtmlObjectElement> for HtmlObjectElement {
 impl_html_element_traits!(HtmlObjectElement);
 impl_try_from_element!(HtmlObjectElement);
 impl_known_element!(HtmlObjectElement, "OBJECT");
+impl_extendable_element!(HtmlObjectElement, "object");

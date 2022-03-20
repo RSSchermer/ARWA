@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlColgroupElement {
@@ -33,3 +33,4 @@ impl AsRef<web_sys::HtmlTableColElement> for HtmlColgroupElement {
 impl_html_element_traits!(HtmlColgroupElement);
 impl_try_from_element!(HtmlColgroupElement, HtmlTableColElement);
 impl_known_element!(HtmlColgroupElement, HtmlTableColElement, "COLGROUP");
+impl_extendable_element!(HtmlColgroupElement, "colgroup");

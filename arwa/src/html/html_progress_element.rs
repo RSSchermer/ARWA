@@ -2,7 +2,8 @@ use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
 use crate::html::{
-    impl_html_element_traits, impl_known_element, labelable_element_seal, LabelableElement, Labels,
+    impl_extendable_element, impl_html_element_traits, impl_known_element, labelable_element_seal,
+    LabelableElement, Labels,
 };
 
 #[derive(Clone)]
@@ -57,3 +58,4 @@ impl AsRef<web_sys::HtmlProgressElement> for HtmlProgressElement {
 impl_html_element_traits!(HtmlProgressElement);
 impl_try_from_element!(HtmlProgressElement);
 impl_known_element!(HtmlProgressElement, "PROGRESS");
+impl_extendable_element!(HtmlProgressElement, "progress");

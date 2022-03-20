@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlPictureElement {
@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlPictureElement> for HtmlPictureElement {
 impl_html_element_traits!(HtmlPictureElement);
 impl_try_from_element!(HtmlPictureElement);
 impl_known_element!(HtmlPictureElement, "PICTURE");
+impl_extendable_element!(HtmlPictureElement, "picture");

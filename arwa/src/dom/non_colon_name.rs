@@ -7,6 +7,7 @@ use crate::console::{Argument, ToArgument};
 pub use arwa_parse::xml_name::InvalidNonColonName;
 
 #[doc(hidden)]
+#[derive(Clone)]
 pub struct StaticallyParsedNonColonName {
     #[doc(hidden)]
     pub name: &'static str,
@@ -18,11 +19,13 @@ impl AsRef<str> for StaticallyParsedNonColonName {
     }
 }
 
+#[derive(Clone)]
 enum NonColonNameInternal {
     Static(StaticallyParsedNonColonName),
     Dynamic(xml_name::NonColonName),
 }
 
+#[derive(Clone)]
 pub struct NonColonName {
     internal: NonColonNameInternal,
 }
@@ -35,7 +38,7 @@ impl NonColonName {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed(name: StaticallyParsedNonColonName) -> Self {
+    pub const fn from_statically_parsed(name: StaticallyParsedNonColonName) -> Self {
         NonColonName {
             internal: NonColonNameInternal::Static(name),
         }
@@ -79,6 +82,20 @@ impl PartialEq<str> for NonColonName {
         let self_as_str: &str = self.as_ref();
 
         self_as_str == other
+    }
+}
+
+impl PartialEq<&'_ str> for NonColonName {
+    #[inline]
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<NonColonName> for &'_ str {
+    #[inline]
+    fn eq(&self, other: &NonColonName) -> bool {
+        other == self
     }
 }
 

@@ -5,6 +5,7 @@ use crate::console::{Argument, ToArgument};
 pub use arwa_parse::xml_name::InvalidName;
 
 #[doc(hidden)]
+#[derive(Clone)]
 pub struct StaticallyParsedName {
     #[doc(hidden)]
     pub name: &'static str,
@@ -16,11 +17,13 @@ impl AsRef<str> for StaticallyParsedName {
     }
 }
 
+#[derive(Clone)]
 enum NameInternal {
     Static(StaticallyParsedName),
     Dynamic(arwa_parse::xml_name::Name),
 }
 
+#[derive(Clone)]
 pub struct Name {
     internal: NameInternal,
 }
@@ -33,7 +36,7 @@ impl Name {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed(name: StaticallyParsedName) -> Self {
+    pub const fn from_statically_parsed(name: StaticallyParsedName) -> Self {
         Name {
             internal: NameInternal::Static(name),
         }
@@ -77,6 +80,20 @@ impl PartialEq<str> for Name {
         let self_as_str: &str = self.as_ref();
 
         self_as_str == other
+    }
+}
+
+impl PartialEq<&'_ str> for Name {
+    #[inline]
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<Name> for &'_ str {
+    #[inline]
+    fn eq(&self, other: &Name) -> bool {
+        other == self
     }
 }
 

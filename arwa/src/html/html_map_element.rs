@@ -3,7 +3,7 @@ use web_sys::HtmlAreaElement;
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlMapElement {
@@ -33,6 +33,7 @@ impl AsRef<web_sys::HtmlMapElement> for HtmlMapElement {
 impl_html_element_traits!(HtmlMapElement);
 impl_try_from_element!(HtmlMapElement);
 impl_known_element!(HtmlMapElement, "MAP");
+impl_extendable_element!(HtmlMapElement, "map");
 
 pub struct MapAreas {
     inner: web_sys::HtmlCollection,

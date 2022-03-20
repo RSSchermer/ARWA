@@ -3,7 +3,7 @@ use wasm_bindgen::JsCast;
 
 use crate::cssom::{link_style_seal, CssStyleSheet, LinkStyle};
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlStyleElement {
@@ -47,3 +47,4 @@ impl AsRef<web_sys::HtmlStyleElement> for HtmlStyleElement {
 impl_html_element_traits!(HtmlStyleElement);
 impl_try_from_element!(HtmlStyleElement);
 impl_known_element!(HtmlStyleElement, "STYLE");
+impl_extendable_element!(HtmlStyleElement, "style");

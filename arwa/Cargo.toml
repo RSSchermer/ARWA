@@ -66,6 +66,7 @@ features = [
     "CssStyleRule",
     "CssStyleSheet",
     "CssSupportsRule",
+    "CustomElementRegistry",
     "CustomEvent",
     "CustomEventInit",
     "DataTransfer",

@@ -188,9 +188,9 @@ pub struct Attributes {
 }
 
 impl Attributes {
-    pub fn lookup(&self, qualified_name: &Name) -> Option<Attribute> {
+    pub fn lookup(&self, name: &Name) -> Option<Attribute> {
         self.attributes
-            .get_named_item(qualified_name.as_ref())
+            .get_named_item(name.as_ref())
             .map(|a| Attribute::new(a))
     }
 
@@ -200,8 +200,8 @@ impl Attributes {
             .map(|a| Attribute::new(a))
     }
 
-    pub fn contains(&self, qualified_name: &Name) -> bool {
-        self.element.has_attribute(qualified_name.as_ref())
+    pub fn contains(&self, name: &Name) -> bool {
+        self.element.has_attribute(name.as_ref())
     }
 
     pub fn contains_namespaced(&self, local_name: &Name, namespace: &str) -> bool {
@@ -211,6 +211,18 @@ impl Attributes {
 
     pub fn names(&self) -> AttributeNames {
         AttributeNames::new(self.element.get_attribute_names())
+    }
+
+    pub fn set(&self, name: &Name, value: &str) {
+        self.element
+            .set_attribute(name.as_ref(), value)
+            .unwrap_throw();
+    }
+
+    pub fn set_namespaced(&self, name: &Name, namespace: &str, value: &str) {
+        self.element
+            .set_attribute_ns(Some(namespace), name.as_ref(), value)
+            .unwrap_throw();
     }
 
     pub fn insert(&self, attribute: &Attribute) -> Option<Attribute> {
@@ -227,27 +239,25 @@ impl Attributes {
             .map_err(|err| InUseAttribute::new(err.unchecked_into()))
     }
 
-    pub fn toggle(&self, qualified_name: &Name) -> bool {
-        self.element
-            .toggle_attribute(qualified_name.as_ref())
-            .unwrap_throw()
+    pub fn toggle(&self, name: &Name) -> bool {
+        self.element.toggle_attribute(name.as_ref()).unwrap_throw()
     }
 
-    pub fn toggle_on(&self, qualified_name: &Name) {
+    pub fn toggle_on(&self, name: &Name) {
         self.element
-            .toggle_attribute_with_force(qualified_name.as_ref(), true)
+            .toggle_attribute_with_force(name.as_ref(), true)
             .unwrap_throw();
     }
 
-    pub fn toggle_off(&self, qualified_name: &Name) {
+    pub fn toggle_off(&self, name: &Name) {
         self.element
-            .toggle_attribute_with_force(qualified_name.as_ref(), false)
+            .toggle_attribute_with_force(name.as_ref(), false)
             .unwrap_throw();
     }
 
-    pub fn remove(&self, qualified_name: &Name) -> Option<Attribute> {
+    pub fn remove(&self, name: &Name) -> Option<Attribute> {
         self.attributes
-            .remove_named_item(qualified_name.as_ref())
+            .remove_named_item(name.as_ref())
             .ok()
             .map(|attr| Attribute::new(attr))
     }

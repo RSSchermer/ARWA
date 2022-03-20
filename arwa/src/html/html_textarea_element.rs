@@ -6,9 +6,10 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::cssom::TextWrap;
 use crate::dom::{impl_try_from_element, SelectionDirection};
 use crate::html::{
-    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
-    impl_known_element, labelable_element_seal, AutoComplete, ConstraintValidationTarget,
-    FormListedElement, HtmlFormElement, LabelableElement, Labels, ValidityState,
+    constraint_validation_target_seal, form_listed_element_seal, impl_extendable_element,
+    impl_html_element_traits, impl_known_element, labelable_element_seal, AutoComplete,
+    ConstraintValidationTarget, FormListedElement, HtmlFormElement, LabelableElement, Labels,
+    ValidityState,
 };
 
 #[derive(Clone)]
@@ -232,3 +233,4 @@ impl AsRef<web_sys::HtmlTextAreaElement> for HtmlTextareaElement {
 impl_html_element_traits!(HtmlTextareaElement);
 impl_try_from_element!(HtmlTextareaElement, HtmlTextAreaElement);
 impl_known_element!(HtmlTextareaElement, HtmlTextAreaElement, "TEXTAREA");
+impl_extendable_element!(HtmlTextareaElement, "textarea");

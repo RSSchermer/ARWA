@@ -1,6 +1,6 @@
 use delegate::delegate;
 
-use crate::html::{impl_html_media_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_media_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlVideoElement {
@@ -43,3 +43,4 @@ impl AsRef<web_sys::HtmlVideoElement> for HtmlVideoElement {
 
 impl_html_media_element_traits!(HtmlVideoElement);
 impl_known_element!(HtmlVideoElement, "VIDEO");
+impl_extendable_element!(HtmlVideoElement, "video");

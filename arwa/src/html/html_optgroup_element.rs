@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlOptgroupElement {
@@ -37,3 +37,4 @@ impl AsRef<web_sys::HtmlOptGroupElement> for HtmlOptgroupElement {
 impl_html_element_traits!(HtmlOptgroupElement);
 impl_try_from_element!(HtmlOptgroupElement, HtmlOptGroupElement);
 impl_known_element!(HtmlOptgroupElement, HtmlOptGroupElement, "OPTGROUP");
+impl_extendable_element!(HtmlOptgroupElement, "optgroup");

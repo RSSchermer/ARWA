@@ -1,16 +1,16 @@
 use std::borrow::Cow;
+use std::mem;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
-use std::mem;
 
-use js_sys::Uint8Array;
 use futures::stream::Stream;
+use js_sys::Uint8Array;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
-use crate::weak_ref::WeakRef;
 use crate::event::Event;
 use crate::finalization_registry::FinalizationRegistry;
+use crate::weak_ref::WeakRef;
 
 thread_local! {
     static ON_EVENT_REGISTRY: FinalizationRegistry = {
@@ -157,7 +157,11 @@ where
         pointer_data.copy_from(&ptr_bits.to_ne_bytes());
 
         ON_EVENT_REGISTRY.with(|r| {
-            r.register_with_unregister_token(target.as_ref(), pointer_data.as_ref(), target.as_ref());
+            r.register_with_unregister_token(
+                target.as_ref(),
+                pointer_data.as_ref(),
+                target.as_ref(),
+            );
         });
     }
 

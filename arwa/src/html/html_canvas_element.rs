@@ -11,7 +11,7 @@ use wasm_bindgen::{JsCast, JsValue};
 
 use crate::dom::impl_try_from_element;
 use crate::file::Blob;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::security::SecurityError;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -105,6 +105,7 @@ impl AsRef<web_sys::HtmlCanvasElement> for HtmlCanvasElement {
 impl_html_element_traits!(HtmlCanvasElement);
 impl_try_from_element!(HtmlCanvasElement);
 impl_known_element!(HtmlCanvasElement, "CANVAS");
+impl_extendable_element!(HtmlCanvasElement, "canvas");
 
 struct CanvasToBlobInit {
     canvas_element: web_sys::HtmlCanvasElement,

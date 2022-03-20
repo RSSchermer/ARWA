@@ -9,10 +9,10 @@ use crate::dom::{impl_try_from_element, SelectionDirection};
 use crate::file::File;
 use crate::html::{
     constraint_validation_target_seal, form_listed_element_seal, form_submitter_element_seal,
-    impl_html_element_traits, impl_known_element, labelable_element_seal, AutoComplete,
-    ConstraintValidationTarget, DynamicFormListedElement, FormEncoding, FormListedElement,
-    FormMethod, FormSubmitterElement, HtmlDatalistElement, HtmlFormElement, LabelableElement,
-    Labels, ValidityState,
+    impl_extendable_element, impl_html_element_traits, impl_known_element, labelable_element_seal,
+    AutoComplete, ConstraintValidationTarget, DynamicFormListedElement, FormEncoding,
+    FormListedElement, FormMethod, FormSubmitterElement, HtmlDatalistElement, HtmlFormElement,
+    LabelableElement, Labels, ValidityState,
 };
 use crate::url::Url;
 use crate::InvalidCast;
@@ -436,6 +436,7 @@ impl AsRef<web_sys::HtmlInputElement> for HtmlInputElement {
 impl_html_element_traits!(HtmlInputElement);
 impl_try_from_element!(HtmlInputElement);
 impl_known_element!(HtmlInputElement, "INPUT");
+impl_extendable_element!(HtmlInputElement, "input");
 
 pub struct InputFiles {
     inner: web_sys::FileList,

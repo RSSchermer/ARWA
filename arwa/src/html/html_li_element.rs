@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlLiElement {
@@ -33,3 +33,4 @@ impl AsRef<web_sys::HtmlLiElement> for HtmlLiElement {
 impl_html_element_traits!(HtmlLiElement);
 impl_try_from_element!(HtmlLiElement);
 impl_known_element!(HtmlLiElement, "LI");
+impl_extendable_element!(HtmlLiElement, "li");

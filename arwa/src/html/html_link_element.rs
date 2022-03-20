@@ -6,7 +6,9 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::cssom::{link_style_seal, CssStyleSheet, LinkStyle};
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element, LinkRelationshipTypes};
+use crate::html::{
+    impl_extendable_element, impl_html_element_traits, impl_known_element, LinkRelationshipTypes,
+};
 use crate::lang::LanguageTag;
 use crate::media_type::MediaType;
 use crate::url::Url;
@@ -143,6 +145,7 @@ impl AsRef<web_sys::HtmlLinkElement> for HtmlLinkElement {
 impl_html_element_traits!(HtmlLinkElement);
 impl_try_from_element!(HtmlLinkElement);
 impl_known_element!(HtmlLinkElement, "LINK");
+impl_extendable_element!(HtmlLinkElement, "link");
 
 pub enum LinkIconSizes {
     Any,

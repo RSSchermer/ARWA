@@ -1,5 +1,5 @@
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlHeadElement {
@@ -21,3 +21,4 @@ impl AsRef<web_sys::HtmlHeadElement> for HtmlHeadElement {
 impl_html_element_traits!(HtmlHeadElement);
 impl_try_from_element!(HtmlHeadElement);
 impl_known_element!(HtmlHeadElement, "HEAD");
+impl_extendable_element!(HtmlHeadElement, "head");

@@ -4,7 +4,8 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element;
 use crate::html::{
-    impl_html_element_traits, impl_known_element, AutoComplete, DynamicFormListedElement,
+    impl_extendable_element, impl_html_element_traits, impl_known_element, AutoComplete,
+    DynamicFormListedElement,
 };
 use crate::url::Url;
 
@@ -153,6 +154,7 @@ impl AsRef<web_sys::HtmlFormElement> for HtmlFormElement {
 impl_html_element_traits!(HtmlFormElement);
 impl_try_from_element!(HtmlFormElement);
 impl_known_element!(HtmlFormElement, "FORM");
+impl_extendable_element!(HtmlFormElement, "form");
 
 pub struct FormElements {
     inner: web_sys::HtmlFormControlsCollection,

@@ -8,7 +8,7 @@ use wasm_bindgen_futures::JsFuture;
 
 use crate::dom::impl_try_from_element;
 use crate::dom_exception_wrapper;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::security::{ReferrerPolicy, CORS};
 use crate::url::Url;
 
@@ -144,6 +144,7 @@ impl AsRef<web_sys::HtmlImageElement> for HtmlImgElement {
 impl_html_element_traits!(HtmlImgElement);
 impl_try_from_element!(HtmlImgElement, HtmlImageElement);
 impl_known_element!(HtmlImgElement, HtmlImageElement, "IMG");
+impl_extendable_element!(HtmlImgElement, "img");
 
 dom_exception_wrapper!(ImageEncodingError);
 

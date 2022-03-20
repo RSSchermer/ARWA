@@ -6,9 +6,9 @@ use wasm_bindgen::JsCast;
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element;
 use crate::html::{
-    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
-    impl_known_element, AutoComplete, ConstraintValidationTarget, DynamicFormListedElement,
-    FormListedElement, HtmlFormElement, HtmlOptionElement, ValidityState,
+    constraint_validation_target_seal, form_listed_element_seal, impl_extendable_element,
+    impl_html_element_traits, impl_known_element, AutoComplete, ConstraintValidationTarget,
+    DynamicFormListedElement, FormListedElement, HtmlFormElement, HtmlOptionElement, ValidityState,
 };
 use crate::InvalidCast;
 
@@ -162,6 +162,7 @@ impl AsRef<web_sys::HtmlSelectElement> for HtmlSelectElement {
 impl_html_element_traits!(HtmlSelectElement);
 impl_try_from_element!(HtmlSelectElement);
 impl_known_element!(HtmlSelectElement, "SELECT");
+impl_extendable_element!(HtmlSelectElement, "select");
 
 #[derive(Clone)]
 pub struct SelectOptions {

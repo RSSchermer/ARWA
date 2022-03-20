@@ -2,7 +2,9 @@ use wasm_bindgen::JsCast;
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element, DynamicTableCellElement};
+use crate::html::{
+    impl_extendable_element, impl_html_element_traits, impl_known_element, DynamicTableCellElement,
+};
 
 #[derive(Clone)]
 pub struct HtmlTrElement {
@@ -41,7 +43,8 @@ impl AsRef<web_sys::HtmlTableRowElement> for HtmlTrElement {
 
 impl_html_element_traits!(HtmlTrElement);
 impl_try_from_element!(HtmlTrElement, HtmlTableRowElement);
-impl_known_element!(HtmlTrElement, HtmlTableRowElement, "TABLE");
+impl_known_element!(HtmlTrElement, HtmlTableRowElement, "TR");
+impl_extendable_element!(HtmlTrElement, "tr");
 
 pub struct TableRowCells {
     inner: web_sys::HtmlCollection,

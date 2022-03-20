@@ -5,7 +5,7 @@ use delegate::delegate;
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::{impl_try_from_element, DynamicDocument};
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::url::Url;
 use crate::window::Window;
 
@@ -87,6 +87,7 @@ impl AsRef<web_sys::HtmlIFrameElement> for HtmlIframeElement {
 impl_html_element_traits!(HtmlIframeElement);
 impl_try_from_element!(HtmlIframeElement, HtmlIFrameElement);
 impl_known_element!(HtmlIframeElement, HtmlIFrameElement, "IFRAME");
+impl_extendable_element!(HtmlIframeElement, "iframe");
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum IframeSandboxRule {

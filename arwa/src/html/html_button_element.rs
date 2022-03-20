@@ -6,7 +6,7 @@ use wasm_bindgen::JsCast;
 use crate::dom::impl_try_from_element;
 use crate::html::{
     constraint_validation_target_seal, form_listed_element_seal, form_submitter_element_seal,
-    impl_html_element_traits, impl_known_element, labelable_element_seal,
+    impl_extendable_element, impl_html_element_traits, impl_known_element, labelable_element_seal,
     ConstraintValidationTarget, DynamicFormListedElement, FormEncoding, FormListedElement,
     FormMethod, FormSubmitterElement, HtmlFormElement, LabelableElement, Labels, ValidityState,
 };
@@ -199,3 +199,4 @@ impl AsRef<web_sys::HtmlButtonElement> for HtmlButtonElement {
 impl_html_element_traits!(HtmlButtonElement);
 impl_try_from_element!(HtmlButtonElement);
 impl_known_element!(HtmlButtonElement, "BUTTON");
+impl_extendable_element!(HtmlButtonElement, "button");

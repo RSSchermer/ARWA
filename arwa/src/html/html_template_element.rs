@@ -1,5 +1,5 @@
 use crate::dom::{impl_try_from_element, GenericDocumentFragment};
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlTemplateElement {
@@ -27,3 +27,4 @@ impl AsRef<web_sys::HtmlTemplateElement> for HtmlTemplateElement {
 impl_html_element_traits!(HtmlTemplateElement);
 impl_try_from_element!(HtmlTemplateElement);
 impl_known_element!(HtmlTemplateElement, "TEMPLATE");
+impl_extendable_element!(HtmlTemplateElement, "template");

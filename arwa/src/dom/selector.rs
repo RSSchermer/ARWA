@@ -7,6 +7,7 @@ use crate::console::{Argument, ToArgument};
 pub use arwa_parse::selector::InvalidSelector;
 
 #[doc(hidden)]
+#[derive(Clone)]
 pub struct StaticallyParsedSelector {
     #[doc(hidden)]
     pub selector: &'static str,
@@ -18,11 +19,13 @@ impl AsRef<str> for StaticallyParsedSelector {
     }
 }
 
+#[derive(Clone)]
 enum SelectorInternal {
     Static(StaticallyParsedSelector),
     Dynamic(DynamicallyParsedSelector),
 }
 
+#[derive(Clone)]
 pub struct Selector {
     internal: SelectorInternal,
 }
@@ -35,7 +38,7 @@ impl Selector {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed(selector: StaticallyParsedSelector) -> Self {
+    pub const fn from_statically_parsed(selector: StaticallyParsedSelector) -> Self {
         Selector {
             internal: SelectorInternal::Static(selector),
         }
@@ -73,6 +76,20 @@ impl PartialEq<str> for Selector {
         let self_as_str: &str = self.as_ref();
 
         self_as_str == other
+    }
+}
+
+impl PartialEq<&'_ str> for Selector {
+    #[inline]
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<Selector> for &'_ str {
+    #[inline]
+    fn eq(&self, selector: &Selector) -> bool {
+        selector == self
     }
 }
 

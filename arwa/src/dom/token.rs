@@ -5,6 +5,7 @@ use crate::console::{Argument, ToArgument};
 pub use arwa_parse::dom_token::InvalidToken;
 
 #[doc(hidden)]
+#[derive(Clone)]
 pub struct StaticallyParsedToken {
     #[doc(hidden)]
     pub token: &'static str,
@@ -16,11 +17,13 @@ impl AsRef<str> for StaticallyParsedToken {
     }
 }
 
+#[derive(Clone)]
 enum TokenInternal {
     Static(StaticallyParsedToken),
     Dynamic(arwa_parse::dom_token::Token),
 }
 
+#[derive(Clone)]
 pub struct Token {
     internal: TokenInternal,
 }
@@ -33,7 +36,7 @@ impl Token {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed(token: StaticallyParsedToken) -> Self {
+    pub const fn from_statically_parsed(token: StaticallyParsedToken) -> Self {
         Token {
             internal: TokenInternal::Static(token),
         }
@@ -77,6 +80,20 @@ impl PartialEq<str> for Token {
         let self_as_str: &str = self.as_ref();
 
         self_as_str == other
+    }
+}
+
+impl PartialEq<&'_ str> for Token {
+    #[inline]
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<Token> for &'_ str {
+    #[inline]
+    fn eq(&self, other: &Token) -> bool {
+        other == self
     }
 }
 

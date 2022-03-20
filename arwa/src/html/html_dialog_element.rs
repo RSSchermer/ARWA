@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
 pub struct HtmlDialogElement {
@@ -45,3 +45,4 @@ impl AsRef<web_sys::HtmlDialogElement> for HtmlDialogElement {
 impl_html_element_traits!(HtmlDialogElement);
 impl_try_from_element!(HtmlDialogElement);
 impl_known_element!(HtmlDialogElement, "DIALOG");
+impl_extendable_element!(HtmlDialogElement, "dialog");

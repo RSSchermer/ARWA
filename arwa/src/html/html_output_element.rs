@@ -5,10 +5,10 @@ use wasm_bindgen::JsCast;
 
 use crate::dom::impl_try_from_element;
 use crate::html::{
-    constraint_validation_target_seal, form_listed_element_seal, impl_html_element_traits,
-    impl_known_element, labelable_element_seal, ConstraintValidationTarget,
-    DynamicFormListedElement, FormListedElement, HtmlFormElement, LabelableElement, Labels,
-    ValidityState,
+    constraint_validation_target_seal, form_listed_element_seal, impl_extendable_element,
+    impl_html_element_traits, impl_known_element, labelable_element_seal,
+    ConstraintValidationTarget, DynamicFormListedElement, FormListedElement, HtmlFormElement,
+    LabelableElement, Labels, ValidityState,
 };
 use crate::InvalidCast;
 
@@ -110,3 +110,4 @@ impl AsRef<web_sys::HtmlOutputElement> for HtmlOutputElement {
 impl_html_element_traits!(HtmlOutputElement);
 impl_try_from_element!(HtmlOutputElement);
 impl_known_element!(HtmlOutputElement, "OUTPUT");
+impl_extendable_element!(HtmlOutputElement, "output");

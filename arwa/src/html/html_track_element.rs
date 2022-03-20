@@ -1,7 +1,7 @@
 use delegate::delegate;
 
 use crate::dom::impl_try_from_element;
-use crate::html::{impl_html_element_traits, impl_known_element};
+use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 use crate::lang::LanguageTag;
 use crate::media::{TextTrack, TextTrackReadyState};
 use crate::url::Url;
@@ -71,3 +71,4 @@ impl AsRef<web_sys::HtmlTrackElement> for HtmlTrackElement {
 impl_html_element_traits!(HtmlTrackElement);
 impl_try_from_element!(HtmlTrackElement);
 impl_known_element!(HtmlTrackElement, "TRACK");
+impl_extendable_element!(HtmlTrackElement, "track");

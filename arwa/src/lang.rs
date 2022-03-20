@@ -8,6 +8,7 @@ use crate::console::{Argument, ToArgument};
 pub use arwa_macro::lang;
 
 #[doc(hidden)]
+#[derive(Clone)]
 pub struct StaticallyParsedLanguageTag {
     #[doc(hidden)]
     pub raw: &'static str,
@@ -91,11 +92,13 @@ impl AsRef<str> for StaticallyParsedLanguageTag {
     }
 }
 
+#[derive(Clone)]
 enum LanguageTagInternal {
     Dynamic(oxilangtag::LanguageTag<String>),
     Static(StaticallyParsedLanguageTag),
 }
 
+#[derive(Clone)]
 pub struct LanguageTag {
     internal: LanguageTagInternal,
 }
@@ -110,7 +113,7 @@ impl LanguageTag {
     }
 
     #[doc(hidden)]
-    pub fn from_statically_parsed(parsed: StaticallyParsedLanguageTag) -> Self {
+    pub const fn from_statically_parsed(parsed: StaticallyParsedLanguageTag) -> Self {
         LanguageTag {
             internal: LanguageTagInternal::Static(parsed),
         }
@@ -226,17 +229,17 @@ impl PartialEq<str> for LanguageTag {
     }
 }
 
-impl<'a> PartialEq<&'a str> for LanguageTag {
+impl PartialEq<&'_ str> for LanguageTag {
     #[inline]
-    fn eq(&self, s: &&'a str) -> bool {
-        self == *s
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
     }
 }
 
-impl<'a> PartialEq<LanguageTag> for &'a str {
+impl PartialEq<LanguageTag> for &'_ str {
     #[inline]
-    fn eq(&self, url: &LanguageTag) -> bool {
-        url == self
+    fn eq(&self, other: &LanguageTag) -> bool {
+        other == self
     }
 }
 

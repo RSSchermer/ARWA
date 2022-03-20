@@ -1,15 +1,15 @@
 #![feature(async_closure)]
 
-use arwa::dom::{selector, ParentNode, DynamicElement};
+use arwa::dom::{selector, DynamicElement, ParentNode};
+use arwa::event::{EventOptions, EventTarget, TypedCustomEvent};
+use arwa::ui::UiEventTarget;
 use arwa::window::window;
 use arwa::{console, spawn_local};
 use futures::StreamExt;
 use wasm_bindgen::prelude::*;
-use arwa::event::{EventTarget, TypedCustomEvent, EventOptions};
-use arwa::ui::UiEventTarget;
 
 struct MyEvent {
-    message: String
+    message: String,
 }
 
 impl Drop for MyEvent {
@@ -52,12 +52,15 @@ pub fn start() {
         .expect("No element with id `dispatch_button`.");
 
     spawn_local(dispatch_button.on_click().for_each(move |_| {
-        inner.dispatch_typed_event(MyEvent {
-            message: "Hello!".to_string()
-        }, EventOptions {
-            bubbles: true,
-            ..Default::default()
-        });
+        inner.dispatch_typed_event(
+            MyEvent {
+                message: "Hello!".to_string(),
+            },
+            EventOptions {
+                bubbles: true,
+                ..Default::default()
+            },
+        );
 
         futures::future::ready(())
     }));
