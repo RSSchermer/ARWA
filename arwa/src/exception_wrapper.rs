@@ -11,6 +11,12 @@ macro_rules! dom_exception_wrapper {
             }
         }
 
+        impl From<$wrapper_type> for wasm_bindgen::JsValue {
+            fn from(value: $wrapper_type) -> wasm_bindgen::JsValue {
+                value.into()
+            }
+        }
+
         impl std::fmt::Display for $wrapper_type {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 let mut message = self.inner.message();
@@ -57,6 +63,12 @@ macro_rules! type_error_wrapper {
         impl $wrapper_type {
             pub(crate) fn new(inner: js_sys::TypeError) -> Self {
                 $wrapper_type { inner }
+            }
+        }
+
+        impl From<$wrapper_type> for wasm_bindgen::JsValue {
+            fn from(value: $wrapper_type) -> wasm_bindgen::JsValue {
+                value.into()
             }
         }
 

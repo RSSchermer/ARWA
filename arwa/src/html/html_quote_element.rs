@@ -10,7 +10,7 @@ pub struct HtmlQuoteElement {
 
 impl HtmlQuoteElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn cite(&self) -> String;
 
             pub fn set_cite(&self, cite: &str);

@@ -16,7 +16,7 @@ impl BroadcastChannel {
     // From<web_sys::BroadcastChannel>.
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
         }
     }

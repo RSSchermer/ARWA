@@ -9,7 +9,7 @@ pub struct HtmlVideoElement {
 
 impl HtmlVideoElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn width(&self) -> u32;
 
             pub fn set_width(&self, width: u32);

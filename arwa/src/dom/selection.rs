@@ -36,7 +36,7 @@ impl Selection {
     // manipulating the selection.
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn anchor_offset(&self) -> u32;
 
             pub fn focus_offset(&self) -> u32;

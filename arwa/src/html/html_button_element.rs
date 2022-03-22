@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
@@ -33,7 +31,7 @@ pub struct HtmlButtonElement {
 
 impl HtmlButtonElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -71,7 +69,7 @@ impl form_listed_element_seal::Seal for HtmlButtonElement {}
 
 impl FormListedElement for HtmlButtonElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -100,7 +98,7 @@ impl form_submitter_element_seal::Seal for HtmlButtonElement {}
 
 impl FormSubmitterElement for HtmlButtonElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn form_no_validate(&self) -> bool;
 
             fn set_form_no_validate(&self, form_no_validate: bool);
@@ -164,7 +162,7 @@ impl constraint_validation_target_seal::Seal for HtmlButtonElement {}
 
 impl ConstraintValidationTarget for HtmlButtonElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

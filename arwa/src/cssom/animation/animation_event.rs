@@ -22,7 +22,7 @@ macro_rules! animation_event {
 
         impl<T> AnimationEvent for $event<T> {
             delegate! {
-                target self.inner {
+                to self.inner {
                     fn animation_name(&self) -> String;
 
                     fn elapsed_time(&self) -> f32;

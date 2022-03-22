@@ -1,6 +1,6 @@
-use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt;
+use wasm_bindgen::{JsError, JsValue};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Status {
@@ -172,3 +172,9 @@ impl fmt::Debug for StatusRangeError {
 }
 
 impl Error for StatusRangeError {}
+
+impl From<StatusRangeError> for JsValue {
+    fn from(err: StatusRangeError) -> Self {
+        JsError::from(err).into()
+    }
+}

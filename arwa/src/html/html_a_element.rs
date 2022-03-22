@@ -18,7 +18,7 @@ pub struct HtmlAElement {
 
 impl HtmlAElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn target(&self) -> String;
 
             pub fn set_target(&self, target: &str);

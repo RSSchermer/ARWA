@@ -1,9 +1,11 @@
+use std::error::Error;
+use std::fmt;
 use std::future::Future;
 use std::ops::Range;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::TextTrackKind;
 
@@ -37,6 +39,12 @@ impl MediaError {
             4 => MediaErrorKind::SrcNotSupported,
             _ => unreachable!(),
         }
+    }
+}
+
+impl From<MediaError> for JsValue {
+    fn from(value: MediaError) -> Self {
+        value.inner.into()
     }
 }
 
@@ -474,8 +482,6 @@ macro_rules! impl_html_media_element_traits {
 }
 
 pub(crate) use impl_html_media_element_traits;
-use std::error::Error;
-use std::fmt;
 
 #[must_use = "futures do nothing unless polled or spawned"]
 pub struct MediaPlay {

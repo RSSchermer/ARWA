@@ -1,6 +1,7 @@
 use std::any::type_name;
 use std::error::Error;
 use std::{fmt, marker};
+use wasm_bindgen::{JsError, JsValue};
 
 pub struct InvalidCast<F, T> {
     from: F,
@@ -38,3 +39,9 @@ impl<F, T> fmt::Debug for InvalidCast<F, T> {
 }
 
 impl<F, T> Error for InvalidCast<F, T> {}
+
+impl<F, T> From<InvalidCast<F, T>> for JsValue {
+    fn from(value: InvalidCast<F, T>) -> Self {
+        JsError::from(value).into()
+    }
+}

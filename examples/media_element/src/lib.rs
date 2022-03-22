@@ -1,6 +1,4 @@
 #![feature(async_closure)]
-use std::convert::TryInto;
-
 use arwa::dom::{selector, ParentNode};
 use arwa::html::{HtmlAudioElement, MediaElement};
 use arwa::ui::UiEventTarget;
@@ -10,20 +8,18 @@ use futures::{FutureExt, StreamExt, TryFutureExt};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
-pub fn start() {
-    let window = window().unwrap();
-    let document = window.document();
+pub fn start() -> Result<(), JsValue> {
+    let document = window().document();
 
     // Obtain a reference to the `web_sys::HtmlButtonElement` we want to listen to.
     let audio: HtmlAudioElement = document
         .query_selector_first(&selector!("#audio"))
-        .expect("No element with the id `audio`")
-        .try_into()
-        .expect("Element is not an audio element");
+        .ok_or(JsError::new("No element with the id `audio`"))?
+        .try_into()?;
 
     let play_button = document
         .query_selector_first(&selector!("#play"))
-        .expect("No element with the id `play`");
+        .ok_or(JsError::new("No element with the id `play`"))?;
 
     let audio_clone = audio.clone();
 
@@ -41,7 +37,7 @@ pub fn start() {
 
     let pause_button = document
         .query_selector_first(&selector!("#pause"))
-        .expect("No element with the id `pause`");
+        .ok_or(JsError::new("No element with the id `pause`"))?;
 
     spawn_local(pause_button.on_click().for_each(move |_| {
         audio.pause();
@@ -49,4 +45,6 @@ pub fn start() {
 
         futures::future::ready(())
     }));
+
+    Ok(())
 }

@@ -1,5 +1,5 @@
 use delegate::delegate;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, JsError, UnwrapThrowExt};
 
 use crate::connection::{connection_event_target_seal, ConnectionEventTarget};
 use crate::crypto::Crypto;
@@ -26,8 +26,12 @@ use crate::window::{
     WindowNavigator,
 };
 
-pub fn window() -> Option<Window> {
-    web_sys::window().map(|inner| inner.into())
+pub fn window() -> Window {
+    if let Some(window) = web_sys::window() {
+        window.into()
+    } else {
+        throw_val(JsError::new("not inside a Window context").into())
+    }
 }
 
 #[derive(Clone)]
@@ -448,7 +452,7 @@ impl security_context_seal::Seal for Window {}
 
 impl SecurityContext for Window {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn is_secure_context(&self) -> bool;
 
             fn origin(&self) -> String;

@@ -15,7 +15,7 @@ impl Attribute {
     }
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn namespace_uri(&self) -> Option<String>;
 
             pub fn value(&self) -> String;

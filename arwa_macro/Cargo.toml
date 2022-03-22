@@ -3,7 +3,7 @@ name = "arwa_macro"
 version = "0.1.0"
 description = "Macro support for the arwa crate."
 authors = ["RSSchermer <roland0507@gmail.com>"]
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/RSSchermer/ARWA"
 homepage = "https://github.com/RSSchermer/ARWA"
 license = "MIT"
@@ -13,7 +13,7 @@ readme = "../README.md"
 proc-macro = true
 
 [dependencies]
-arwa_parse = { path = "../arwa_parse" }
+arwa_parse = { version = "0.1.0", path = "../arwa_parse" }
 oxilangtag = "0.1.2"
 proc-macro2 = "1.0.36"
 quote = "1.0.15"

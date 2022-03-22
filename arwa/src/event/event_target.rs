@@ -1,7 +1,6 @@
 use std::any::{Any, TypeId};
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
-use std::convert::TryInto;
 use std::mem;
 use std::rc::Rc;
 
@@ -325,7 +324,7 @@ pub(crate) use impl_event_target_traits;
 
 macro_rules! impl_try_from_event_target {
     ($tpe:ident, $web_sys_tpe:ident) => {
-        impl std::convert::TryFrom<$crate::event::DynamicEventTarget> for $tpe {
+        impl TryFrom<$crate::event::DynamicEventTarget> for $tpe {
             type Error = $crate::InvalidCast<$crate::event::DynamicEventTarget, $tpe>;
 
             fn try_from(value: $crate::event::DynamicEventTarget) -> Result<Self, Self::Error> {

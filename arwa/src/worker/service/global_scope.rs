@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -407,7 +406,7 @@ pub struct WindowClient {
 
 impl WindowClient {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn focused(&self) -> bool;
         }
     }

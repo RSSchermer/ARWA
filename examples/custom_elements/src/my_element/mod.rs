@@ -1,5 +1,4 @@
 use std::cell::Cell;
-use std::convert::TryInto;
 
 use arwa::console;
 use arwa::dom::{name, selector, Element, ParentNode, ShadowHost, ShadowRootOptions};
@@ -11,8 +10,7 @@ use arwa::window::window;
 
 thread_local! {
     static TEMPLATE: HtmlTemplateElement = {
-        let window = window().unwrap();
-        let document: HtmlDocument = window.document().try_into().unwrap();
+        let document: HtmlDocument = window().document().try_into().expect("Window document it not a HTML document");
 
         let template_element: HtmlTemplateElement = document.create_known_element();
 
@@ -81,13 +79,12 @@ fn disconnected_callback(_element: &MyElement) {
 
 fn attribute_changed_callback(element: &MyElement, change: AttributeChange) {
     if change.attribute_name == "message" {
-        let message_container = element
+        if let Some(message_container) = element
             .shadow_root()
-            .unwrap()
-            .query_selector_first(&selector!("#message_container"))
-            .unwrap();
-
-        message_container.deserialize_inner(&change.new_value.unwrap_or_default());
+            .and_then(|r| r.query_selector_first(&selector!("#message_container")))
+        {
+            message_container.deserialize_inner(&change.new_value.unwrap_or_default());
+        }
     }
 }
 

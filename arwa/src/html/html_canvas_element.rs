@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::future::Future;
 use std::mem;
 use std::pin::Pin;
@@ -51,7 +50,7 @@ pub struct HtmlCanvasElement {
 
 impl HtmlCanvasElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn width(&self) -> u32;
 
             pub fn set_width(&self, width: u32);

@@ -13,7 +13,7 @@ pub struct PopStateEvent<T> {
 
 impl<T> PopStateEvent<T> {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn state(&self) -> JsValue;
         }
     }

@@ -55,14 +55,14 @@ impl FnOnce<(Result<f64, Aborted>,)> for FrameLoop {
 }
 
 #[wasm_bindgen(start)]
-pub fn start() {
-    let window = window().unwrap();
+pub fn start() -> Result<(), JsValue> {
+    let window = window();
     let document = window.document();
 
     // Obtain a reference to our "display container" element.
     let display_container = document
         .query_selector_first(&selector!("#display_container"))
-        .expect("No element with id `display_container`.");
+        .ok_or(JsError::new("No element with id `display_container`."))?;
 
     // Set up an abort handle with which we may cancel the loop.
     let (abort_handle, abort_registration) = AbortHandle::new_pair();
@@ -86,7 +86,7 @@ pub fn start() {
     // Obtain a reference to the cancellation button.
     let button = document
         .query_selector_first(&selector!("#cancel_button"))
-        .expect("No element with id `cancel_button`.");
+        .ok_or(JsError::new("No element with id `cancel_button`."))?;
 
     // Respond to click events on the button by cancelling the loop.
     spawn_local(button.on_click().take(1).for_each(move |_| {
@@ -94,4 +94,6 @@ pub fn start() {
 
         futures::future::ready(())
     }));
+
+    Ok(())
 }

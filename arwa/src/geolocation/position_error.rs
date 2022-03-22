@@ -32,6 +32,12 @@ impl PositionError {
     }
 }
 
+impl From<PositionError> for JsValue {
+    fn from(value: PositionError) -> Self {
+        value.inner.into()
+    }
+}
+
 impl fmt::Display for PositionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         let mut message = self.inner.message();

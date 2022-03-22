@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::collection::Collection;
 use crate::dom_exception_wrapper;
@@ -22,7 +22,9 @@ impl Storage {
     }
 
     pub fn set(&self, key: &str, value: &str) {
-        self.inner.set_item(key, value).unwrap_throw();
+        if let Err(err) = self.inner.set_item(key, value) {
+            throw_val(err)
+        }
     }
 
     pub fn try_set(&self, key: &str, value: &str) -> Result<(), StorageQuotaExceeded> {

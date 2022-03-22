@@ -10,7 +10,7 @@ pub struct HtmlDetailsElement {
 
 impl HtmlDetailsElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn open(&self) -> bool;
 
             pub fn set_open(&self, open: bool);

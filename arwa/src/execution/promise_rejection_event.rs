@@ -25,7 +25,7 @@ impl<T> promise_rejection_event_seal::Seal for RejectionHandledEvent<T> {}
 
 impl<T> PromiseRejectionEvent for RejectionHandledEvent<T> {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn promise(&self) -> Promise;
 
             fn reason(&self) -> JsValue;
@@ -48,7 +48,7 @@ impl<T> promise_rejection_event_seal::Seal for UnhandledRejectionEvent<T> {}
 
 impl<T> PromiseRejectionEvent for UnhandledRejectionEvent<T> {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn promise(&self) -> Promise;
 
             fn reason(&self) -> JsValue;

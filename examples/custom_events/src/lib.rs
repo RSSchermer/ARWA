@@ -19,17 +19,16 @@ impl Drop for MyEvent {
 }
 
 #[wasm_bindgen(start)]
-pub fn start() {
-    let window = window().unwrap();
-    let document = window.document();
+pub fn start() -> Result<(), JsValue> {
+    let document = window().document();
 
     let outer = document
         .query_selector_first(&selector!("#outer"))
-        .expect("No element with id `outer`.");
+        .ok_or(JsError::new("No element with id `outer`."))?;
 
     let inner = document
         .query_selector_first(&selector!("#inner"))
-        .expect("No element with id `inner`.");
+        .ok_or(JsError::new("No element with id `inner`."))?;
 
     spawn_local(
         inner
@@ -49,7 +48,7 @@ pub fn start() {
 
     let dispatch_button = document
         .query_selector_first(&selector!("#dispatch_button"))
-        .expect("No element with id `dispatch_button`.");
+        .ok_or(JsError::new("No element with id `dispatch_button`."))?;
 
     spawn_local(dispatch_button.on_click().for_each(move |_| {
         inner.dispatch_typed_event(
@@ -64,4 +63,6 @@ pub fn start() {
 
         futures::future::ready(())
     }));
+
+    Ok(())
 }

@@ -13,7 +13,7 @@ pub struct HtmlLabelElement {
 
 impl HtmlLabelElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn html_for(&self) -> String;
 
             pub fn set_html_for(&self, html_for: &str);

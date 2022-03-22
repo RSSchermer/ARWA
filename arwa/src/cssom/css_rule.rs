@@ -77,7 +77,7 @@ macro_rules! impl_css_rule_traits {
             }
         }
 
-        impl std::convert::TryFrom<$crate::cssom::DynamicCssRule> for $rule {
+        impl TryFrom<$crate::cssom::DynamicCssRule> for $rule {
             type Error = $crate::InvalidCast<$crate::cssom::DynamicCssRule, $rule>;
 
             fn try_from(value: $crate::cssom::DynamicCssRule) -> Result<Self, Self::Error> {

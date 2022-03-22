@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::dom::{DynamicNode, GenericDocumentFragment, HierarchyRequestError};
 
@@ -141,7 +141,10 @@ impl LiveRange {
     }
 
     pub fn duplicate_contents(&self) -> GenericDocumentFragment {
-        self.inner.clone_contents().unwrap_throw().into()
+        match self.inner.clone_contents() {
+            Ok(fragment) => fragment.into(),
+            Err(err) => throw_val(err),
+        }
     }
 
     pub fn try_duplicate_contents(&self) -> Result<GenericDocumentFragment, HierarchyRequestError> {
@@ -152,7 +155,10 @@ impl LiveRange {
     }
 
     pub fn extract_contents(&self) -> GenericDocumentFragment {
-        self.inner.extract_contents().unwrap_throw().into()
+        match self.inner.extract_contents() {
+            Ok(fragment) => fragment.into(),
+            Err(err) => throw_val(err),
+        }
     }
 
     pub fn try_extract_contents(&self) -> Result<GenericDocumentFragment, HierarchyRequestError> {

@@ -22,7 +22,7 @@ pub struct ServiceWorkerRegistration {
 
 impl ServiceWorkerRegistration {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn scope(&self) -> String;
         }
     }

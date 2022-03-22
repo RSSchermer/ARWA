@@ -105,11 +105,13 @@ macro_rules! impl_child_node_for_element {
                 T: $crate::dom::ChildNode,
             {
                 use crate::dom::element_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
 
-                self.as_web_sys_element()
+                if let Err(err) = self
+                    .as_web_sys_element()
                     .replace_with_with_node_1(replacement.as_web_sys_node())
-                    .unwrap_throw();
+                {
+                    wasm_bindgen::throw_val(err)
+                }
             }
 
             fn try_replace_with<T>(
@@ -131,11 +133,13 @@ macro_rules! impl_child_node_for_element {
                 T: $crate::dom::ChildNode,
             {
                 use crate::dom::element_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
 
-                self.as_web_sys_element()
+                if let Err(err) = self
+                    .as_web_sys_element()
                     .before_with_node_1(node.as_web_sys_node())
-                    .unwrap_throw();
+                {
+                    wasm_bindgen::throw_val(err)
+                }
             }
 
             fn try_before_insert_node<T>(
@@ -170,11 +174,13 @@ macro_rules! impl_child_node_for_element {
                 T: $crate::dom::ChildNode,
             {
                 use crate::dom::element_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
 
-                self.as_web_sys_element()
+                if let Err(err) = self
+                    .as_web_sys_element()
                     .after_with_node_1(node.as_web_sys_node())
-                    .unwrap_throw();
+                {
+                    wasm_bindgen::throw_val(err)
+                }
             }
 
             fn try_after_insert_node<T>(
@@ -229,11 +235,13 @@ macro_rules! impl_child_node_for_character_data {
                 T: $crate::dom::ChildNode,
             {
                 use crate::dom::character_data_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
 
-                self.as_web_sys_character_data()
+                if let Err(err) = self
+                    .as_web_sys_character_data()
                     .replace_with_with_node_1(replacement.as_web_sys_node())
-                    .unwrap_throw();
+                {
+                    wasm_bindgen::throw_val(err)
+                }
             }
 
             fn try_replace_with<T>(
@@ -255,11 +263,13 @@ macro_rules! impl_child_node_for_character_data {
                 T: $crate::dom::ChildNode,
             {
                 use crate::dom::character_data_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
 
-                self.as_web_sys_character_data()
+                if let Err(err) = self
+                    .as_web_sys_character_data()
                     .before_with_node_1(node.as_web_sys_node())
-                    .unwrap_throw();
+                {
+                    wasm_bindgen::throw_val(err)
+                }
             }
 
             fn try_before_insert_node<T>(
@@ -294,11 +304,13 @@ macro_rules! impl_child_node_for_character_data {
                 T: $crate::dom::ChildNode,
             {
                 use crate::dom::character_data_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
 
-                self.as_web_sys_character_data()
+                if let Err(err) = self
+                    .as_web_sys_character_data()
                     .after_with_node_1(node.as_web_sys_node())
-                    .unwrap_throw();
+                {
+                    wasm_bindgen::throw_val(err)
+                }
             }
 
             fn try_after_insert_node<T>(

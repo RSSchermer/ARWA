@@ -9,7 +9,7 @@ pub struct CssFontFeatureValuesRule {
 
 impl CssFontFeatureValuesRule {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn font_family(&self) -> String;
 
             pub fn set_font_family(&self, value: &str);

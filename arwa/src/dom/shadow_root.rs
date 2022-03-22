@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast};
 
 use crate::cssom::{styled_seal, StyleSheets, Styled};
 use crate::dom::{
@@ -62,10 +62,13 @@ pub(crate) mod shadow_host_seal {
 
 pub trait ShadowHost: shadow_host_seal::Seal {
     fn attach_shadow(&self, options: ShadowRootOptions) -> ShadowRoot {
-        self.as_web_sys_element()
+        match self
+            .as_web_sys_element()
             .attach_shadow(&options.into_web_sys())
-            .unwrap_throw()
-            .into()
+        {
+            Ok(shadow) => shadow.into(),
+            Err(err) => throw_val(err),
+        }
     }
 
     fn try_attach_shadow(

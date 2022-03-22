@@ -1,5 +1,4 @@
 use std::any::TypeId;
-use std::convert::TryInto;
 use std::marker;
 use std::mem;
 use std::ops::Deref;

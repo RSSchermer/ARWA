@@ -17,7 +17,7 @@ impl CssStyleRule {
     // cssom::Selector would always be valid.
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn selector_text(&self) -> String;
 
             pub fn set_selector_text(&self, value: &str);

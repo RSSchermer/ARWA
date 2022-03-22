@@ -19,7 +19,7 @@ pub struct VideoTrack {
 
 impl VideoTrack {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn id(&self) -> String;
 
             pub fn label(&self) -> String;

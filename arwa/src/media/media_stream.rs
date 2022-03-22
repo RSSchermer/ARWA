@@ -11,7 +11,7 @@ pub struct MediaStream {
 
 impl MediaStream {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn id(&self) -> String;
 
             pub fn active(&self) -> bool;
@@ -137,7 +137,7 @@ impl StreamTrack {
     // TODO: constraints and capabilities
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn id(&self) -> String;
 
             pub fn label(&self) -> String;

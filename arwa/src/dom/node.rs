@@ -157,7 +157,7 @@ pub(crate) use impl_node_traits;
 
 macro_rules! impl_try_from_node {
     ($tpe:ident, $web_sys_tpe:ident) => {
-        impl std::convert::TryFrom<$crate::dom::DynamicNode> for $tpe {
+        impl TryFrom<$crate::dom::DynamicNode> for $tpe {
             type Error = $crate::InvalidCast<$crate::dom::DynamicNode, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicNode) -> Result<Self, Self::Error> {

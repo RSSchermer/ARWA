@@ -6,9 +6,11 @@
 use std::error::Error;
 use std::fmt;
 
-pub use mime_4::Value;
+use wasm_bindgen::{JsError, JsValue};
 
 use crate::console::{Argument, ToArgument};
+
+pub use mime_4::Value;
 
 #[doc(hidden)]
 pub use mime_4::media_type as mime_4_media_type;
@@ -141,6 +143,12 @@ impl fmt::Debug for InvalidMediaType {
 }
 
 impl Error for InvalidMediaType {}
+
+impl From<InvalidMediaType> for JsValue {
+    fn from(value: InvalidMediaType) -> Self {
+        JsError::from(value).into()
+    }
+}
 
 #[macro_export]
 macro_rules! media_type {

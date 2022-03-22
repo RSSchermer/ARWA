@@ -19,7 +19,7 @@ pub struct WheelEvent<T> {
 
 impl<T> WheelEvent<T> {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn delta_x(&self) -> f64;
 
             pub fn delta_y(&self) -> f64;

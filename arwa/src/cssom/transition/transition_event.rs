@@ -22,7 +22,7 @@ macro_rules! transition_event {
 
         impl<T> TransitionEvent for $event<T> {
             delegate! {
-                target self.inner {
+                to self.inner {
                     fn property_name(&self) -> String;
 
                     fn elapsed_time(&self) -> f32;

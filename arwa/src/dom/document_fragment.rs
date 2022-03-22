@@ -74,11 +74,13 @@ macro_rules! impl_document_fragment_traits {
                 T: $crate::dom::ChildNode,
             {
                 use crate::dom::document_fragment_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
 
-                self.as_web_sys_document_fragment()
+                if let Err(err) = self
+                    .as_web_sys_document_fragment()
                     .prepend_with_node_1(node.as_web_sys_node())
-                    .unwrap_throw();
+                {
+                    wasm_bindgen::throw_val(err)
+                }
             }
 
             fn try_prepend_child<T>(&self, node: &T) -> Result<(), HierarchyRequestError>

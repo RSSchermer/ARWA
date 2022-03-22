@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use delegate::delegate;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{
@@ -33,7 +31,7 @@ pub struct Performance {
 
 impl Performance {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn now(&self) -> f64;
 
             pub fn set_resource_timing_buffer_size(&self, max_size: u32);
@@ -170,7 +168,7 @@ pub struct Mark {
 
 impl Mark {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
         }
     }
@@ -221,7 +219,7 @@ pub struct Measure {
 
 impl Measure {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
 
             pub fn start_time(&self) -> f64;
@@ -272,7 +270,7 @@ pub struct ResourceTiming {
 
 impl ResourceTiming {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
 
             pub fn start_time(&self) -> f64;
@@ -370,7 +368,7 @@ pub struct ServerTiming {
 
 impl ServerTiming {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
 
             pub fn description(&self) -> String;

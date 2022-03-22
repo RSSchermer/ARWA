@@ -25,7 +25,7 @@ pub struct HtmlOlElement {
 
 impl HtmlOlElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn reversed(&self) -> bool;
 
             pub fn set_reversed(&self, reversed: bool);

@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::{
@@ -78,9 +78,9 @@ pub trait ParentNode: parent_node_seal::Seal + Sized {
     where
         T: ChildNode,
     {
-        self.as_web_sys_node()
-            .append_child(node.as_web_sys_node())
-            .unwrap_throw();
+        if let Err(err) = self.as_web_sys_node().append_child(node.as_web_sys_node()) {
+            throw_val(err)
+        }
     }
 
     fn try_append_child<T>(&self, node: &T) -> Result<(), HierarchyRequestError>

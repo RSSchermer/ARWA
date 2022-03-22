@@ -10,7 +10,7 @@ pub struct HtmlDataElement {
 
 impl HtmlDataElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);

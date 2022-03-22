@@ -19,7 +19,7 @@ pub struct AudioTrack {
 
 impl AudioTrack {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn id(&self) -> String;
 
             pub fn label(&self) -> String;

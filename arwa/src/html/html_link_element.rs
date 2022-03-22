@@ -44,7 +44,7 @@ pub struct HtmlLinkElement {
 
 impl HtmlLinkElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn disabled(&self) -> bool;
 
             pub fn set_disabled(&self, disabled: bool);

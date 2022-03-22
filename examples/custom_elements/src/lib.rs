@@ -2,8 +2,6 @@
 
 mod my_element;
 
-use std::convert::TryInto;
-
 use arwa::dom::{selector, ChildNode, ParentNode};
 use arwa::html::{custom_element_name, HtmlButtonElement, HtmlDocument};
 use arwa::spawn_local;
@@ -15,27 +13,24 @@ use wasm_bindgen::prelude::*;
 use crate::my_element::{MyElement, MyElementExt, MY_ELEMENT};
 
 #[wasm_bindgen(start)]
-pub fn start() {
-    let window = window().unwrap();
+pub fn start() -> Result<(), JsValue> {
+    let window = window();
 
     window
         .custom_elements()
-        .try_register(&custom_element_name!("my-element"), MY_ELEMENT)
-        .unwrap();
+        .register(&custom_element_name!("my-element"), MY_ELEMENT);
 
-    let document: HtmlDocument = window.document().try_into().unwrap();
+    let document: HtmlDocument = window.document().try_into()?;
 
     let my_element: MyElement = document
         .query_selector_first(&selector!("my-element"))
-        .unwrap()
-        .try_into()
-        .unwrap();
+        .ok_or(JsError::new("No element of type `my-element`"))?
+        .try_into()?;
 
     let reconnect_button: HtmlButtonElement = document
         .query_selector_first(&selector!("#reconnect_button"))
-        .expect("No element with id `reconnect_button`.")
-        .try_into()
-        .expect("Not a button element.");
+        .ok_or(JsError::new("No element with id `reconnect_button`."))?
+        .try_into()?;
 
     let my_element_clone = my_element.clone();
     let body = document.body().unwrap();
@@ -58,9 +53,8 @@ pub fn start() {
 
     let change_message_button: HtmlButtonElement = document
         .query_selector_first(&selector!("#change_message_button"))
-        .expect("No element with id `change_message_button`.")
-        .try_into()
-        .expect("Not a button element.");
+        .ok_or(JsError::new("No element with id `change_message_button`."))?
+        .try_into()?;
 
     spawn_local(change_message_button.on_click().take(1).for_each(move |_| {
         if let Some(element) = document.query_selector_first(&selector!("my-element")) {
@@ -73,4 +67,6 @@ pub fn start() {
 
         futures::future::ready(())
     }));
+
+    Ok(())
 }

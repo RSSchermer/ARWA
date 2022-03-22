@@ -26,7 +26,7 @@ pub struct ValidityState {
 
 impl ValidityState {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value_missing(&self) -> bool;
 
             pub fn type_mismatch(&self) -> bool;

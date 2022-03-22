@@ -143,7 +143,7 @@ macro_rules! impl_typed_event_traits {
             };
         }
 
-        impl<T> std::convert::TryFrom<$crate::event::DynamicEvent<T>> for $tpe<T> {
+        impl<T> TryFrom<$crate::event::DynamicEvent<T>> for $tpe<T> {
             type Error = $crate::InvalidCast<$crate::event::DynamicEvent<T>, $tpe<T>>;
 
             fn try_from(value: $crate::event::DynamicEvent<T>) -> Result<Self, Self::Error> {

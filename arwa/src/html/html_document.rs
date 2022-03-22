@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use wasm_bindgen::JsCast;
 
 use crate::dom::impl_document_traits;

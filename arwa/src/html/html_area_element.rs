@@ -50,7 +50,7 @@ impl HtmlAreaElement {
     // "default")?)
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn alt(&self) -> String;
 
             pub fn set_alt(&self, alt: &str);

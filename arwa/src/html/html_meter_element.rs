@@ -13,7 +13,7 @@ pub struct HtmlMeterElement {
 
 impl HtmlMeterElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> f64;
 
             pub fn set_value(&self, value: f64);

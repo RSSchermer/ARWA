@@ -4,12 +4,10 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    let window = window().unwrap();
-
     console::log!("Simple message");
 
     // Message with a browser owned complex object
-    console::log!(window);
+    console::log!(window());
 
     // Different log levels:
     console::info!("Informational message");
@@ -24,7 +22,7 @@ pub fn start() {
     console::log!("Value %i referenced in string", 1u8);
 
     // String formatting with a complex object
-    console::log!("The %o referenced in a string", window);
+    console::log!("The %o referenced in a string", window());
 
     // A successful assertion
     console::assert!(1 == 1, "Won't be written to the console");

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsError, JsValue, UnwrapThrowExt};
 
 use crate::console::{Argument, ToArgument};
 
@@ -281,6 +281,12 @@ impl fmt::Display for InvalidLanguageTag {
 }
 
 impl Error for InvalidLanguageTag {}
+
+impl From<InvalidLanguageTag> for JsValue {
+    fn from(value: InvalidLanguageTag) -> Self {
+        JsError::from(value).into()
+    }
+}
 
 // Taken directly from https://docs.rs/oxilangtag/0.1.2/src/oxilangtag/lib.rs.html#234-239
 struct ExtensionsIterator<'a> {

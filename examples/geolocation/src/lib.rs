@@ -5,15 +5,17 @@ use futures::{future, StreamExt};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
-pub fn start() {
-    let window = window().unwrap();
+pub fn start() -> Result<(), JsValue> {
+    let window = window();
     let document = window.document();
-    let navigator = window.navigator();
-    let geolocation = navigator.geolocation().unwrap();
+    let geolocation = window
+        .navigator()
+        .geolocation()
+        .ok_or(JsError::new("Geolocation unavailable"))?;
 
     let position_container = document
         .query_selector_first(&selector!("#position_container"))
-        .expect("No element with id `position_container`");
+        .ok_or(JsError::new("No element with id `position_container`"))?;
 
     spawn_local(
         geolocation
@@ -35,4 +37,6 @@ pub fn start() {
                 future::ready(())
             }),
     );
+
+    Ok(())
 }

@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast};
 
 use crate::collection::{Collection, Sequence};
 use crate::cssom::{DynamicCssRule, InsertRuleError, RemoveRuleError};
@@ -28,10 +28,10 @@ pub struct CssGroupedRules {
 }
 
 impl CssGroupedRules {
-    pub fn insert(&self, index: u32, rule: &str) -> u32 {
-        self.grouping_rule
-            .insert_rule_with_index(rule, index)
-            .unwrap_throw()
+    pub fn insert(&self, index: u32, rule: &str) {
+        if let Err(err) = self.grouping_rule.insert_rule_with_index(rule, index) {
+            throw_val(err)
+        }
     }
 
     pub fn try_insert(&self, index: u32, rule: &str) -> Result<u32, InsertRuleError> {
@@ -41,7 +41,9 @@ impl CssGroupedRules {
     }
 
     pub fn remove(&self, index: u32) {
-        self.grouping_rule.delete_rule(index).unwrap_throw();
+        if let Err(err) = self.grouping_rule.delete_rule(index) {
+            throw_val(err)
+        }
     }
 
     pub fn try_remove(&self, index: u32) -> Result<(), RemoveRuleError> {

@@ -14,7 +14,7 @@ pub struct HtmlScriptElement {
 
 impl HtmlScriptElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn no_module(&self) -> bool;
 
             pub fn set_no_module(&self, no_module: bool);

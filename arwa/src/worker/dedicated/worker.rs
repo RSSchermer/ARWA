@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, JsValue};
 
 use crate::event::{impl_event_target_traits, impl_try_from_event_target};
 use crate::message::{
@@ -14,7 +14,10 @@ pub struct DedicatedWorker {
 
 impl DedicatedWorker {
     pub fn create(url: &Url, options: WorkerOptions) -> Self {
-        create_dedicated_worker_internal(url, options).unwrap_throw()
+        match create_dedicated_worker_internal(url, options) {
+            Ok(worker) => worker,
+            Err(err) => throw_val(err),
+        }
     }
 
     pub fn try_create(url: &Url, options: WorkerOptions) -> Result<Self, CreateWorkerError> {

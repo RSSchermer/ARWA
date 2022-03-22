@@ -9,7 +9,7 @@ pub struct CssNamespaceRule {
 
 impl CssNamespaceRule {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn namespace_uri(&self) -> String;
 
             pub fn prefix(&self) -> String;

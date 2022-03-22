@@ -10,7 +10,7 @@ pub struct HtmlDialogElement {
 
 impl HtmlDialogElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn return_value(&self) -> String;
 
             pub fn set_return_value(&self, return_value: &str);

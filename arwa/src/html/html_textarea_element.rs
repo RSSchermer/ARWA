@@ -19,7 +19,7 @@ pub struct HtmlTextareaElement {
 
 impl HtmlTextareaElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -174,7 +174,7 @@ impl form_listed_element_seal::Seal for HtmlTextareaElement {}
 
 impl FormListedElement for HtmlTextareaElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -198,7 +198,7 @@ impl constraint_validation_target_seal::Seal for HtmlTextareaElement {}
 
 impl ConstraintValidationTarget for HtmlTextareaElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

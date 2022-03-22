@@ -1,5 +1,5 @@
 use delegate::delegate;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::dom::{
     child_node_seal, impl_node_traits, impl_owned_node, impl_try_from_node, ChildNode,
@@ -12,7 +12,7 @@ pub struct DocumentType {
 
 impl DocumentType {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
 
             pub fn public_id(&self) -> String;
@@ -53,9 +53,12 @@ impl ChildNode for DocumentType {
     where
         T: ChildNode,
     {
-        self.inner
+        if let Err(err) = self
+            .inner
             .replace_with_with_node_1(replacement.as_web_sys_node())
-            .unwrap_throw();
+        {
+            throw_val(err)
+        }
     }
 
     fn try_replace_with<T>(&self, replacement: &T) -> Result<(), HierarchyRequestError>
@@ -71,9 +74,9 @@ impl ChildNode for DocumentType {
     where
         T: ChildNode,
     {
-        self.inner
-            .before_with_node_1(node.as_web_sys_node())
-            .unwrap_throw();
+        if let Err(err) = self.inner.before_with_node_1(node.as_web_sys_node()) {
+            throw_val(err)
+        }
     }
 
     fn try_before_insert_node<T>(&self, node: &T) -> Result<(), HierarchyRequestError>
@@ -98,9 +101,9 @@ impl ChildNode for DocumentType {
     where
         T: ChildNode,
     {
-        self.inner
-            .after_with_node_1(node.as_web_sys_node())
-            .unwrap_throw();
+        if let Err(err) = self.inner.after_with_node_1(node.as_web_sys_node()) {
+            throw_val(err)
+        }
     }
 
     fn try_after_insert_node<T>(&self, node: &T) -> Result<(), HierarchyRequestError>

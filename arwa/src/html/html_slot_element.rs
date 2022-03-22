@@ -15,7 +15,7 @@ pub struct HtmlSlotElement {
 
 impl HtmlSlotElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
 
             pub fn set_name(&self, name: &str);

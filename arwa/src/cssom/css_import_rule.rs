@@ -10,7 +10,7 @@ pub struct CssImportRule {
 
 impl CssImportRule {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn href(&self) -> String;
         }
     }

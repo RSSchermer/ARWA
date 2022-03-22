@@ -9,7 +9,7 @@ pub struct CssKeyframeRule {
 
 impl CssKeyframeRule {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn key_text(&self) -> String;
 
             pub fn set_key_text(&self, value: &str);

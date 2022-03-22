@@ -54,7 +54,7 @@ impl HtmlFormElement {
     // Note: ignoring acceptCharset, per the spec the only valid value is "UTF-8".
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn no_validate(&self) -> bool;
 
             pub fn set_no_validate(&self, no_validate: bool);
@@ -195,7 +195,7 @@ pub struct Radio {
 
 impl Radio {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);

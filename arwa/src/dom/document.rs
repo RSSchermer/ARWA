@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::connection::{connection_event_target_seal, ConnectionEventTarget};
 use crate::cssom::{styled_seal, StyleSheets, Styled};
@@ -187,10 +187,13 @@ pub trait Document: document_seal::Seal + Sized {
         qualified_name: &QualifiedName,
         namespace: &str,
     ) -> Attribute {
-        self.as_web_sys_document()
+        match self
+            .as_web_sys_document()
             .create_attribute_ns(Some(namespace), qualified_name.as_ref())
-            .unwrap_throw()
-            .into()
+        {
+            Ok(attr) => attr.into(),
+            Err(err) => throw_val(err),
+        }
     }
 
     fn try_create_attribute_namespaced(
@@ -216,10 +219,13 @@ pub trait Document: document_seal::Seal + Sized {
         qualified_name: &QualifiedName,
         namespace: &str,
     ) -> DynamicElement {
-        self.as_web_sys_document()
+        match self
+            .as_web_sys_document()
             .create_element_ns(Some(namespace), qualified_name.as_ref())
-            .unwrap_throw()
-            .into()
+        {
+            Ok(element) => element.into(),
+            Err(err) => throw_val(err),
+        }
     }
 
     fn try_create_element_namespaced(
@@ -235,10 +241,10 @@ pub trait Document: document_seal::Seal + Sized {
 
     #[allow(non_snake_case)]
     fn create_CDATA_section(&self, data: &str) -> CDataSection {
-        self.as_web_sys_document()
-            .create_cdata_section(data)
-            .unwrap_throw()
-            .into()
+        match self.as_web_sys_document().create_cdata_section(data) {
+            Ok(cdata) => cdata.into(),
+            Err(err) => throw_val(err),
+        }
     }
 
     #[allow(non_snake_case)]
@@ -254,10 +260,13 @@ pub trait Document: document_seal::Seal + Sized {
     }
 
     fn create_processing_instruction(&self, target: &str, data: &str) -> ProcessingInstruction {
-        self.as_web_sys_document()
+        match self
+            .as_web_sys_document()
             .create_processing_instruction(target, data)
-            .unwrap_throw()
-            .into()
+        {
+            Ok(instruction) => instruction.into(),
+            Err(err) => throw_val(err),
+        }
     }
 
     fn try_create_processing_instruction(

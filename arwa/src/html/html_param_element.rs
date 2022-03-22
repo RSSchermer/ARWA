@@ -10,7 +10,7 @@ pub struct HtmlParamElement {
 
 impl HtmlParamElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
 
             pub fn set_name(&self, name: &str);

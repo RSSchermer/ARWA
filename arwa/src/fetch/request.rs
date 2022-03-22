@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, JsValue, UnwrapThrowExt};
 
 use crate::fetch::{Body, BodySource, Headers, RequestMethod};
 use crate::security::ReferrerPolicy;
@@ -271,7 +271,10 @@ pub struct Request {
 
 impl Request {
     pub fn init(url: &Url, descriptor: RequestDescriptor) -> Self {
-        create_request_internal(url.as_ref(), descriptor).unwrap_throw()
+        match create_request_internal(url.as_ref(), descriptor) {
+            Ok(request) => request,
+            Err(err) => throw_val(err),
+        }
     }
 
     pub fn try_init(url: &Url, descriptor: RequestDescriptor) -> Result<Self, RequestInitError> {

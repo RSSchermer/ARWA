@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::security::SecurityError;
 use crate::url::Url;
@@ -15,7 +15,10 @@ impl WindowLocation {
 
     pub fn to_url(&self) -> Url {
         // Location.href is always a valid URL.
-        Url::parse(self.inner.href().unwrap_throw().as_ref()).unwrap_throw()
+        match Url::parse(self.inner.href().unwrap_throw().as_ref()) {
+            Ok(url) => url,
+            Err(err) => throw_val(err.into()),
+        }
     }
 
     pub fn try_to_url(&self) -> Result<Url, SecurityError> {
@@ -27,7 +30,9 @@ impl WindowLocation {
     }
 
     pub fn assign(&self, url: &Url) {
-        self.inner.assign(url.as_ref()).unwrap_throw()
+        if let Err(err) = self.inner.assign(url.as_ref()) {
+            throw_val(err)
+        }
     }
 
     pub fn try_assign(&self, url: &Url) -> Result<(), SecurityError> {
@@ -44,7 +49,9 @@ impl WindowLocation {
     }
 
     pub fn reload(&self) {
-        self.inner.reload().unwrap_throw()
+        if let Err(err) = self.inner.reload() {
+            throw_val(err)
+        }
     }
 
     pub fn try_reload(&self) -> Result<(), SecurityError> {
@@ -54,7 +61,9 @@ impl WindowLocation {
     }
 
     pub fn reload_forced(&self) {
-        self.inner.reload_with_forceget(true).unwrap_throw()
+        if let Err(err) = self.inner.reload_with_forceget(true) {
+            throw_val(err)
+        }
     }
 
     pub fn try_reload_forced(&self) -> Result<(), SecurityError> {

@@ -1,12 +1,11 @@
 use std::any::{Any, TypeId};
-use std::convert::{TryFrom, TryInto};
 use std::ops::Deref;
 use std::{marker, mem};
 
 use js_sys::{Array, Function, Reflect, Uint8Array};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{throw_val, JsCast};
 use web_sys::HtmlElement;
 
 use crate::dom::{impl_shadow_host_for_element, DynamicElement, Name, ParentNode};
@@ -232,9 +231,10 @@ impl CustomElementRegistry {
         T: 'static,
         E: ExtendableElement + 'static,
     {
-        self.try_register(name, descriptor)
-            .map_err(|err| err.inner)
-            .unwrap_throw()
+        match self.try_register(name, descriptor) {
+            Ok(ok) => ok,
+            Err(err) => throw_val(err.inner.into()),
+        }
     }
 
     pub fn try_register<T, E>(

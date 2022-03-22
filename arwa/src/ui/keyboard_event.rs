@@ -67,7 +67,7 @@ macro_rules! keyboard_event {
 
         impl<T> ModifierState for $event<T> {
             delegate! {
-                target self.inner {
+                to self.inner {
                     fn get_modifier_state(&self, key: &str) -> bool;
 
                     fn alt_key(&self) -> bool;

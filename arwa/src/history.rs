@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, JsValue};
 
 use crate::dom_exception_wrapper;
 use crate::impl_common_wrapper_traits;
@@ -36,7 +36,10 @@ impl History {
     // and every method here needs a fallible alternative.
 
     pub fn count_entries(&self) -> u32 {
-        self.inner.length().unwrap_throw()
+        match self.inner.length() {
+            Ok(length) => length,
+            Err(err) => throw_val(err),
+        }
     }
 
     pub fn try_count_entries(&self) -> Result<u32, SecurityError> {
@@ -46,7 +49,10 @@ impl History {
     }
 
     pub fn get_state(&self) -> Option<JsValue> {
-        let state = self.inner.state().unwrap_throw();
+        let state = match self.inner.state() {
+            Ok(state) => state,
+            Err(err) => throw_val(err),
+        };
 
         if state.is_null() {
             None
@@ -63,7 +69,12 @@ impl History {
     }
 
     pub fn get_scroll_restoration(&self) -> ScrollRestoration {
-        ScrollRestoration::from_web_sys(self.inner.scroll_restoration().unwrap_throw())
+        let scroll_restoration = match self.inner.scroll_restoration() {
+            Ok(scroll_restoration) => scroll_restoration,
+            Err(err) => throw_val(err),
+        };
+
+        ScrollRestoration::from_web_sys(scroll_restoration)
     }
 
     pub fn try_get_scroll_restoration(&self) -> Result<ScrollRestoration, SecurityError> {
@@ -74,9 +85,12 @@ impl History {
     }
 
     pub fn set_scroll_restoration(&self, scroll_restoration: ScrollRestoration) {
-        self.inner
+        if let Err(err) = self
+            .inner
             .set_scroll_restoration(scroll_restoration.to_web_sys())
-            .unwrap_throw()
+        {
+            throw_val(err)
+        }
     }
 
     pub fn try_set_scroll_restoration(
@@ -89,7 +103,9 @@ impl History {
     }
 
     pub fn go(&self, delta: i32) {
-        self.inner.go_with_delta(delta).unwrap_throw()
+        if let Err(err) = self.inner.go_with_delta(delta) {
+            throw_val(err)
+        }
     }
 
     pub fn try_go(&self, delta: i32) -> Result<(), SecurityError> {
@@ -102,7 +118,9 @@ impl History {
     }
 
     pub fn go_back(&self) {
-        self.inner.back().unwrap_throw()
+        if let Err(err) = self.inner.back() {
+            throw_val(err)
+        }
     }
 
     pub fn try_go_back(&self) -> Result<(), SecurityError> {
@@ -112,7 +130,9 @@ impl History {
     }
 
     pub fn go_forward(&self) {
-        self.inner.forward().unwrap_throw()
+        if let Err(err) = self.inner.forward() {
+            throw_val(err)
+        }
     }
 
     pub fn try_go_forward(&self) -> Result<(), SecurityError> {

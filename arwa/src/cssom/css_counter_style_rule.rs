@@ -9,7 +9,7 @@ pub struct CssCounterStyleRule {
 
 impl CssCounterStyleRule {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn name(&self) -> String;
 
             pub fn set_name(&self, value: &str);

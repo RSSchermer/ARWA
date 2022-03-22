@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::ops::{Bound, Range, RangeBounds};
 
 use delegate::delegate;
@@ -60,7 +59,7 @@ impl HtmlInputElement {
     // modes.
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -308,7 +307,7 @@ impl form_listed_element_seal::Seal for HtmlInputElement {}
 
 impl FormListedElement for HtmlInputElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -337,7 +336,7 @@ impl form_submitter_element_seal::Seal for HtmlInputElement {}
 
 impl FormSubmitterElement for HtmlInputElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn form_no_validate(&self) -> bool;
 
             fn set_form_no_validate(&self, form_no_validate: bool);
@@ -401,7 +400,7 @@ impl constraint_validation_target_seal::Seal for HtmlInputElement {}
 
 impl ConstraintValidationTarget for HtmlInputElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

@@ -12,7 +12,7 @@ pub struct ErrorEvent<T> {
 
 impl<T> ErrorEvent<T> {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn message(&self) -> String;
 
             pub fn filename(&self) -> String;

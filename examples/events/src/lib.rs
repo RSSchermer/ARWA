@@ -8,14 +8,13 @@ use futures::{FutureExt, StreamExt};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
-pub fn start() {
-    let window = window().unwrap();
-    let document = window.document();
+pub fn start() -> Result<(), JsValue> {
+    let document = window().document();
 
     // Obtain a reference to the HtmlButtonElement we want to listen to.
     let button = document
         .query_selector_first(&selector!("#button"))
-        .expect("No element with id `button`.");
+        .ok_or(JsError::new("No element with id `button`."))?;
 
     spawn_local(
         button
@@ -28,7 +27,9 @@ pub fn start() {
 
     let remove_event_target_button = document
         .query_selector_first(&selector!("#remove_event_target_button"))
-        .expect("No element with id `remove_event_target_button`.");
+        .ok_or(JsError::new(
+            "No element with id `remove_event_target_button`.",
+        ))?;
 
     spawn_local(
         remove_event_target_button
@@ -40,4 +41,6 @@ pub fn start() {
                 futures::future::ready(())
             }),
     );
+
+    Ok(())
 }

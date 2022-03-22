@@ -1,5 +1,5 @@
 use js_sys::Uint32Array;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::connection::{connection_status_seal, ConnectionStatus};
 use crate::dom_exception_wrapper;
@@ -31,9 +31,9 @@ impl WindowNavigator {
     pub fn register_protocol_handler(&self, protocol_handler: ProtocolHandler) {
         let ProtocolHandler { scheme, url } = protocol_handler;
 
-        self.inner
-            .register_protocol_handler(scheme, url, "")
-            .unwrap_throw()
+        if let Err(err) = self.inner.register_protocol_handler(scheme, url, "") {
+            throw_val(err)
+        }
     }
 
     pub fn try_register_protocol_handler(

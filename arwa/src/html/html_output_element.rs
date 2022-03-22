@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
@@ -19,7 +17,7 @@ pub struct HtmlOutputElement {
 
 impl HtmlOutputElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> String;
 
             pub fn set_value(&self, value: &str);
@@ -38,7 +36,7 @@ impl form_listed_element_seal::Seal for HtmlOutputElement {}
 
 impl FormListedElement for HtmlOutputElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -67,7 +65,7 @@ impl constraint_validation_target_seal::Seal for HtmlOutputElement {}
 
 impl ConstraintValidationTarget for HtmlOutputElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

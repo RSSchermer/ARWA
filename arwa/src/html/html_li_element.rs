@@ -10,7 +10,7 @@ pub struct HtmlLiElement {
 
 impl HtmlLiElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn value(&self) -> i32;
 
             pub fn set_value(&self, value: i32);

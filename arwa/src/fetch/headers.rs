@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::impl_common_wrapper_traits;
 use crate::type_error_wrapper;
@@ -24,7 +24,9 @@ impl Headers {
     }
 
     pub fn set(&self, header_name: &str, value: &str) {
-        self.inner.set(header_name, value).unwrap_throw()
+        if let Err(err) = self.inner.set(header_name, value) {
+            throw_val(err)
+        }
     }
 
     pub fn try_set(&self, header_name: &str, value: &str) -> Result<(), InvalidHeaderName> {
@@ -34,7 +36,9 @@ impl Headers {
     }
 
     pub fn append(&self, header_name: &str, value: &str) {
-        self.inner.append(header_name, value).unwrap_throw()
+        if let Err(err) = self.inner.append(header_name, value) {
+            throw_val(err)
+        }
     }
 
     pub fn try_append(&self, header_name: &str, value: &str) -> Result<(), InvalidHeaderName> {
@@ -44,7 +48,9 @@ impl Headers {
     }
 
     pub fn remove(&self, header_name: &str) {
-        self.inner.delete(header_name).unwrap_throw()
+        if let Err(err) = self.inner.delete(header_name) {
+            throw_val(err)
+        }
     }
 
     pub fn try_remove(&self, header_name: &str) -> Result<(), InvalidHeaderName> {

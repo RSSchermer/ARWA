@@ -10,7 +10,7 @@ pub struct HtmlColgroupElement {
 
 impl HtmlColgroupElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn span(&self) -> u32;
 
             pub fn set_span(&self, span: u32);

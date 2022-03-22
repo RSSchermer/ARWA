@@ -1,7 +1,7 @@
 use std::mem;
 
 use delegate::delegate;
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, JsValue, UnwrapThrowExt};
 
 use crate::fetch::{Body, BodySource, Headers, Status};
 use crate::impl_common_wrapper_traits;
@@ -57,7 +57,10 @@ pub struct Response {
 
 impl Response {
     pub fn init(&self, descriptor: ResponseDescriptor) -> Response {
-        create_response_internal(descriptor).unwrap_throw()
+        match create_response_internal(descriptor) {
+            Ok(response) => response,
+            Err(err) => throw_val(err),
+        }
     }
 
     pub fn try_init(&self, descriptor: ResponseDescriptor) -> Result<Response, ResponseInitError> {
@@ -72,7 +75,7 @@ impl Response {
     }
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn status(&self) -> u16;
 
             pub fn status_text(&self) -> String;

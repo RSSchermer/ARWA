@@ -10,7 +10,7 @@ pub struct ProcessingInstruction {
 
 impl ProcessingInstruction {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn target(&self) -> String;
         }
     }

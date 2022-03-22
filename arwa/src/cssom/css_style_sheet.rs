@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast};
 
 use crate::collection::{Collection, Sequence};
 use crate::cssom::{CssImportRule, DynamicCssRule, InsertRuleError, RemoveRuleError};
@@ -60,9 +60,14 @@ impl CssStyleSheet {
     }
 
     pub fn resolve_rules(&self) -> CssStyleSheetRules {
+        let rules = match self.inner.css_rules() {
+            Ok(rules) => rules,
+            Err(err) => throw_val(err),
+        };
+
         CssStyleSheetRules {
             style_sheet: self.inner.clone(),
-            rules: self.inner.css_rules().unwrap_throw(),
+            rules,
         }
     }
 
@@ -100,10 +105,10 @@ pub struct CssStyleSheetRules {
 }
 
 impl CssStyleSheetRules {
-    pub fn insert(&self, index: u32, rule: &str) -> u32 {
-        self.style_sheet
-            .insert_rule_with_index(rule, index)
-            .unwrap_throw()
+    pub fn insert(&self, index: u32, rule: &str) {
+        if let Err(err) = self.style_sheet.insert_rule_with_index(rule, index) {
+            throw_val(err)
+        }
     }
 
     pub fn try_insert(&self, index: u32, rule: &str) -> Result<u32, InsertRuleError> {
@@ -113,7 +118,9 @@ impl CssStyleSheetRules {
     }
 
     pub fn remove(&self, index: u32) {
-        self.style_sheet.delete_rule(index).unwrap_throw();
+        if let Err(err) = self.style_sheet.delete_rule(index) {
+            throw_val(err)
+        }
     }
 
     pub fn try_remove(&self, index: u32) -> Result<(), RemoveRuleError> {

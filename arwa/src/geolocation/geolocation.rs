@@ -110,7 +110,7 @@ pub struct Coordinates {
 
 impl Coordinates {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn latitude(&self) -> f64;
 
             pub fn longitude(&self) -> f64;

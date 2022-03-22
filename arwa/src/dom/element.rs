@@ -2,7 +2,7 @@ use std::fmt;
 
 use delegate::delegate;
 use js_sys::JsString;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::collection::{Collection, Sequence};
 use crate::cssom::{
@@ -47,9 +47,9 @@ pub trait Element: element_seal::Seal {
     }
 
     fn set_pointer_capture(&self, pointer_id: i32) {
-        self.as_web_sys_element()
-            .set_pointer_capture(pointer_id)
-            .unwrap_throw()
+        if let Err(err) = self.as_web_sys_element().set_pointer_capture(pointer_id) {
+            throw_val(err)
+        }
     }
 
     fn try_set_pointer_capture(&self, pointer_id: i32) -> Result<(), InvalidPointerId> {
@@ -226,10 +226,10 @@ impl Attributes {
     }
 
     pub fn insert(&self, attribute: &Attribute) -> Option<Attribute> {
-        self.attributes
-            .set_named_item(attribute.as_ref())
-            .unwrap_throw()
-            .map(|attr| attr.into())
+        match self.attributes.set_named_item(attribute.as_ref()) {
+            Ok(attr) => attr.map(|a| a.into()),
+            Err(err) => throw_val(err),
+        }
     }
 
     pub fn try_insert(&self, attribute: &Attribute) -> Result<Option<Attribute>, InUseAttribute> {
@@ -373,7 +373,7 @@ pub struct ClientRect {
 
 impl ClientRect {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn x(&self) -> f64;
 
             pub fn y(&self) -> f64;
@@ -531,7 +531,7 @@ pub(crate) use impl_element_traits;
 
 macro_rules! impl_try_from_element {
     ($tpe:ident, $web_sys_tpe:ident) => {
-        impl std::convert::TryFrom<$crate::dom::DynamicElement> for $tpe {
+        impl TryFrom<$crate::dom::DynamicElement> for $tpe {
             type Error = $crate::InvalidCast<$crate::dom::DynamicElement, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicElement) -> Result<Self, Self::Error> {
@@ -557,7 +557,7 @@ pub(crate) use impl_try_from_element;
 
 macro_rules! impl_try_from_element_with_tag_check {
     ($tpe:ident, $web_sys_tpe:ident, $tag_name:literal) => {
-        impl std::convert::TryFrom<$crate::dom::DynamicElement> for $tpe {
+        impl TryFrom<$crate::dom::DynamicElement> for $tpe {
             type Error = $crate::InvalidCast<$crate::dom::DynamicElement, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicElement) -> Result<Self, Self::Error> {
@@ -578,7 +578,7 @@ macro_rules! impl_try_from_element_with_tag_check {
             }
         }
 
-        impl std::convert::TryFrom<$crate::dom::DynamicNode> for $tpe {
+        impl TryFrom<$crate::dom::DynamicNode> for $tpe {
             type Error = $crate::InvalidCast<$crate::dom::DynamicNode, $tpe>;
 
             fn try_from(value: $crate::dom::DynamicNode) -> Result<Self, Self::Error> {
@@ -601,7 +601,7 @@ macro_rules! impl_try_from_element_with_tag_check {
             }
         }
 
-        impl std::convert::TryFrom<$crate::event::DynamicEventTarget> for $tpe {
+        impl TryFrom<$crate::event::DynamicEventTarget> for $tpe {
             type Error = $crate::InvalidCast<$crate::event::DynamicEventTarget, $tpe>;
 
             fn try_from(value: $crate::event::DynamicEventTarget) -> Result<Self, Self::Error> {

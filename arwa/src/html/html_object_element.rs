@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::str::FromStr;
 
 use delegate::delegate;
@@ -23,7 +22,7 @@ pub struct HtmlObjectElement {
 
 impl HtmlObjectElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn use_map(&self) -> String;
 
             pub fn set_use_map(&self, use_map: &str);
@@ -78,7 +77,7 @@ impl form_listed_element_seal::Seal for HtmlObjectElement {}
 
 impl FormListedElement for HtmlObjectElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);
@@ -107,7 +106,7 @@ impl constraint_validation_target_seal::Seal for HtmlObjectElement {}
 
 impl ConstraintValidationTarget for HtmlObjectElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn will_validate(&self) -> bool;
 
             fn check_validity(&self) -> bool;

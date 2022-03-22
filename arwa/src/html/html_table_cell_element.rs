@@ -1,5 +1,4 @@
 use std::cell::{RefCell, RefMut};
-use std::convert::TryFrom;
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::{impl_try_from_element, impl_try_from_element_with_tag_check, Token};

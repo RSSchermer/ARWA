@@ -2,7 +2,7 @@
 name = "media-element"
 version = "0.1.0"
 authors = ["Roland Schermer <roland0507@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 publish = false
 
@@ -10,7 +10,6 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-futures = "0.3.4"
+futures = "0.3.21"
 arwa = { version = "0.1.0", path = "../../arwa" }
-wasm-bindgen = "0.2.59"
-wasm-bindgen-futures = "0.4.9"
+wasm-bindgen = "0.2.79"

@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
@@ -21,7 +19,7 @@ impl HtmlFieldsetElement {
     // `fieldset` is "barred from constraint validation".
 
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn disabled(&self) -> bool;
 
             pub fn set_disabled(&self, disabled: bool);
@@ -39,7 +37,7 @@ impl form_listed_element_seal::Seal for HtmlFieldsetElement {}
 
 impl FormListedElement for HtmlFieldsetElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             fn name(&self) -> String;
 
             fn set_name(&self, name: &str);

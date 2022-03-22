@@ -15,7 +15,7 @@ pub struct StorageEvent<T> {
 
 impl<T> StorageEvent<T> {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn key(&self) -> Option<String>;
 
             pub fn old_value(&self) -> Option<String>;

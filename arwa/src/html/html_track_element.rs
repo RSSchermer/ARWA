@@ -13,7 +13,7 @@ pub struct HtmlTrackElement {
 
 impl HtmlTrackElement {
     delegate! {
-        target self.inner {
+        to self.inner {
             pub fn label(&self) -> String;
 
             pub fn set_label(&self, label: &str);
