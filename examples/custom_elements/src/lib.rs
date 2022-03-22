@@ -7,7 +7,7 @@ use arwa::html::{custom_element_name, HtmlButtonElement, HtmlDocument};
 use arwa::spawn_local;
 use arwa::ui::UiEventTarget;
 use arwa::window::window;
-use futures::{FutureExt, StreamExt};
+use futures::StreamExt;
 use wasm_bindgen::prelude::*;
 
 use crate::my_element::{MyElement, MyElementExt, MY_ELEMENT};
@@ -32,31 +32,36 @@ pub fn start() -> Result<(), JsValue> {
         .ok_or(JsError::new("No element with id `reconnect_button`."))?
         .try_into()?;
 
+    let reconnect_clicks = reconnect_button.on_click();
     let my_element_clone = my_element.clone();
     let body = document.body().unwrap();
 
-    spawn_local(
-        reconnect_button
-            .on_click()
-            .take(3)
-            .for_each(move |_| {
-                my_element_clone.disconnect();
-                body.prepend_child(&my_element_clone);
+    spawn_local(async move {
+        // Let's take just the first 3 clicks and then disconnect the custom element, so we can
+        // watch it get garbage collected (probably, eventually... there are essentially no
+        // guarantees for if and when a browser will perform a garbage collection pass).
+        let mut reconnect_clicks = reconnect_clicks.take(3);
 
-                futures::future::ready(())
-            })
-            .map(move |_| {
-                my_element.disconnect();
-                reconnect_button.set_disabled(true);
-            }),
-    );
+        while let Some(_) = reconnect_clicks.next().await {
+            my_element_clone.disconnect();
+            body.prepend_child(&my_element_clone);
+        }
+
+        my_element.disconnect();
+        reconnect_button.set_disabled(true);
+    });
 
     let change_message_button: HtmlButtonElement = document
         .query_selector_first(&selector!("#change_message_button"))
         .ok_or(JsError::new("No element with id `change_message_button`."))?
         .try_into()?;
 
-    spawn_local(change_message_button.on_click().take(1).for_each(move |_| {
+    let mut change_message_clicks = change_message_button.on_click();
+
+    spawn_local(async move {
+        // Wait for the first click, then try changing the message and then disable the button.
+        change_message_clicks.next().await;
+
         if let Some(element) = document.query_selector_first(&selector!("my-element")) {
             let element: MyElement = element.try_into().unwrap();
 
@@ -64,9 +69,7 @@ pub fn start() -> Result<(), JsValue> {
         }
 
         change_message_button.set_disabled(true);
-
-        futures::future::ready(())
-    }));
+    });
 
     Ok(())
 }

@@ -27,7 +27,7 @@ impl FnOnce<(Result<f64, Aborted>,)> for FrameLoop {
 
     extern "rust-call" fn call_once(mut self, args: (Result<f64, Aborted>,)) -> Self::Output {
         // Only loop if the frame has not been cancelled.
-        if let Ok(time) = args.0 {
+        if let (Ok(time), ..) = args {
             // Update the count and our displayed text.
             self.count += 1;
 
@@ -88,12 +88,14 @@ pub fn start() -> Result<(), JsValue> {
         .query_selector_first(&selector!("#cancel_button"))
         .ok_or(JsError::new("No element with id `cancel_button`."))?;
 
-    // Respond to click events on the button by cancelling the loop.
-    spawn_local(button.on_click().take(1).for_each(move |_| {
-        abort_handle.borrow().abort();
+    let mut clicks = button.on_click();
 
-        futures::future::ready(())
-    }));
+    // Respond to the first click event by cancelling the loop.
+    spawn_local(async move {
+        clicks.next().await;
+
+        abort_handle.borrow().abort();
+    });
 
     Ok(())
 }

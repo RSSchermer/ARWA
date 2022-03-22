@@ -1,7 +1,7 @@
 use arwa::dom::{selector, Element, ParentNode};
 use arwa::window::window;
 use arwa::{console, spawn_local};
-use futures::{future, StreamExt};
+use futures::StreamExt;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
@@ -17,26 +17,24 @@ pub fn start() -> Result<(), JsValue> {
         .query_selector_first(&selector!("#position_container"))
         .ok_or(JsError::new("No element with id `position_container`"))?;
 
-    spawn_local(
-        geolocation
-            .watch_position(Default::default())
-            .for_each(move |result| {
-                match result {
-                    Ok(position) => {
-                        let coordinates = position.coordinates();
+    let mut positions = geolocation.watch_position(Default::default());
 
-                        position_container.deserialize_inner(&format!(
-                            "Lat: {}, Long: {}",
-                            coordinates.latitude(),
-                            coordinates.longitude()
-                        ));
-                    }
-                    Err(err) => console::error!(err),
-                };
+    spawn_local(async move {
+        while let Some(result) = positions.next().await {
+            match result {
+                Ok(position) => {
+                    let coordinates = position.coordinates();
 
-                future::ready(())
-            }),
-    );
+                    position_container.deserialize_inner(&format!(
+                        "Lat: {}, Long: {}",
+                        coordinates.latitude(),
+                        coordinates.longitude()
+                    ));
+                }
+                Err(err) => console::error!(err),
+            };
+        }
+    });
 
     Ok(())
 }
