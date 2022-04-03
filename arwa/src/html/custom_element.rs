@@ -1,6 +1,8 @@
 use std::any::{Any, TypeId};
+use std::mem::MaybeUninit;
 use std::ops::Deref;
-use std::{marker, mem};
+use std::ptr::DynMetadata;
+use std::{marker, mem, ptr};
 
 use js_sys::{Array, Function, Reflect, Uint8Array};
 use wasm_bindgen::closure::Closure;
@@ -11,7 +13,6 @@ use web_sys::HtmlElement;
 use crate::dom::{impl_shadow_host_for_element, DynamicElement, Name, ParentNode};
 use crate::finalization_registry::FinalizationRegistry;
 use crate::html::{impl_html_element_traits, CustomElementName};
-use crate::util::type_id_to_u64;
 use crate::InvalidCast;
 use crate::{dom_exception_wrapper, impl_common_wrapper_traits};
 
@@ -20,24 +21,19 @@ thread_local! {
         let callback = |held_value: JsValue| {
             // Reconstruct the Box<dyn Any> that holds the data, then drop it.
 
-            let pointer_data: Uint8Array = held_value.unchecked_into();
+            let serialized_data: Uint8Array = held_value.unchecked_into();
 
-            // Copy pointer data to WASM linear memory that we can operate on.
-            let mut scratch = [0u8; 24];
-            let size_of_usize = mem::size_of::<usize>();
+            let mut uninit_custom_element_data = MaybeUninit::<CustomElementData>::uninit();
+            let data_ptr = uninit_custom_element_data.as_mut_ptr();
 
-            pointer_data.copy_to(&mut scratch[..size_of_usize * 2 + 8]);
+            deserialize_custom_element_data(&wasm_bindgen::memory(), data_ptr, &serialized_data);
 
-            let (address_bytes, rest) = scratch.split_at(size_of_usize);
-            let (vtable_bytes, _) = rest.split_at(size_of_usize);
-
-            let address_usize = usize::from_ne_bytes(address_bytes.try_into().unwrap_throw());
-            let vtable_usize = usize::from_ne_bytes(vtable_bytes.try_into().unwrap_throw());
-
-            let ptr: *mut dyn Any = unsafe { mem::transmute((address_usize, vtable_usize)) };
+            let custom_element_data = unsafe {
+                uninit_custom_element_data.assume_init()
+            };
 
             unsafe {
-                mem::drop(Box::from_raw(ptr));
+                mem::drop(Box::from_raw(custom_element_data.to_dyn_any_ptr()));
             }
         };
 
@@ -49,6 +45,18 @@ thread_local! {
 
         registry
     };
+}
+
+struct CustomElementData {
+    address: *mut (),
+    metadata: DynMetadata<dyn Any>,
+    type_id: TypeId,
+}
+
+impl CustomElementData {
+    fn to_dyn_any_ptr(&self) -> *mut dyn Any {
+        ptr::from_raw_parts_mut(self.address, self.metadata)
+    }
 }
 
 pub(crate) mod extendable_element_seal {
@@ -95,14 +103,14 @@ where
     E: ExtendableElement,
 {
     fn from_raw_unchecked(raw: RawCustomElement) -> Self {
-        let mut scratch = [0u8; 24];
-        let size_of_usize = mem::size_of::<usize>();
+        let mut uninit_custom_element_data = MaybeUninit::<CustomElementData>::uninit();
+        let data_ptr = uninit_custom_element_data.as_mut_ptr();
 
-        raw.data().copy_to(&mut scratch[0..size_of_usize * 2 + 8]);
+        raw.deserialize_custom_element_data(&wasm_bindgen::memory(), data_ptr);
 
-        let data_ptr_bits =
-            usize::from_ne_bytes(scratch[..size_of_usize].try_into().unwrap_throw());
-        let data = <*const T>::from_bits(data_ptr_bits);
+        let custom_element_data = unsafe { uninit_custom_element_data.assume_init() };
+
+        let data = custom_element_data.address as *const T;
         let extended = E::from_web_sys_html_element_unchecked(raw.into());
 
         CustomElement { data, extended }
@@ -139,36 +147,36 @@ where
     fn try_from(element: DynamicElement) -> Result<Self, Self::Error> {
         let element: web_sys::Element = element.into();
 
-        if let Ok(value) = Reflect::get(element.as_ref(), &"__arwa_custom_element_data".into()) {
-            if !value.is_undefined() {
-                let data: Uint8Array = value.unchecked_into();
-                let target_type_num = type_id_to_u64(TypeId::of::<CustomElement<T, E>>());
+        let is_custom_element = Reflect::has(
+            element.as_ref(),
+            &"__deserialize_custom_element_data".into(),
+        )
+        .unwrap_or(false);
 
-                let mut scratch = [0u8; 24];
-                let size_of_usize = mem::size_of::<usize>();
-                let type_num_start = size_of_usize * 2;
-                let type_num_end = size_of_usize * 2 + 8;
+        if is_custom_element {
+            let raw = element.unchecked_into::<RawCustomElement>();
 
-                data.copy_to(&mut scratch[0..size_of_usize * 2 + 8]);
+            let mut uninit_custom_element_data = MaybeUninit::<CustomElementData>::uninit();
+            let data_ptr = uninit_custom_element_data.as_mut_ptr();
 
-                let type_num = u64::from_ne_bytes(
-                    scratch[type_num_start..type_num_end]
-                        .try_into()
-                        .unwrap_throw(),
-                );
+            raw.deserialize_custom_element_data(&wasm_bindgen::memory(), data_ptr);
 
-                if type_num == target_type_num {
-                    let data_ptr_bits =
-                        usize::from_ne_bytes(scratch[..size_of_usize].try_into().unwrap_throw());
-                    let data = <*const T>::from_bits(data_ptr_bits);
-                    let extended = E::from_web_sys_html_element_unchecked(element.unchecked_into());
+            let custom_element_data = unsafe { uninit_custom_element_data.assume_init() };
+            let target_type_id = TypeId::of::<CustomElement<T, E>>();
 
-                    return Ok(CustomElement { data, extended });
-                }
+            if custom_element_data.type_id == target_type_id {
+                let data = custom_element_data.address as *const T;
+                let extended = E::from_web_sys_html_element_unchecked(raw.unchecked_into());
+
+                Ok(CustomElement { data, extended })
+            } else {
+                Err(InvalidCast::new(DynamicElement::from(
+                    raw.unchecked_into::<web_sys::Element>(),
+                )))
             }
+        } else {
+            Err(InvalidCast::new(DynamicElement::from(element)))
         }
-
-        Err(InvalidCast::new(DynamicElement::from(element)))
     }
 }
 
@@ -256,7 +264,6 @@ impl CustomElementRegistry {
         } = descriptor;
 
         let type_id = TypeId::of::<CustomElement<T, E>>();
-        let type_num = type_id_to_u64(type_id);
 
         let constructor = move |extended: web_sys::HtmlElement| {
             let extended = E::from_web_sys_html_element_unchecked(extended);
@@ -265,25 +272,31 @@ impl CustomElementRegistry {
 
             let data = Box::new(data) as Box<dyn Any>;
             let data_ptr = Box::into_raw(data);
-            let (address_ptr, vtable_ptr): (usize, usize) = unsafe { mem::transmute(data_ptr) };
+            let (address, metadata) = data_ptr.to_raw_parts();
+            let mut custom_element_data = CustomElementData {
+                address,
+                metadata,
+                type_id,
+            };
+            let ptr = &mut custom_element_data as *mut CustomElementData;
 
-            let mut scratch = [0u8; 24];
-            let size_of_usize = mem::size_of::<usize>();
-            let type_num_start = size_of_usize * 2;
-            let type_num_end = size_of_usize * 2 + 8;
+            let serialized = serialize_custom_element_data(
+                &wasm_bindgen::memory(),
+                ptr,
+                mem::size_of::<CustomElementData>() as u32,
+            );
 
-            scratch[0..size_of_usize].copy_from_slice(&address_ptr.to_ne_bytes());
-            scratch[size_of_usize..type_num_start].copy_from_slice(&vtable_ptr.to_ne_bytes());
-            scratch[type_num_start..type_num_end].copy_from_slice(&type_num.to_ne_bytes());
+            // Make sure it doesn't drop early
+            mem::drop(custom_element_data);
 
-            let data = Uint8Array::new_with_length(type_num_end as u32);
+            CUSTOM_ELEMENT_FINALIZATION_REGISTRY.with(|r| {
+                r.register(
+                    extended.as_web_sys_html_element().as_ref(),
+                    serialized.as_ref(),
+                )
+            });
 
-            data.copy_from(&scratch[..type_num_end]);
-
-            CUSTOM_ELEMENT_FINALIZATION_REGISTRY
-                .with(|r| r.register(extended.as_web_sys_html_element().as_ref(), data.as_ref()));
-
-            data
+            serialized
         };
 
         let constructor_boxed =
@@ -389,10 +402,14 @@ dom_exception_wrapper!(RegisterCustomElementError);
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(extends = HtmlElement)]
-    pub type RawCustomElement;
+    type RawCustomElement;
 
-    #[wasm_bindgen(method, getter, js_name = "__arwa_custom_element_data")]
-    pub fn data(this: &RawCustomElement) -> Uint8Array;
+    #[wasm_bindgen(method, js_name = "__deserialize_custom_element_data")]
+    fn deserialize_custom_element_data(
+        this: &RawCustomElement,
+        wasm_memory: &JsValue,
+        ptr: *mut CustomElementData,
+    );
 }
 
 #[wasm_bindgen(module = "/src/html/define_custom_element.js")]
@@ -408,6 +425,20 @@ extern "C" {
         attribute_changed_callback: &Function,
         observed_attributes: &Array,
     ) -> Result<JsValue, JsValue>;
+
+    #[wasm_bindgen]
+    fn serialize_custom_element_data(
+        wasm_memory: &JsValue,
+        pointer: *mut CustomElementData,
+        size: u32,
+    ) -> Uint8Array;
+
+    #[wasm_bindgen]
+    fn deserialize_custom_element_data(
+        wasm_memory: &JsValue,
+        pointer: *mut CustomElementData,
+        serialized_data: &Uint8Array,
+    );
 }
 
 macro_rules! impl_extendable_element {
