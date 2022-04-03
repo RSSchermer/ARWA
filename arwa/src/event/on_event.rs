@@ -158,6 +158,9 @@ where
             mem::size_of::<*mut ()>() as u32,
         );
 
+        // Explicitly drop here so that it doesn't drop early
+        mem::drop(internal);
+
         ON_EVENT_REGISTRY.with(|r| {
             r.register_with_unregister_token(
                 target.as_ref(),

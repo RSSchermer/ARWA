@@ -221,6 +221,9 @@ pub trait EventTarget: event_target_seal::Seal + Sized {
             mem::size_of::<CustomEventData>() as u32,
         );
 
+        // Explicitly drop here so that it doesn't drop early
+        mem::drop(custom_event_data);
+
         let EventOptions {
             cancelable,
             bubbles,
