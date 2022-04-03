@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::mem;
+use std::mem::MaybeUninit;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
@@ -8,6 +9,7 @@ use js_sys::Uint8Array;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
+use crate::event::serialize::{js_deserialize, js_serialize};
 use crate::event::Event;
 use crate::finalization_registry::FinalizationRegistry;
 use crate::weak_ref::WeakRef;
@@ -17,16 +19,13 @@ thread_local! {
         let callback = |held_value: JsValue| {
             let pointer_data: Uint8Array = held_value.unchecked_into();
 
-            let mut scratch = [0u8; mem::size_of::<usize>()];
+            let mut internal = MaybeUninit::<*mut Internal<JsValue>>::uninit();
+            let ptr = internal.as_mut_ptr() as *mut ();
 
-            pointer_data.copy_to(&mut scratch);
+            js_deserialize(&wasm_bindgen::memory(), ptr, &pointer_data);
 
-            let ptr_bits = usize::from_ne_bytes(scratch);
-
-            // This is safe because registration only ever happens after the stream has been pinned,
-            // and it unregisters on drop, so the pointer is always valid for the entire
-            // registration window.
-            let internal = unsafe { &mut *<* mut Internal<JsValue>>::from_bits(ptr_bits) };
+            let internal = unsafe { internal.assume_init() };
+            let internal = unsafe { &mut *internal };
 
             internal.terminated = true;
 
@@ -150,11 +149,14 @@ where
         internal.callback = Some(closure);
         internal.use_capture = use_capture;
 
-        let ptr = internal as *mut Internal<T>;
-        let ptr_bits = ptr.to_bits();
-        let pointer_data = Uint8Array::new_with_length(mem::size_of::<usize>() as u32);
-
-        pointer_data.copy_from(&ptr_bits.to_ne_bytes());
+        // Serialize a pointer to Internal for the finalization registry.
+        let mut internal = internal as *mut Internal<T>;
+        let ptr = &mut internal as *mut *mut Internal<T> as *mut ();
+        let pointer_data = js_serialize(
+            &wasm_bindgen::memory(),
+            ptr,
+            mem::size_of::<*mut ()>() as u32,
+        );
 
         ON_EVENT_REGISTRY.with(|r| {
             r.register_with_unregister_token(

@@ -1,13 +1,26 @@
-use std::any::TypeId;
-use std::marker;
-use std::mem;
+use std::any::{Any, TypeId};
+use std::mem::MaybeUninit;
 use std::ops::Deref;
+use std::ptr::DynMetadata;
+use std::{marker, ptr};
 
 use js_sys::{Object, Uint8Array};
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, JsValue};
 
 use crate::console::{Argument, ToArgument};
+use crate::event::serialize::js_deserialize;
 use crate::event::{event_seal, Event, EventTarget, EventType, EventTypeInternal, TypedEvent};
+
+pub(crate) struct CustomEventData {
+    pub(crate) address: *mut (),
+    pub(crate) metadata: DynMetadata<dyn Any>,
+}
+
+impl CustomEventData {
+    pub(crate) fn to_dyn_any_ptr(&self) -> *mut dyn Any {
+        ptr::from_raw_parts_mut(self.address, self.metadata)
+    }
+}
 
 #[derive(Clone)]
 pub struct CustomEvent<T> {
@@ -85,18 +98,14 @@ where
     fn from_web_sys_event_unchecked(event: web_sys::Event) -> Self {
         let event: web_sys::CustomEvent = event.unchecked_into();
 
-        let pointer_data: Uint8Array = event.detail().unchecked_into();
+        let serialized: Uint8Array = event.detail().unchecked_into();
 
-        // Copy pointer data to WASM linear memory that we can operate on. The pointer data is a
-        // `*mut dyn Any`, but here we know the concrete type `D`, so we only need to address
-        // pointer and ignore the vtable pointer.
-        let mut scratch = [0u8; 16];
-        let size_of_usize = mem::size_of::<usize>();
+        let mut custom_event_data = MaybeUninit::<CustomEventData>::uninit();
+        let ptr = custom_event_data.as_mut_ptr() as *mut ();
 
-        pointer_data.copy_to(&mut scratch[..size_of_usize * 2]);
+        js_deserialize(&wasm_bindgen::memory(), ptr, &serialized);
 
-        let address_bytes = &scratch[..size_of_usize];
-        let address_usize = usize::from_ne_bytes(address_bytes.try_into().unwrap_throw());
+        let custom_event_data = unsafe { custom_event_data.assume_init() };
 
         // Note that this pointer will be valid for the lifetime of this TypedCustomEvent, as it
         // holds a strong reference to the browser owned CustomEvent in `inner`. We only drop the
@@ -104,7 +113,7 @@ where
         // browser owned CustomEvent gets identified for garbage collection, which can only happen
         // after this TypedCustomEvent is dropped and its strong reference to the browser owned
         // CustomEvent is thus released.
-        let data_ptr = <*const D>::from_bits(address_usize);
+        let data_ptr = custom_event_data.address as *const D;
 
         TypedCustomEvent {
             inner: event,

@@ -2,6 +2,7 @@ use std::any::{Any, TypeId};
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::mem;
+use std::mem::MaybeUninit;
 use std::rc::Rc;
 
 use js_sys::{Promise, Uint8Array};
@@ -10,7 +11,9 @@ use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
 use crate::event::event::{DynamicEvent, TypedEvent};
 use crate::event::on_event::OnEvent;
+use crate::event::serialize::{js_deserialize, js_serialize};
 use crate::event::type_id_event_name::type_id_to_event_name;
+use crate::event::CustomEventData;
 use crate::finalization_registry::FinalizationRegistry;
 use crate::impl_common_wrapper_traits;
 
@@ -19,24 +22,17 @@ thread_local! {
         let callback = |held_value: JsValue| {
             // Reconstruct the Box<dyn Any> that holds the data, then drop it.
 
-            let pointer_data: Uint8Array = held_value.unchecked_into();
+            let serialized: Uint8Array = held_value.unchecked_into();
 
-            // Copy pointer data to WASM linear memory that we can operate on.
-            let mut scratch = [0u8; 16];
-            let size_of_usize = mem::size_of::<usize>();
+            let mut custom_event_data = MaybeUninit::<CustomEventData>::uninit();
+            let ptr = custom_event_data.as_mut_ptr() as *mut ();
 
-            pointer_data.copy_to(&mut scratch[..size_of_usize * 2]);
+            js_deserialize(&wasm_bindgen::memory(), ptr, &serialized);
 
-            let (address_bytes, rest) = scratch.split_at(size_of_usize);
-            let (vtable_bytes, _) = rest.split_at(size_of_usize);
-
-            let address_usize = usize::from_ne_bytes(address_bytes.try_into().unwrap_throw());
-            let vtable_usize = usize::from_ne_bytes(vtable_bytes.try_into().unwrap_throw());
-
-            let ptr: *mut dyn Any = unsafe { mem::transmute((address_usize, vtable_usize)) };
+            let custom_event_data = unsafe { custom_event_data.assume_init() };
 
             unsafe {
-                mem::drop(Box::from_raw(ptr));
+                mem::drop(Box::from_raw(custom_event_data.to_dyn_any_ptr()));
             }
         };
 
@@ -215,29 +211,15 @@ pub trait EventTarget: event_target_seal::Seal + Sized {
         let event_type = type_id_to_event_name(type_id);
         let event_data = Box::new(event_data) as Box<dyn Any>;
         let data_ptr = Box::into_raw(event_data);
+        let (address, metadata) = data_ptr.to_raw_parts();
 
-        // I cannot really find a clean way to achieve this. There's the unstable
-        // `<*mut dyn Any>::to_raw_parts()`, which gets us to `(*mut (), DynMetadata<dyn Any>)`. The
-        // address pointer can then be turned to bits with `<*mut ()>::to_bits`, but there is no
-        // such machinery for `DynMetadata`. `DynMetadata` is a wraps the pointer to the vtable (of
-        // size `usize`). For now I'll resort to `mem::transmute`, but I'm hoping there is/will be a
-        // better way that does not rely on undefined behaviour.
-        // Im not sure if the memory layout for fat trait object pointers is formally defined, so
-        // this may be Undefined Behavior. This is the current layout however, and it seems to me
-        // exceedingly unlikely that this will ever change. If/when there is some properly Defined
-        // Behavior that accomplishes this sort of "fat trait object pointer" serialization, that
-        // would of course be preferable.
-        let (address_ptr, vtable_ptr): (usize, usize) = unsafe { mem::transmute(data_ptr) };
-
-        let mut scratch = [0u8; 16];
-        let size_of_usize = mem::size_of::<usize>();
-
-        scratch[0..size_of_usize].copy_from_slice(&address_ptr.to_ne_bytes());
-        scratch[size_of_usize..size_of_usize * 2].copy_from_slice(&vtable_ptr.to_ne_bytes());
-
-        let event_data = Uint8Array::new_with_length(size_of_usize as u32 * 2);
-
-        event_data.copy_from(&scratch[..size_of_usize * 2]);
+        let mut custom_event_data = CustomEventData { address, metadata };
+        let ptr = &mut custom_event_data as *mut CustomEventData as *mut ();
+        let event_data = js_serialize(
+            &wasm_bindgen::memory(),
+            ptr,
+            mem::size_of::<CustomEventData>() as u32,
+        );
 
         let EventOptions {
             cancelable,
@@ -250,30 +232,6 @@ pub trait EventTarget: event_target_seal::Seal + Sized {
         init.cancelable(cancelable);
         init.bubbles(bubbles);
         init.composed(composed);
-
-        // Note that storing the event_data in `detail` is not completely sound the way this is
-        // currently implemented. One might intercept a custom event generated like this, modify
-        // the contents of the Uint8Array in the `detail` property, and then subsequent use of the
-        // custom element that tries to deref the data pointer or running the finalizer will cause
-        // UB. This could be made sound though. `CustomEvent.detail` is specced to be a read-only
-        // property, which means the browser will not allow it to be modified (in non-strict mode
-        // setting it is a no-op, in strict mode setting it is an error). The `Uint8Array` we store
-        // in the property is however modifiable. Unfortunately `Object.freeze` is currently not
-        // allowed on typed buffers (because there is no distinction between buffers that actually
-        // own their data, and buffers that view data that is in some way shared). Rather than store
-        // the pointer data in a `Uint8Array`, we could format it into a javascript string (which is
-        // immutable) and parse it back, or we could store in a normal javascript `Array`, which can
-        // be frozen and read it back from there. I believe a setup like that would be sound, but it
-        // comes with more overhead. I prefer the unsound faster way for now, especially since,
-        // though it can be broken, I don't think one can trigger this behavior accidentally; you
-        // would have to be deliberately breaking it, in which case you would know what you were
-        // doing.
-        //
-        // Ideally, there'd be a way to create immutable typed buffers, I suspect that would be a
-        // more generally useful construct for javascript-WASM FFI: "Hey browser-host, I have a blob
-        // of bytes I'd like you to store on your garbage collected heap for a while. Don't worry
-        // about what it means, just let me read it back when I ask for it later. In the meanwhile
-        // don't let anyone touch it please!"
         init.detail(event_data.as_ref());
 
         let event =

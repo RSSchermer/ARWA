@@ -1,10 +1,4 @@
-#![feature(
-    const_type_id,
-    get_mut_unchecked,
-    iter_intersperse,
-    ptr_metadata,
-    ptr_to_from_bits
-)]
+#![feature(const_type_id, get_mut_unchecked, iter_intersperse, ptr_metadata)]
 
 pub mod collection;
 pub mod connection;

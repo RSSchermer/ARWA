@@ -10,4 +10,5 @@ pub use self::event_target::*;
 mod on_event;
 pub use self::on_event::*;
 
+mod serialize;
 mod type_id_event_name;
