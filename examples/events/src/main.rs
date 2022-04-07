@@ -5,10 +5,9 @@ use arwa::ui::UiEventTarget;
 use arwa::window::window;
 use arwa::{console, spawn_local};
 use futures::StreamExt;
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::{JsError, JsValue};
 
-#[wasm_bindgen(start)]
-pub fn start() -> Result<(), JsValue> {
+fn main() -> Result<(), JsValue> {
     let document = window().document();
 
     // Obtain a reference to the HtmlButtonElement we want to listen to.

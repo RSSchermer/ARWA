@@ -6,9 +6,5 @@ edition = "2021"
 license = "MIT"
 publish = false
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies]
 arwa = { version = "0.1.0", path = "../../arwa" }
-wasm-bindgen = "0.2.79"

@@ -1,11 +1,11 @@
-# Events Example
+# Custom Element Example
 
-This example contains a minimal Rudo program that responds to a stream of click events. 
+This example contains a minimal ARWA program that demonstrates a simple custom element.
 
-You can build the example locally with:
+Run this example locally with [Trunk](https://trunkrs.dev/):
 
 ```
-$ npm run serve
+$ trunk serve
 ```
 
 Then visit http://localhost:8080 in a browser to see the result.

@@ -8,7 +8,7 @@ use arwa::ui::UiEventTarget;
 use arwa::window::{window, Window};
 use futures::future::{AbortHandle, Abortable, Aborted};
 use futures::{FutureExt, StreamExt};
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::{JsError, JsValue};
 
 // We want to loop a call to the same function on each animation frame, while tracking some state.
 // Self referential functions with state can be a bit hairy in Rust. We'll use the unstable nightly
@@ -54,8 +54,7 @@ impl FnOnce<(Result<f64, Aborted>,)> for FrameLoop {
     }
 }
 
-#[wasm_bindgen(start)]
-pub fn start() -> Result<(), JsValue> {
+fn main() -> Result<(), JsValue> {
     let window = window();
     let document = window.document();
 

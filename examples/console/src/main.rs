@@ -1,9 +1,7 @@
 use arwa::console;
 use arwa::window::window;
-use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen(start)]
-pub fn start() {
+fn main() {
     console::log!("Simple message");
 
     // Message with a browser owned complex object

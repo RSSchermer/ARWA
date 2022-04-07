@@ -8,12 +8,11 @@ use arwa::spawn_local;
 use arwa::ui::UiEventTarget;
 use arwa::window::window;
 use futures::StreamExt;
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::{JsError, JsValue};
 
 use crate::my_element::{MyElement, MyElementExt, MY_ELEMENT};
 
-#[wasm_bindgen(start)]
-pub fn start() -> Result<(), JsValue> {
+fn main() -> Result<(), JsValue> {
     let window = window();
 
     window
