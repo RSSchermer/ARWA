@@ -8,7 +8,7 @@ use js_sys::{Object, Uint8Array};
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::console::{Argument, ToArgument};
-use crate::event::serialize::js_deserialize;
+use crate::js_serialize::js_deserialize;
 use crate::event::{event_seal, Event, EventTarget, EventType, EventTypeInternal, TypedEvent};
 
 pub(crate) struct CustomEventData {

@@ -9,7 +9,7 @@ use js_sys::Uint8Array;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
-use crate::event::serialize::{js_deserialize, js_serialize};
+use crate::js_serialize::{js_deserialize, js_serialize};
 use crate::event::Event;
 use crate::finalization_registry::FinalizationRegistry;
 use crate::weak_ref::WeakRef;

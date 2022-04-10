@@ -11,7 +11,7 @@ use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
 use crate::event::event::{DynamicEvent, TypedEvent};
 use crate::event::on_event::OnEvent;
-use crate::event::serialize::{js_deserialize, js_serialize};
+use crate::js_serialize::{js_deserialize, js_serialize};
 use crate::event::type_id_event_name::type_id_to_event_name;
 use crate::event::CustomEventData;
 use crate::finalization_registry::FinalizationRegistry;

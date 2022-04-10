@@ -10,6 +10,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::{throw_val, JsCast};
 use web_sys::HtmlElement;
 
+use crate::js_serialize::{js_serialize, js_deserialize};
 use crate::dom::{impl_shadow_host_for_element, DynamicElement, Name, ParentNode};
 use crate::finalization_registry::FinalizationRegistry;
 use crate::html::{impl_html_element_traits, CustomElementName};
@@ -24,9 +25,9 @@ thread_local! {
             let serialized_data: Uint8Array = held_value.unchecked_into();
 
             let mut uninit_custom_element_data = MaybeUninit::<CustomElementData>::uninit();
-            let data_ptr = uninit_custom_element_data.as_mut_ptr();
+            let data_ptr = uninit_custom_element_data.as_mut_ptr() as *mut ();
 
-            deserialize_custom_element_data(&wasm_bindgen::memory(), data_ptr, &serialized_data);
+            js_deserialize(&wasm_bindgen::memory(), data_ptr, &serialized_data);
 
             let custom_element_data = unsafe {
                 uninit_custom_element_data.assume_init()
@@ -278,9 +279,9 @@ impl CustomElementRegistry {
                 metadata,
                 type_id,
             };
-            let ptr = &mut custom_element_data as *mut CustomElementData;
+            let ptr = &mut custom_element_data as *mut CustomElementData as *mut ();
 
-            let serialized = serialize_custom_element_data(
+            let serialized = js_serialize(
                 &wasm_bindgen::memory(),
                 ptr,
                 mem::size_of::<CustomElementData>() as u32,
@@ -412,9 +413,9 @@ extern "C" {
     );
 }
 
-#[wasm_bindgen(module = "/src/html/define_custom_element.js")]
+#[wasm_bindgen(module = "/src/js_support.js")]
 extern "C" {
-    #[wasm_bindgen(catch)]
+    #[wasm_bindgen(catch, js_name = __arwa_define_custom_element)]
     fn define_custom_element(
         name: &str,
         extended_name: Option<&str>,
@@ -425,20 +426,6 @@ extern "C" {
         attribute_changed_callback: &Function,
         observed_attributes: &Array,
     ) -> Result<JsValue, JsValue>;
-
-    #[wasm_bindgen]
-    fn serialize_custom_element_data(
-        wasm_memory: &JsValue,
-        pointer: *mut CustomElementData,
-        size: u32,
-    ) -> Uint8Array;
-
-    #[wasm_bindgen]
-    fn deserialize_custom_element_data(
-        wasm_memory: &JsValue,
-        pointer: *mut CustomElementData,
-        serialized_data: &Uint8Array,
-    );
 }
 
 macro_rules! impl_extendable_element {
