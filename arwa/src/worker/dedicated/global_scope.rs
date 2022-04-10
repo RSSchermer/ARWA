@@ -1,8 +1,17 @@
+use wasm_bindgen::JsCast;
+
 use crate::fetch::{cache_context_seal, CacheContext};
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
 use crate::worker::impl_worker_global_scope_traits;
+
+pub fn current() -> DedicatedWorkerGlobalScope {
+    js_sys::global()
+        .dyn_into::<web_sys::DedicatedWorkerGlobalScope>()
+        .expect("Current context is not a dedicated worker context.")
+        .into()
+}
 
 #[derive(Clone)]
 pub struct DedicatedWorkerGlobalScope {

@@ -1,4 +1,10 @@
-#![feature(const_type_id, get_mut_unchecked, iter_intersperse, ptr_metadata)]
+#![feature(
+    box_into_inner,
+    const_type_id,
+    get_mut_unchecked,
+    iter_intersperse,
+    ptr_metadata
+)]
 
 pub use wasm_bindgen_futures::spawn_local;
 

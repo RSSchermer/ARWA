@@ -10,4 +10,5 @@ members = [
     "examples/events",
     "examples/geolocation",
     "examples/media_element",
+    "examples/spawn_worker",
 ]
