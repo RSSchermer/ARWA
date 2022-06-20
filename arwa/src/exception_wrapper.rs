@@ -1,5 +1,6 @@
 macro_rules! dom_exception_wrapper {
-    ($wrapper_type:ident) => {
+    ($(#[$($doc:tt)*])* $wrapper_type:ident) => {
+        $(#[$($doc)*])*
         #[derive(Clone)]
         pub struct $wrapper_type {
             inner: web_sys::DomException,

@@ -11,11 +11,11 @@ use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 
 use crate::event::event::{DynamicEvent, TypedEvent};
 use crate::event::on_event::OnEvent;
-use crate::js_serialize::{js_deserialize, js_serialize};
 use crate::event::type_id_event_name::type_id_to_event_name;
 use crate::event::CustomEventData;
 use crate::finalization_registry::FinalizationRegistry;
 use crate::impl_common_wrapper_traits;
+use crate::js_serialize::{js_deserialize, js_serialize};
 
 thread_local! {
     static TYPED_CUSTOM_EVENT_REGISTRY: FinalizationRegistry = {
@@ -276,6 +276,14 @@ macro_rules! impl_event_target_traits {
         }
 
         impl $crate::event::EventTarget for $tpe {}
+
+        impl From<$tpe> for $crate::event::DynamicEventTarget {
+            fn from(node: $tpe) -> $crate::event::DynamicEventTarget {
+                use wasm_bindgen::JsCast;
+
+                $crate::event::DynamicEventTarget::from(node.inner.unchecked_into::<web_sys::EventTarget>())
+            }
+        }
 
         $crate::impl_common_wrapper_traits!($tpe);
     };

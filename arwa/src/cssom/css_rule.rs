@@ -9,7 +9,7 @@ pub(crate) mod css_rule_seal {
 }
 
 pub trait CssRule: css_rule_seal::Seal {
-    fn css_text(&self) -> String {
+    fn serialize(&self) -> String {
         self.as_web_sys_css_rule().css_text()
     }
 

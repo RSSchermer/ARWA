@@ -1,4 +1,4 @@
-use crate::dom::{impl_try_from_element, GenericDocumentFragment};
+use crate::dom::{impl_try_from_element, DocumentFragment};
 use crate::html::{impl_extendable_element, impl_html_element_traits, impl_known_element};
 
 #[derive(Clone)]
@@ -7,7 +7,7 @@ pub struct HtmlTemplateElement {
 }
 
 impl HtmlTemplateElement {
-    pub fn content(&self) -> GenericDocumentFragment {
+    pub fn content(&self) -> DocumentFragment {
         self.inner.content().into()
     }
 }

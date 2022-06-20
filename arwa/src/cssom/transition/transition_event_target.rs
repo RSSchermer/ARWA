@@ -10,19 +10,28 @@ pub(crate) mod transition_event_target_seal {
     }
 }
 
+/// Implemented for types that emit transition events.
 pub trait TransitionEventTarget: transition_event_target_seal::Seal + Sized {
+    /// Returns an async iterator over [TransitionCancelEvent]s emitted when a transition is
+    /// cancelled.
     fn on_transition_cancel(&self) -> OnTransitionCancel<Self> {
         OnTransitionCancel::new(self.as_web_sys_event_target())
     }
 
+    /// Returns an async iterator over [TransitionEndEvent]s emitted when a transition has
+    /// completed.
     fn on_transition_end(&self) -> OnTransitionEnd<Self> {
         OnTransitionEnd::new(self.as_web_sys_event_target())
     }
 
-    fn on_transition_iteration(&self) -> OnTransitionRun<Self> {
+    /// Returns an async iterator over [TransitionIterationEvent]s emitted when a transition
+    /// is first created.
+    fn on_transition_run(&self) -> OnTransitionRun<Self> {
         OnTransitionRun::new(self.as_web_sys_event_target())
     }
 
+    /// Returns an async iterator over [TransitionStartEvent]s emitted when a transition animation
+    /// begins.
     fn on_transition_start(&self) -> OnTransitionStart<Self> {
         OnTransitionStart::new(self.as_web_sys_event_target())
     }

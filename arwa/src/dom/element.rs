@@ -1,6 +1,11 @@
 use std::fmt;
+use std::future::Future;
+use std::task::{Context, Poll};
+use std::pin::Pin;
 
+use pin_project::pin_project;
 use delegate::delegate;
+use wasm_bindgen_futures::JsFuture;
 use js_sys::JsString;
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
@@ -9,9 +14,9 @@ use crate::cssom::{
     impl_animation_event_target_for_element, impl_transition_event_target_for_element,
 };
 use crate::dom::{
-    impl_child_node_for_element, impl_node_traits, impl_owned_node, impl_parent_node_for_element,
-    impl_try_from_node, range_bound_container_seal, Attribute, Name, NonColonName,
-    RangeBoundContainer, Selector, Token,
+    impl_child_node, impl_node_traits,impl_owned_node, impl_parent_node, impl_try_from_child_node,
+    impl_try_from_node, impl_try_from_parent_node, range_bound_container_seal, Attribute, Name,
+    NonColonName, RangeBoundContainer, Selector, Token,
 };
 use crate::dom_exception_wrapper;
 use crate::impl_common_wrapper_traits;
@@ -76,6 +81,19 @@ pub trait Element: element_seal::Seal {
 
     fn request_pointer_lock(&self) {
         self.as_web_sys_element().request_pointer_lock();
+    }
+
+    fn try_request_pointer_lock(&self) -> Result<(), RequestPointerLockError> {
+        todo!("web-sys does not currently return a Result")
+    }
+
+    fn request_fullscreen(&self) -> RequestFullscreen {
+        todo!("web-sys incorrectly does not return a Promise")
+        // let promise = self.as_web_sys_element().request_fullscreen();
+        //
+        // RequestFullscreen {
+        //     inner: promise.into()
+        // }
     }
 
     fn bounding_client_rect(&self) -> ClientRect {
@@ -179,6 +197,23 @@ pub trait Element: element_seal::Seal {
 
     fn deserialize_outer(&self, serialized: &str) {
         self.as_web_sys_element().set_outer_html(serialized);
+    }
+}
+
+dom_exception_wrapper!(RequestPointerLockError);
+dom_exception_wrapper!(RequestFullscreenError);
+
+#[pin_project]
+pub struct RequestFullscreen {
+    #[pin]
+    inner: JsFuture
+}
+
+impl Future for RequestFullscreen {
+    type Output = Result<(), RequestFullscreenError>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.project().inner.poll(cx).map_ok(|_| ()).map_err(|err| RequestFullscreenError::new(err.unchecked_into()))
     }
 }
 
@@ -476,8 +511,10 @@ impl RangeBoundContainer for DynamicElement {}
 
 impl_node_traits!(DynamicElement);
 impl_try_from_node!(DynamicElement, Element);
-impl_parent_node_for_element!(DynamicElement);
-impl_child_node_for_element!(DynamicElement);
+impl_parent_node!(DynamicElement);
+impl_try_from_parent_node!(DynamicElement, Element);
+impl_child_node!(DynamicElement);
+impl_try_from_child_node!(DynamicElement, Element);
 impl_owned_node!(DynamicElement);
 impl_scrollable_for_element!(DynamicElement);
 impl_scroll_into_view_for_element!(DynamicElement);
@@ -514,9 +551,33 @@ macro_rules! impl_element_traits {
 
         impl $crate::dom::RangeBoundContainer for $tpe {}
 
+        impl From<$tpe> for $crate::dom::DynamicElement {
+            fn from(element: $tpe) -> $crate::dom::DynamicElement {
+                use wasm_bindgen::JsCast;
+
+                $crate::dom::DynamicElement::from(element.inner.unchecked_into::<web_sys::Element>())
+            }
+        }
+
+        impl From<$tpe> for $crate::dom::DynamicChildNode {
+            fn from(element: $tpe) -> $crate::dom::DynamicChildNode {
+                use wasm_bindgen::JsCast;
+
+                $crate::dom::DynamicChildNode::new(element.inner.unchecked_into())
+            }
+        }
+
+        impl From<$tpe> for $crate::dom::DynamicParentNode {
+            fn from(element: $tpe) -> $crate::dom::DynamicParentNode {
+                use wasm_bindgen::JsCast;
+
+                $crate::dom::DynamicParentNode::new(element.inner.unchecked_into())
+            }
+        }
+
         $crate::dom::impl_node_traits!($tpe);
-        $crate::dom::impl_parent_node_for_element!($tpe);
-        $crate::dom::impl_child_node_for_element!($tpe);
+        $crate::dom::impl_parent_node!($tpe);
+        $crate::dom::impl_child_node!($tpe);
         $crate::dom::impl_owned_node!($tpe);
         $crate::dom::impl_element_sibling_for_element!($tpe);
         $crate::scroll::impl_scrollable_for_element!($tpe);
@@ -547,6 +608,8 @@ macro_rules! impl_try_from_element {
         }
 
         $crate::dom::impl_try_from_node!($tpe, $web_sys_tpe);
+        $crate::dom::impl_try_from_child_node!($tpe, $web_sys_tpe);
+        $crate::dom::impl_try_from_parent_node!($tpe, $web_sys_tpe);
     };
     ($tpe:ident) => {
         $crate::dom::impl_try_from_element!($tpe, $tpe);
@@ -631,3 +694,4 @@ macro_rules! impl_try_from_element_with_tag_check {
 }
 
 pub(crate) use impl_try_from_element_with_tag_check;
+

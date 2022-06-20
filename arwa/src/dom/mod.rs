@@ -1,3 +1,54 @@
+//! The Document Object Model.
+//!
+//! The Document Object Model (DOM)is a collection of interfaces that permit access to and
+//! manipulation of the structure of and information state of documents. Documents consist of
+//! [Node]s, where certain node types can act as [ParentNode]s that may have an ordered collection
+//! of associated [ChildNode]s, thus creating a hierarchical tree structure. A [Document] node acts
+//! as a top level container of a DOM document. It may have a single [Element] child node that acts
+//! as the "root" node of the document tree. The DOM API allows you to traverse and change the
+//! structure of a document and its tree.
+//!
+//! Document standards such as [html] and [svg] build on top of the DOM, defining their own sets
+//! of node types and associated behaviors.
+//!
+//! # The Window Associated Document
+//!
+//! The window associated document is the document the browser engine will attempt to present to the
+//! user. A reference to the document associated with a browser [Window] can be obtained by calling
+//! the [Window::document] method:
+//!
+//! ```
+//! use arwa::window::window;
+//! use arwa::dom::DynamicDocument;
+//!
+//! let window = window();
+//! let document: DynamicDocument = window.document();
+//! ```
+//!
+//! This returns a [DynamicDocument] value that represents a document reference of which the
+//! specific document type is not statically known. You may use [TryFrom] / [TryInto] conversion
+//! to convert a [DynamicDocument] into its specific document type:
+//!
+//! ```
+//! # use arwa::window::window;
+//! # use arwa::dom::DynamicDocument;
+//! # let window = window();
+//! # let document: DynamicDocument = window.document();
+//! use arwa::html::HtmlDocument;
+//!
+//! let html_document: HtmlDocument = document.try_into().expect("not an HTML document");
+//! ```
+//!
+//! Note that the window associated document can only change when the window is navigated to a new
+//! URL.
+//!
+//! See also [Window::document].
+//!
+//! # Invalid DOM hierarchies
+//!
+//! Certain manipulations of the DOM tree can result in invalid DOM hierarchies. See
+//! [HierarchyRequestError] for details on how an operation might produce an invalid hierarchy.
+
 mod attribute;
 pub use self::attribute::*;
 

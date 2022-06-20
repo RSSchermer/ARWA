@@ -13,7 +13,7 @@ fn main() -> Result<(), JsValue> {
         .ok_or(JsError::new("Geolocation unavailable"))?;
 
     let position_container = document
-        .query_selector_first(&selector!("#position_container"))
+        .query_selector(&selector!("#position_container"))
         .ok_or(JsError::new("No element with id `position_container`"))?;
 
     let mut positions = geolocation.watch_position(Default::default());

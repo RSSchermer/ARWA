@@ -4,14 +4,22 @@ mod animation_event_seal {
     pub trait Seal {}
 }
 
+/// Implemented for animation-related event types.
 pub trait AnimationEvent: animation_event_seal::Seal {
+    /// Returns the [CSS animation-name](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-name)
+    /// of the CSS animation that generated the animation that caused this event to be emitted.
     fn animation_name(&self) -> String;
 
+    /// The amount of time in milliseconds for which this animation has been running at the time
+    /// this event was emitted.
+    ///
+    /// Excludes the amount of time for which the animation was paused (if any).
     fn elapsed_time(&self) -> f32;
 }
 
 macro_rules! animation_event {
-    ($event:ident, $name:literal) => {
+    ($(#[$($doc:tt)*])* $event:ident, $name:literal) => {
+        $(#[$($doc)*])*
         #[derive(Clone)]
         pub struct $event<T> {
             inner: web_sys::AnimationEvent,
@@ -40,7 +48,19 @@ macro_rules! animation_event {
     };
 }
 
-animation_event!(AnimationStartEvent, "animationstart");
-animation_event!(AnimationEndEvent, "animationend");
-animation_event!(AnimationIterationEvent, "animationiteration");
-animation_event!(AnimationCancelEvent, "animationcancel");
+animation_event! {
+    /// Event emitted on [AnimationEventTarget] types when an animation begins.
+    AnimationStartEvent, "animationstart"
+}
+animation_event!{
+    /// Event emitted on [AnimationEventTarget] types when an animation completes.
+    AnimationEndEvent, "animationend"
+}
+animation_event!{
+    /// Event emitted on [AnimationEventTarget] types when an animation iteration completes.
+    AnimationIterationEvent, "animationiteration"
+}
+animation_event!{
+    /// Event emitted on [AnimationEventTarget] types when an animation is cancelled.
+    AnimationCancelEvent, "animationcancel"
+}

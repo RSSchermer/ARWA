@@ -38,11 +38,11 @@ pub mod window;
 pub mod worker;
 
 mod exception_wrapper;
+mod finalization_registry;
 mod impl_common_wrapper_traits;
 mod invalid_cast;
+mod js_serialize;
 mod transferable;
-mod finalization_registry;
 mod unchecked_cast_array;
 mod util;
 mod weak_ref;
-mod js_serialize;

@@ -11,7 +11,8 @@ pub trait TransitionEvent: transition_event_seal::Seal {
 }
 
 macro_rules! transition_event {
-    ($event:ident, $name:literal) => {
+    ($(#[$($doc:tt)*])* $event:ident, $name:literal) => {
+        $(#[$($doc)*])*
         #[derive(Clone)]
         pub struct $event<T> {
             inner: web_sys::TransitionEvent,
@@ -40,7 +41,27 @@ macro_rules! transition_event {
     };
 }
 
-transition_event!(TransitionStartEvent, "transitionstart");
-transition_event!(TransitionEndEvent, "transitionend");
-transition_event!(TransitionRunEvent, "transitionrun");
-transition_event!(TransitionCancelEvent, "transitioncancel");
+transition_event!{
+    /// Event emitted on [TransitionEventTarget] types when a transition begins.
+    ///
+    /// Differs from a [TransitionRunEvent] in that a [TransitionStartEvent] is emitted after
+    /// the initial delay (if any), whereas a [TransitionRunEvent] is emitted before any such
+    /// initial delay.
+    TransitionStartEvent, "transitionstart"
+}
+transition_event!{
+    /// Event emitted on [TransitionEventTarget] types when a transition completes.
+    TransitionEndEvent, "transitionend"
+}
+transition_event!{
+    /// Event emitted on [TransitionEventTarget] types when a transition is first created.
+    ///
+    /// Differs from a [TransitionStartEvent] in that a [TransitionStartEvent] is emitted after
+    /// the initial delay (if any), whereas a [TransitionRunEvent] is emitted before any such
+    /// initial delay.
+    TransitionRunEvent, "transitionrun"
+}
+transition_event!{
+    /// Event emitted on [TransitionEventTarget] types when a transition is cancelled.
+    TransitionCancelEvent, "transitioncancel"
+}

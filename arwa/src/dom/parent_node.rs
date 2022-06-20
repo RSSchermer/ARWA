@@ -1,32 +1,53 @@
+use wasm_bindgen::prelude::*;
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::{
-    ChildNode, DocumentFragment, DynamicElement, DynamicNode, HierarchyRequestError, Selector,
+    node_seal, ChildNode, Fragment, DynamicChildNode, DynamicElement, DynamicNode,
+    HierarchyRequestError, Node, Selector,
 };
+use crate::event::impl_event_target_traits;
 
 pub(crate) mod parent_node_seal {
+    use crate::dom::JsParentNode;
+
     pub trait Seal {
         #[doc(hidden)]
         fn from_web_sys_node_unchecked(node: web_sys::Node) -> Self;
 
         #[doc(hidden)]
-        fn as_web_sys_node(&self) -> &web_sys::Node;
+        fn as_js_parent_node(&self) -> &JsParentNode;
     }
 }
 
+/// Implemented for node types that can have an ordered list of child nodes.
 pub trait ParentNode: parent_node_seal::Seal + Sized {
+    /// Returns `true` if the given `node` is a descendant of this parent node, `false` otherwise.
+    ///
+    /// Note that the `node` does not have to be a direct child of this parent node for this
+    /// function to return `true`, it may also be a child-of-a-child, a child-of-a-child-of-a-child,
+    /// etc.
     fn contains<T>(&self, node: &T) -> bool
     where
         T: ChildNode,
     {
-        self.as_web_sys_node()
-            .contains(Some(node.as_web_sys_node()))
+        self.as_js_parent_node()
+            .contains(Some(node.as_js_child_node()))
     }
 
-    fn query_selector_first(&self, selector: &Selector) -> Option<DynamicElement>;
+    fn query_selector(&self, selector: &Selector) -> Option<DynamicElement> {
+        self.as_js_parent_node()
+            .query_selector(selector.as_ref())
+            .map(|e| e.into())
+    }
 
-    fn query_selector_all(&self, selector: &Selector) -> QuerySelectorAll;
+    fn query_selector_all(&self, selector: &Selector) -> QuerySelectorAll {
+        let node_list = self
+            .as_js_parent_node()
+            .query_selector_all(selector.as_ref());
+
+        QuerySelectorAll::new(node_list)
+    }
 
     /// Creates a new node that is a deep copy of the `source` node.
     ///
@@ -35,7 +56,7 @@ pub trait ParentNode: parent_node_seal::Seal + Sized {
     /// See also [duplicate].
     fn duplicate_deep(source: &Self) -> Self {
         let cloned_node = source
-            .as_web_sys_node()
+            .as_js_parent_node()
             .clone_node_with_deep(true)
             .unwrap_throw();
 
@@ -43,28 +64,42 @@ pub trait ParentNode: parent_node_seal::Seal + Sized {
     }
 
     fn normalize(&self) {
-        self.as_web_sys_node().normalize()
+        self.as_js_parent_node().normalize()
     }
 
     /// Returns a live collection of the all nodes that are direct children of this parent node.
     ///
     /// See also [child_elements] to retrieve only the subset of nodes that implement [Element].
     fn child_nodes(&self) -> ChildNodes {
-        ChildNodes::new(self.as_web_sys_node().child_nodes())
+        ChildNodes::new(self.as_js_parent_node().child_nodes())
     }
 
     /// Returns a live collection of only the [Element nodes that are direct children of this parent node.
     ///
     /// See also [child_elements] to retrieve only the subset of nodes that implement [Element].
-    fn child_elements(&self) -> ChildElements;
+    fn child_elements(&self) -> ChildElements {
+        let children = self.as_js_parent_node().children();
+
+        ChildElements::new(children)
+    }
 
     fn prepend_child<T>(&self, node: &T)
     where
-        T: ChildNode;
+        T: ChildNode,
+    {
+        self.as_js_parent_node()
+            .prepend(node.as_js_child_node())
+            .unwrap_throw()
+    }
 
     fn try_prepend_child<T>(&self, node: &T) -> Result<(), HierarchyRequestError>
     where
-        T: ChildNode;
+        T: ChildNode,
+    {
+        self.as_js_parent_node()
+            .prepend(node.as_js_child_node())
+            .map_err(|err| HierarchyRequestError::new(err.unchecked_into()))
+    }
 
     /// Prepends the document structure in the given `document_fragment` before the first child
     /// element in this node.
@@ -72,13 +107,22 @@ pub trait ParentNode: parent_node_seal::Seal + Sized {
     /// This moves the nodes from the document fragment, leaving the document fragment empty.
     fn prepend_fragment<T>(&self, document_fragment: &T)
     where
-        T: DocumentFragment;
+        T: Fragment,
+    {
+        // Note: this should never cause a hierarchy request error.
+        self.as_js_parent_node()
+            .prepend(document_fragment.as_web_sys_document_fragment().as_ref())
+            .unwrap_throw()
+    }
 
     fn append_child<T>(&self, node: &T)
     where
         T: ChildNode,
     {
-        if let Err(err) = self.as_web_sys_node().append_child(node.as_web_sys_node()) {
+        if let Err(err) = self
+            .as_js_parent_node()
+            .append_child(node.as_js_child_node())
+        {
             throw_val(err)
         }
     }
@@ -87,8 +131,8 @@ pub trait ParentNode: parent_node_seal::Seal + Sized {
     where
         T: ChildNode,
     {
-        self.as_web_sys_node()
-            .append_child(node.as_web_sys_node())
+        self.as_js_parent_node()
+            .append_child(node.as_js_child_node())
             .map(|_| ())
             .map_err(|err| HierarchyRequestError::new(err.unchecked_into()))
     }
@@ -99,10 +143,10 @@ pub trait ParentNode: parent_node_seal::Seal + Sized {
     /// This moves the nodes from the document fragment, leaving the document fragment empty.
     fn append_fragment<T>(&self, document_fragment: &T)
     where
-        T: DocumentFragment,
+        T: Fragment,
     {
         // Note: this should never cause a hierarchy request error.
-        self.as_web_sys_node()
+        self.as_js_parent_node()
             .append_child(document_fragment.as_web_sys_document_fragment().as_ref())
             .unwrap_throw();
     }
@@ -128,10 +172,10 @@ impl Collection for ChildNodes {
 }
 
 impl Sequence for ChildNodes {
-    type Item = DynamicNode;
+    type Item = DynamicChildNode;
 
     fn get(&self, index: u32) -> Option<Self::Item> {
-        self.inner.get(index).map(|n| n.into())
+        self.inner.get(index).map(|n| DynamicChildNode::new(n))
     }
 
     fn to_host_array(&self) -> js_sys::Array {
@@ -200,191 +244,129 @@ impl Sequence for QuerySelectorAll {
     }
 }
 
-macro_rules! impl_parent_node_for_element {
-    ($element:ident) => {
-        impl $crate::dom::parent_node_seal::Seal for $element {
+/// A [Node] that can be used as a [ChildNode], but for which a specific type is not statically
+/// known.
+///
+/// You may try to resolve a value of this type to a more specific type using [TryFrom]. All Arwa
+/// types that implement [ChildNode] also implement `TryFrom<DynamicChildNode>`.
+#[derive(Clone, PartialEq)]
+pub struct DynamicParentNode {
+    inner: web_sys::Node,
+}
+
+impl DynamicParentNode {
+    pub(crate) fn new(inner: web_sys::Node) -> Self {
+        DynamicParentNode { inner }
+    }
+}
+
+impl node_seal::Seal for DynamicParentNode {
+    fn from_web_sys_node_unchecked(inner: web_sys::Node) -> Self {
+        DynamicParentNode { inner }
+    }
+
+    fn as_web_sys_node(&self) -> &web_sys::Node {
+        &self.inner
+    }
+}
+
+impl Node for DynamicParentNode {}
+
+impl parent_node_seal::Seal for DynamicParentNode {
+    fn from_web_sys_node_unchecked(inner: web_sys::Node) -> Self {
+        DynamicParentNode { inner }
+    }
+
+    fn as_js_parent_node(&self) -> &JsParentNode {
+        self.inner.unchecked_ref()
+    }
+}
+
+impl ParentNode for DynamicParentNode {}
+
+impl AsRef<web_sys::Node> for DynamicParentNode {
+    fn as_ref(&self) -> &web_sys::Node {
+        &self.inner
+    }
+}
+
+impl From<DynamicParentNode> for DynamicNode {
+    fn from(value: DynamicParentNode) -> Self {
+        DynamicNode::from(value.inner)
+    }
+}
+
+impl From<DynamicParentNode> for web_sys::Node {
+    fn from(value: DynamicParentNode) -> Self {
+        value.inner
+    }
+}
+
+impl_event_target_traits!(DynamicParentNode);
+
+macro_rules! impl_parent_node {
+    ($tpe:ident) => {
+        impl $crate::dom::parent_node_seal::Seal for $tpe {
             fn from_web_sys_node_unchecked(node: web_sys::Node) -> Self {
                 use wasm_bindgen::JsCast;
 
-                $element {
+                $tpe {
                     inner: node.unchecked_into(),
                 }
             }
 
-            fn as_web_sys_node(&self) -> &web_sys::Node {
-                use crate::dom::element_seal::Seal;
-
-                self.as_web_sys_element().as_ref()
-            }
-        }
-
-        impl $crate::dom::ParentNode for $element {
-            fn query_selector_first(
-                &self,
-                selector: &$crate::dom::Selector,
-            ) -> Option<$crate::dom::DynamicElement> {
-                use crate::dom::element_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                self.as_web_sys_element()
-                    .query_selector(selector.as_ref())
-                    .unwrap_throw()
-                    .map(|e| e.into())
-            }
-
-            fn query_selector_all(
-                &self,
-                selector: &$crate::dom::Selector,
-            ) -> $crate::dom::QuerySelectorAll {
-                use crate::dom::element_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                $crate::dom::QuerySelectorAll::new(
-                    self.as_web_sys_element()
-                        .query_selector_all(selector.as_ref())
-                        .unwrap_throw(),
-                )
-            }
-
-            fn child_elements(&self) -> $crate::dom::ChildElements {
-                use crate::dom::element_seal::Seal;
-
-                $crate::dom::ChildElements::new(self.as_web_sys_element().children())
-            }
-
-            fn prepend_child<T>(&self, node: &T)
-            where
-                T: $crate::dom::ChildNode,
-            {
-                use crate::dom::element_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                self.as_web_sys_element()
-                    .prepend_with_node_1(node.as_web_sys_node())
-                    .unwrap_throw();
-            }
-
-            fn try_prepend_child<T>(
-                &self,
-                node: &T,
-            ) -> Result<(), $crate::dom::HierarchyRequestError>
-            where
-                T: $crate::dom::ChildNode,
-            {
-                use crate::dom::element_seal::Seal;
+            fn as_js_parent_node(&self) -> &$crate::dom::JsParentNode {
                 use wasm_bindgen::JsCast;
 
-                self.as_web_sys_element()
-                    .prepend_with_node_1(node.as_web_sys_node())
-                    .map_err(|err| $crate::dom::HierarchyRequestError::new(err.unchecked_into()))
-            }
-
-            fn prepend_fragment<T>(&self, document_fragment: &T)
-            where
-                T: $crate::dom::DocumentFragment,
-            {
-                use crate::dom::element_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                self.as_web_sys_element()
-                    .prepend_with_node_1(document_fragment.as_web_sys_document_fragment().as_ref())
-                    .unwrap_throw();
+                self.inner.unchecked_ref()
             }
         }
+
+        impl $crate::dom::ParentNode for $tpe {}
     };
 }
 
-pub(crate) use impl_parent_node_for_element;
+pub(crate) use impl_parent_node;
 
-macro_rules! impl_parent_node_for_document {
-    ($document:ident) => {
-        impl $crate::dom::parent_node_seal::Seal for $document {
-            fn from_web_sys_node_unchecked(node: web_sys::Node) -> Self {
-                $document {
-                    inner: node.unchecked_into(),
-                }
-            }
+macro_rules! impl_try_from_parent_node {
+    ($tpe:ident, $web_sys_tpe:ident) => {
+        impl TryFrom<$crate::dom::DynamicParentNode> for $tpe {
+            type Error = $crate::InvalidCast<$crate::dom::DynamicParentNode, $tpe>;
 
-            fn as_web_sys_node(&self) -> &web_sys::Node {
-                use crate::dom::document_seal::Seal;
+            fn try_from(value: $crate::dom::DynamicParentNode) -> Result<Self, Self::Error> {
+                use wasm_bindgen::JsCast;
 
-                self.as_web_sys_document().as_ref()
-            }
-        }
+                let value: web_sys::Node = value.into();
 
-        impl $crate::dom::ParentNode for $document {
-            fn query_selector_first(
-                &self,
-                selector: &$crate::dom::Selector,
-            ) -> Option<$crate::dom::DynamicElement> {
-                use crate::dom::document_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                self.as_web_sys_document()
-                    .query_selector(selector.as_ref())
-                    .unwrap_throw()
+                value
+                    .dyn_into::<web_sys::$web_sys_tpe>()
                     .map(|e| e.into())
-            }
-
-            fn query_selector_all(
-                &self,
-                selector: &$crate::dom::Selector,
-            ) -> $crate::dom::QuerySelectorAll {
-                use crate::dom::document_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                $crate::dom::QuerySelectorAll::new(
-                    self.as_web_sys_document()
-                        .query_selector_all(selector.as_ref())
-                        .unwrap_throw(),
-                )
-            }
-
-            fn child_elements(&self) -> $crate::dom::ChildElements {
-                use crate::dom::document_seal::Seal;
-
-                $crate::dom::ChildElements::new(self.as_web_sys_document().children())
-            }
-
-            fn prepend_child<T>(&self, node: &T)
-            where
-                T: $crate::dom::ChildNode,
-            {
-                use crate::dom::document_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                self.as_web_sys_document()
-                    .prepend_with_node_1(node.as_web_sys_node())
-                    .unwrap_throw();
-            }
-
-            fn try_prepend_child<T>(
-                &self,
-                node: &T,
-            ) -> Result<(), $crate::dom::HierarchyRequestError>
-            where
-                T: $crate::dom::ChildNode,
-            {
-                use crate::dom::document_seal::Seal;
-
-                self.as_web_sys_document()
-                    .prepend_with_node_1(node.as_web_sys_node())
-                    .map_err(|err| $crate::dom::HierarchyRequestError::new(err.unchecked_into()))
-            }
-
-            fn prepend_fragment<T>(&self, document_fragment: &T)
-            where
-                T: $crate::dom::DocumentFragment,
-            {
-                use crate::dom::document_seal::Seal;
-                use wasm_bindgen::UnwrapThrowExt;
-
-                self.as_web_sys_document()
-                    .prepend_with_node_1(document_fragment.as_web_sys_document_fragment().as_ref())
-                    .unwrap_throw();
+                    .map_err(|e| $crate::InvalidCast::new($crate::dom::DynamicParentNode::new(e)))
             }
         }
     };
+    ($tpe:ident) => {
+        $crate::dom::impl_try_from_parent_node!($tpe, $tpe);
+    };
 }
 
-pub(crate) use impl_parent_node_for_document;
+pub(crate) use impl_try_from_parent_node;
+
+#[wasm_bindgen]
+extern "C" {
+    #[doc(hidden)]
+    #[wasm_bindgen(extends = web_sys::Node)]
+    pub type JsParentNode;
+
+    #[wasm_bindgen(method, js_name=querySelector)]
+    pub(crate) fn query_selector(this: &JsParentNode, selector: &str) -> Option<web_sys::Element>;
+
+    #[wasm_bindgen(method, js_name=querySelectorAll)]
+    pub(crate) fn query_selector_all(this: &JsParentNode, selector: &str) -> web_sys::NodeList;
+
+    #[wasm_bindgen(method)]
+    pub(crate) fn children(this: &JsParentNode) -> web_sys::HtmlCollection;
+
+    #[wasm_bindgen(catch, method)]
+    pub(crate) fn prepend(this: &JsParentNode, node: &web_sys::Node) -> Result<(), JsValue>;
+}

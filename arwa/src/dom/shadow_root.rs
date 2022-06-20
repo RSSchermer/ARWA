@@ -1,9 +1,7 @@
 use wasm_bindgen::{throw_val, JsCast};
 
 use crate::cssom::{styled_seal, StyleSheets, Styled};
-use crate::dom::{
-    impl_document_fragment_traits, DynamicElement, HierarchyRequestError, QuerySelectorAll,
-};
+use crate::dom::{impl_fragment_traits, DynamicElement};
 use crate::dom_exception_wrapper;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -138,7 +136,7 @@ impl AsRef<web_sys::ShadowRoot> for ShadowRoot {
     }
 }
 
-impl_document_fragment_traits!(ShadowRoot);
+impl_fragment_traits!(ShadowRoot);
 
 macro_rules! impl_shadow_host_for_element {
     ($tpe:ident) => {

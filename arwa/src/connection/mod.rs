@@ -1,3 +1,5 @@
+//! Connection status and status change events.
+
 mod connection_event_target;
 pub use self::connection_event_target::*;
 

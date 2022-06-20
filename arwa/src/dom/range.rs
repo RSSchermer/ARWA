@@ -1,6 +1,6 @@
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
-use crate::dom::{DynamicNode, GenericDocumentFragment, HierarchyRequestError};
+use crate::dom::{DynamicNode, DocumentFragment, HierarchyRequestError};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum RangeBoundaryCompare {
@@ -140,28 +140,28 @@ impl LiveRange {
         self.inner.delete_contents().unwrap_throw()
     }
 
-    pub fn duplicate_contents(&self) -> GenericDocumentFragment {
+    pub fn duplicate_contents(&self) -> DocumentFragment {
         match self.inner.clone_contents() {
             Ok(fragment) => fragment.into(),
             Err(err) => throw_val(err),
         }
     }
 
-    pub fn try_duplicate_contents(&self) -> Result<GenericDocumentFragment, HierarchyRequestError> {
+    pub fn try_duplicate_contents(&self) -> Result<DocumentFragment, HierarchyRequestError> {
         self.inner
             .clone_contents()
             .map(|ok| ok.into())
             .map_err(|err| HierarchyRequestError::new(err.unchecked_into()))
     }
 
-    pub fn extract_contents(&self) -> GenericDocumentFragment {
+    pub fn extract_contents(&self) -> DocumentFragment {
         match self.inner.extract_contents() {
             Ok(fragment) => fragment.into(),
             Err(err) => throw_val(err),
         }
     }
 
-    pub fn try_extract_contents(&self) -> Result<GenericDocumentFragment, HierarchyRequestError> {
+    pub fn try_extract_contents(&self) -> Result<DocumentFragment, HierarchyRequestError> {
         self.inner
             .extract_contents()
             .map(|ok| ok.into())

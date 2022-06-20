@@ -60,7 +60,7 @@ fn main() -> Result<(), JsValue> {
 
     // Obtain a reference to our "display container" element.
     let display_container = document
-        .query_selector_first(&selector!("#display_container"))
+        .query_selector(&selector!("#display_container"))
         .ok_or(JsError::new("No element with id `display_container`."))?;
 
     // Set up an abort handle with which we may cancel the loop.
@@ -84,7 +84,7 @@ fn main() -> Result<(), JsValue> {
 
     // Obtain a reference to the cancellation button.
     let button = document
-        .query_selector_first(&selector!("#cancel_button"))
+        .query_selector(&selector!("#cancel_button"))
         .ok_or(JsError::new("No element with id `cancel_button`."))?;
 
     let mut clicks = button.on_click();

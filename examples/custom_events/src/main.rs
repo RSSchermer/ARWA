@@ -22,11 +22,11 @@ fn main() -> Result<(), JsValue> {
     let document = window().document();
 
     let outer = document
-        .query_selector_first(&selector!("#outer"))
+        .query_selector(&selector!("#outer"))
         .ok_or(JsError::new("No element with id `outer`."))?;
 
     let inner = document
-        .query_selector_first(&selector!("#inner"))
+        .query_selector(&selector!("#inner"))
         .ok_or(JsError::new("No element with id `inner`."))?;
 
     let mut inner_events = inner.on_typed_event::<TypedCustomEvent<MyEvent, DynamicElement>>();
@@ -46,7 +46,7 @@ fn main() -> Result<(), JsValue> {
     });
 
     let dispatch_button = document
-        .query_selector_first(&selector!("#dispatch_button"))
+        .query_selector(&selector!("#dispatch_button"))
         .ok_or(JsError::new("No element with id `dispatch_button`."))?;
 
     let mut dispatch_clicks = dispatch_button.on_click();

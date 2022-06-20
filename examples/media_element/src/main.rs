@@ -12,12 +12,12 @@ fn main() -> Result<(), JsValue> {
 
     // Obtain a reference to the `web_sys::HtmlButtonElement` we want to listen to.
     let audio: HtmlAudioElement = document
-        .query_selector_first(&selector!("#audio"))
+        .query_selector(&selector!("#audio"))
         .ok_or(JsError::new("No element with the id `audio`"))?
         .try_into()?;
 
     let play_button = document
-        .query_selector_first(&selector!("#play"))
+        .query_selector(&selector!("#play"))
         .ok_or(JsError::new("No element with the id `play`"))?;
 
     let audio_clone = audio.clone();
@@ -33,7 +33,7 @@ fn main() -> Result<(), JsValue> {
     });
 
     let pause_button = document
-        .query_selector_first(&selector!("#pause"))
+        .query_selector(&selector!("#pause"))
         .ok_or(JsError::new("No element with the id `pause`"))?;
     let mut pause_clicks = pause_button.on_click();
 

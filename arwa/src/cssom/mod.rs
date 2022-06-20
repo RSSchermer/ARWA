@@ -1,3 +1,11 @@
+//! The CSS Object Model.
+//!
+//! Set of APIs that permit access to and manipulation of style related state information and
+//! processes.
+//!
+//! The main entry points for access to style information are the [Styled] trait (implemented for
+//! document types) and the [StyledInline] trait (implement for element types).
+
 mod animation;
 pub use self::animation::*;
 

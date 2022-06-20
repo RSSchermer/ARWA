@@ -29,7 +29,7 @@ pub trait Node: node_seal::Seal + Sized {
     ///
     /// The resulting node will not have any children.
     ///
-    /// See also [duplicate_deep].
+    /// See also [ParentNode::duplicate_deep].
     fn duplicate(source: &Self) -> Self {
         let cloned_node = source.as_web_sys_node().clone_node().unwrap_throw();
 
@@ -146,6 +146,14 @@ macro_rules! impl_node_traits {
                 use crate::dom::node_seal::Seal;
 
                 self.as_web_sys_node()
+            }
+        }
+
+        impl From<$tpe> for $crate::dom::DynamicNode {
+            fn from(node: $tpe) -> $crate::dom::DynamicNode {
+                use wasm_bindgen::JsCast;
+
+                $crate::dom::DynamicNode::from(node.inner.unchecked_into::<web_sys::Node>())
             }
         }
 

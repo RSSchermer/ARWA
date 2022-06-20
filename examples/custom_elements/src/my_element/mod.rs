@@ -1,11 +1,8 @@
 use std::cell::Cell;
 
 use arwa::console;
-use arwa::dom::{name, selector, Element, ParentNode, ShadowHost, ShadowRootOptions};
-use arwa::html::{
-    default_adopted_callback, AttributeChange, CustomElement, CustomElementDescriptor,
-    GenericExtendableElement, HtmlDocument, HtmlTemplateElement,
-};
+use arwa::dom::{name, selector, Element, ParentNode, ShadowHost, ShadowRootOptions, Name};
+use arwa::html::{AttributeChange, CustomElement, CustomElementDescriptor, GenericExtendableElement, HtmlDocument, HtmlTemplateElement, CustomElementRegistry, CustomElementName, CustomElementDefinition};
 use arwa::window::window;
 
 thread_local! {
@@ -81,19 +78,20 @@ fn attribute_changed_callback(element: &MyElement, change: AttributeChange) {
     if change.attribute_name == "message" {
         if let Some(message_container) = element
             .shadow_root()
-            .and_then(|r| r.query_selector_first(&selector!("#message_container")))
+            .and_then(|r| r.query_selector(&selector!("#message_container")))
         {
             message_container.deserialize_inner(&change.new_value.unwrap_or_default());
         }
     }
 }
 
-pub const MY_ELEMENT: CustomElementDescriptor<MyElementData, GenericExtendableElement> =
-    CustomElementDescriptor {
-        constructor,
-        connected_callback,
-        disconnected_callback,
-        adopted_callback: default_adopted_callback,
-        attribute_changed_callback,
-        observed_attributes: &[name!("message")],
-    };
+const OBSERVED_ATTRIBUTES: &'static [Name] = &[name!("message")];
+
+pub fn register(name: &CustomElementName, registry: &CustomElementRegistry) -> CustomElementDefinition<MyElementData, GenericExtendableElement> {
+    let descriptor = CustomElementDescriptor::new(constructor)
+        .connected_callback(connected_callback)
+        .disconnected_callback(disconnected_callback)
+        .attribute_changed_callback(OBSERVED_ATTRIBUTES, attribute_changed_callback);
+
+    registry.register(name, descriptor)
+}

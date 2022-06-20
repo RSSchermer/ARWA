@@ -1,4 +1,3 @@
-use delegate::delegate;
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::cssom::{impl_css_rule_traits, CssStyleSheet};
@@ -9,11 +8,9 @@ pub struct CssImportRule {
 }
 
 impl CssImportRule {
-    delegate! {
-        to self.inner {
-            pub fn href(&self) -> String;
-        }
-    }
+    // TODO: decide what to do about `href`. It returns a raw string, whereas
+    // `import_rule.style_sheet().href()` returns the resolved URL. Perhaps call it `href_text`, or
+    // ignore it altogether?
 
     pub fn style_sheet(&self) -> CssStyleSheet {
         // Spec says import rule always has an associated stylesheet

@@ -10,19 +10,26 @@ pub(crate) mod animation_event_target_seal {
     }
 }
 
+/// Implemented for types that emit animation events.
 pub trait AnimationEventTarget: animation_event_target_seal::Seal + Sized {
+    /// Returns an async iterator over [AnimationCancelEvent]s emitted when an animation is
+    /// cancelled.
     fn on_animation_cancel(&self) -> OnAnimationCancel<Self> {
         OnAnimationCancel::new(self.as_web_sys_event_target())
     }
 
+    /// Returns an async iterator over [AnimationEndEvent]s emitted when an animation has completed.
     fn on_animation_end(&self) -> OnAnimationEnd<Self> {
         OnAnimationEnd::new(self.as_web_sys_event_target())
     }
 
+    /// Returns an async iterator over [AnimationIterationEvent]s emitted when an animation
+    /// iteration completes.
     fn on_animation_iteration(&self) -> OnAnimationIteration<Self> {
         OnAnimationIteration::new(self.as_web_sys_event_target())
     }
 
+    /// Returns an async iterator over [AnimationStartEvent]s emitted when an animation begins.
     fn on_animation_start(&self) -> OnAnimationStart<Self> {
         OnAnimationStart::new(self.as_web_sys_event_target())
     }

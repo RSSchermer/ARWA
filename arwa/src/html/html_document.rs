@@ -1,9 +1,7 @@
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{UnwrapThrowExt, JsCast};
 
-use crate::dom::impl_document_traits;
-use crate::html::{
-    slot_change_event_target_seal, HtmlBodyElement, HtmlHeadElement, SlotChangeEventTarget,
-};
+use crate::dom::{impl_document_traits, Name, DynamicElement};
+use crate::html::{slot_change_event_target_seal, HtmlBodyElement, HtmlHeadElement, SlotChangeEventTarget, CustomElementName};
 
 pub(crate) mod known_element_seal {
     pub trait Seal {}
@@ -49,6 +47,17 @@ pub struct HtmlDocument {
 impl HtmlDocument {
     pub fn create_known_element<T: KnownElement>(&self) -> T {
         T::create(self)
+    }
+
+    pub fn create_customized_element(&self, name: &Name, is: &CustomElementName) -> DynamicElement {
+        let mut opts = web_sys::ElementCreationOptions::new();
+
+        opts.is(is.as_ref());
+
+        self.inner
+            .create_element_with_element_creation_options(name.as_ref(), &opts)
+            .unwrap_throw()
+            .into()
     }
 
     pub fn design_mode_enabled(&self) -> bool {

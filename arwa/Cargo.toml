@@ -17,15 +17,16 @@ bitflags = "1.3.2"
 delegate = "0.6.2"
 form_urlencoded = "1.0.1"
 futures = "0.3.21"
-js-sys = "0.3.56"
+js-sys = "0.3.58"
 lazycell = "1.3.0"
 mime_4 = { version = "0.4.0-a.0", features = ["macro"] }
 oxilangtag = "0.1.2"
-wasm-bindgen = "0.2.79"
-wasm-bindgen-futures = "0.4.29"
+pin-project = "1.0.10"
+wasm-bindgen = "0.2.81"
+wasm-bindgen-futures = "0.4.31"
 
 [dependencies.web-sys]
-version = "0.3.56"
+version = "0.3.58"
 features = [
     "console",
     "AbortController",
@@ -80,6 +81,7 @@ features = [
     "DomTokenList",
     "DragEvent",
     "Element",
+    "ElementCreationOptions",
     "ErrorEvent",
     "EventTarget",
     "File",
@@ -171,6 +173,7 @@ features = [
     "MediaStreamTrackEvent",
     "MediaStreamTrackState",
     "MessageChannel",
+    "MessageEvent",
     "MessagePort",
     "MouseEvent",
     "NamedNodeMap",
@@ -245,6 +248,7 @@ features = [
     "WheelEvent",
     "Window",
     "WindowClient",
+    "Worker",
     "WorkerGlobalScope",
     "WorkerLocation",
     "WorkerNavigator",

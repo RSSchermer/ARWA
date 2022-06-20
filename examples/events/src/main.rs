@@ -12,7 +12,7 @@ fn main() -> Result<(), JsValue> {
 
     // Obtain a reference to the HtmlButtonElement we want to listen to.
     let button = document
-        .query_selector_first(&selector!("#button"))
+        .query_selector(&selector!("#button"))
         .ok_or(JsError::new("No element with id `button`."))?;
 
     let mut click_events = button.on_click();
@@ -26,7 +26,7 @@ fn main() -> Result<(), JsValue> {
     });
 
     let remove_event_target_button = document
-        .query_selector_first(&selector!("#remove_event_target_button"))
+        .query_selector(&selector!("#remove_event_target_button"))
         .ok_or(JsError::new(
             "No element with id `remove_event_target_button`.",
         ))?;

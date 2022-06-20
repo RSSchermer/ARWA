@@ -1,5 +1,6 @@
 use crate::dom::impl_character_data_traits;
 
+/// Represents a comment node in a document, that is typically not displayed to the user.
 #[derive(Clone)]
 pub struct Comment {
     inner: web_sys::Comment,

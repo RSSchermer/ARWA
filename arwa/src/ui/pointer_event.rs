@@ -84,6 +84,7 @@ macro_rules! pointer_button_event {
 }
 
 pointer_button_event!(ClickEvent, "click");
+pointer_button_event!(DblClickEvent, "dblclick");
 pointer_button_event!(AuxClickEvent, "auxclick");
 pointer_button_event!(ContextMenuEvent, "contextmenu");
 pointer_button_event!(PointerDownEvent, "pointerdown");
