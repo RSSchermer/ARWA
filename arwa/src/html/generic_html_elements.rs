@@ -31,6 +31,7 @@ generic_html_element!(HtmlAbbrElement, "ABBR", "abbr");
 generic_html_element!(HtmlBElement, "B", "b");
 generic_html_element!(HtmlBdiElement, "BDI", "bdi");
 generic_html_element!(HtmlBdoElement, "BDO", "bdo");
+generic_html_element!(HtmlCiteElement, "CITE", "cite");
 generic_html_element!(HtmlCodeElement, "CODE", "code");
 generic_html_element!(HtmlDfnElement, "DFN", "dfn");
 generic_html_element!(HtmlEmElement, "EM", "em");

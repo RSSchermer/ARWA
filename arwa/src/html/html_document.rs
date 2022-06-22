@@ -10,6 +10,8 @@ pub(crate) mod known_element_seal {
 /// Trait implemented by [HtmlElement] types that are specified in the
 /// [HTML Standard](https://html.spec.whatwg.org/multipage/#toc-semantics).
 pub trait KnownElement: Sized + known_element_seal::Seal {
+    const TAG_NAME: &'static Name;
+
     /// Creates a new instance of the element that is owned by the given `owner_document`.
     fn create(owner_document: &HtmlDocument) -> Self;
 }
@@ -19,6 +21,12 @@ macro_rules! impl_known_element {
         impl $crate::html::known_element_seal::Seal for $tpe {}
 
         impl $crate::html::KnownElement for $tpe {
+            const TAG_NAME: &'static $crate::dom::Name = &$crate::dom::Name::from_statically_parsed(
+                $crate::dom::StaticallyParsedName {
+                    name: $tag_name
+                }
+            );
+
             fn create(document: &$crate::html::HtmlDocument) -> Self {
                 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 

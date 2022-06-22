@@ -5,7 +5,7 @@ use crate::ui::{
     FocusOutEvent, GotPointerCaptureEvent, InputEvent, KeyDownEvent, KeyUpEvent,
     LostPointerCaptureEvent, PointerCancelEvent, PointerDownEvent, PointerEnterEvent,
     PointerLeaveEvent, PointerMoveEvent, PointerOutEvent, PointerOverEvent, PointerUpEvent,
-    WheelEvent,
+    WheelEvent, DblClickEvent
 };
 
 pub(crate) mod ui_event_target_seal {
@@ -38,6 +38,10 @@ pub trait UiEventTarget: ui_event_target_seal::Seal + Sized {
 
     fn on_click(&self) -> OnClick<Self> {
         OnClick::new(self.as_web_sys_event_target())
+    }
+
+    fn on_dbl_click(&self) -> OnDblClick<Self> {
+        OnDblClick::new(self.as_web_sys_event_target())
     }
 
     fn on_aux_click(&self) -> OnAuxClick<Self> {
@@ -139,6 +143,7 @@ typed_event_iterator!(
 typed_event_iterator!(OnFocusIn, OnFocusInWithOptions, FocusInEvent, "focusin");
 typed_event_iterator!(OnFocusOut, OnFocusOutWithOptions, FocusOutEvent, "focusout");
 typed_event_iterator!(OnClick, OnClickWithOptions, ClickEvent, "click");
+typed_event_iterator!(OnDblClick, OnDblClickWithOptions, DblClickEvent, "dblclick");
 typed_event_iterator!(OnAuxClick, OnAuxClickWithOptions, AuxClickEvent, "auxclick");
 typed_event_iterator!(
     OnContextMenu,

@@ -19,9 +19,9 @@ macro_rules! heading_element {
     };
 }
 
-heading_element!(H1Element, "H1", "h1");
-heading_element!(H2Element, "H2", "h2");
-heading_element!(H3Element, "H3", "h3");
-heading_element!(H4Element, "H4", "h4");
-heading_element!(H5Element, "H5", "h5");
-heading_element!(H6Element, "H6", "h6");
+heading_element!(HtmlH1Element, "H1", "h1");
+heading_element!(HtmlH2Element, "H2", "h2");
+heading_element!(HtmlH3Element, "H3", "h3");
+heading_element!(HtmlH4Element, "H4", "h4");
+heading_element!(HtmlH5Element, "H5", "h5");
+heading_element!(HtmlH6Element, "H6", "h6");
