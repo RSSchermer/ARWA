@@ -1,20 +1,20 @@
 use std::fmt;
 use std::future::Future;
-use std::task::{Context, Poll};
 use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use pin_project::pin_project;
 use delegate::delegate;
-use wasm_bindgen_futures::JsFuture;
 use js_sys::JsString;
+use pin_project::pin_project;
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
+use wasm_bindgen_futures::JsFuture;
 
 use crate::collection::{Collection, Sequence};
 use crate::cssom::{
     impl_animation_event_target_for_element, impl_transition_event_target_for_element,
 };
 use crate::dom::{
-    impl_child_node, impl_node_traits,impl_owned_node, impl_parent_node, impl_try_from_child_node,
+    impl_child_node, impl_node_traits, impl_owned_node, impl_parent_node, impl_try_from_child_node,
     impl_try_from_node, impl_try_from_parent_node, range_bound_container_seal, Attribute, Name,
     NonColonName, RangeBoundContainer, Selector, Token,
 };
@@ -206,14 +206,18 @@ dom_exception_wrapper!(RequestFullscreenError);
 #[pin_project]
 pub struct RequestFullscreen {
     #[pin]
-    inner: JsFuture
+    inner: JsFuture,
 }
 
 impl Future for RequestFullscreen {
     type Output = Result<(), RequestFullscreenError>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        self.project().inner.poll(cx).map_ok(|_| ()).map_err(|err| RequestFullscreenError::new(err.unchecked_into()))
+        self.project()
+            .inner
+            .poll(cx)
+            .map_ok(|_| ())
+            .map_err(|err| RequestFullscreenError::new(err.unchecked_into()))
     }
 }
 
@@ -555,7 +559,9 @@ macro_rules! impl_element_traits {
             fn from(element: $tpe) -> $crate::dom::DynamicElement {
                 use wasm_bindgen::JsCast;
 
-                $crate::dom::DynamicElement::from(element.inner.unchecked_into::<web_sys::Element>())
+                $crate::dom::DynamicElement::from(
+                    element.inner.unchecked_into::<web_sys::Element>(),
+                )
             }
         }
 
@@ -592,6 +598,10 @@ pub(crate) use impl_element_traits;
 
 macro_rules! impl_try_from_element {
     ($tpe:ident, $web_sys_tpe:ident) => {
+        $crate::dom::impl_try_from_node!($tpe, $web_sys_tpe);
+        $crate::dom::impl_try_from_child_node!($tpe, $web_sys_tpe);
+        $crate::dom::impl_try_from_parent_node!($tpe, $web_sys_tpe);
+
         impl TryFrom<$crate::dom::DynamicElement> for $tpe {
             type Error = $crate::InvalidCast<$crate::dom::DynamicElement, $tpe>;
 
@@ -601,15 +611,10 @@ macro_rules! impl_try_from_element {
                 let value: web_sys::Element = value.into();
 
                 value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
+                    .dyn_into::<$tpe>()
                     .map_err(|e| $crate::InvalidCast::new(e.into()))
             }
         }
-
-        $crate::dom::impl_try_from_node!($tpe, $web_sys_tpe);
-        $crate::dom::impl_try_from_child_node!($tpe, $web_sys_tpe);
-        $crate::dom::impl_try_from_parent_node!($tpe, $web_sys_tpe);
     };
     ($tpe:ident) => {
         $crate::dom::impl_try_from_element!($tpe, $tpe);
@@ -620,6 +625,43 @@ pub(crate) use impl_try_from_element;
 
 macro_rules! impl_try_from_element_with_tag_check {
     ($tpe:ident, $web_sys_tpe:ident, $tag_name:literal) => {
+        impl wasm_bindgen::JsCast for $tpe {
+            fn instanceof(val: &wasm_bindgen::JsValue) -> bool {
+                if <web_sys::$web_sys_tpe as wasm_bindgen::JsCast>::instanceof(val) {
+                    let val: &web_sys::$web_sys_tpe = val.unchecked_ref();
+
+                    return val.tag_name().as_str() != $tag_name;
+                }
+
+                false
+            }
+
+            fn unchecked_from_js(val: wasm_bindgen::JsValue) -> Self {
+                $tpe {
+                    inner: <web_sys::$web_sys_tpe as wasm_bindgen::JsCast>::unchecked_from_js(val),
+                }
+            }
+
+            fn unchecked_from_js_ref(val: &wasm_bindgen::JsValue) -> &Self {
+                // Note: we essentially know this must be safe, because the implementation of
+                // `unchecked_from_js` above ensures the type is a single field struct that wraps a
+                // JsValue type.
+                unsafe { std::mem::transmute(val) }
+            }
+        }
+
+        impl TryFrom<wasm_bindgen::JsValue> for $tpe {
+            type Error = $crate::InvalidCast<wasm_bindgen::JsValue, $tpe>;
+
+            fn try_from(value: wasm_bindgen::JsValue) -> Result<$tpe, Self::Error> {
+                use wasm_bindgen::JsCast;
+
+                value
+                    .dyn_into::<$tpe>()
+                    .map_err(|e| $crate::InvalidCast::new(e.into()))
+            }
+        }
+
         impl TryFrom<$crate::dom::DynamicElement> for $tpe {
             type Error = $crate::InvalidCast<$crate::dom::DynamicElement, $tpe>;
 
@@ -628,15 +670,8 @@ macro_rules! impl_try_from_element_with_tag_check {
 
                 let value: web_sys::Element = value.into();
 
-                if value.tag_name().as_str() != $tag_name {
-                    return Err($crate::InvalidCast::new($crate::dom::DynamicElement::from(
-                        value,
-                    )));
-                }
-
                 value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|inner| $tpe { inner })
+                    .dyn_into::<$tpe>()
                     .map_err(|e| $crate::InvalidCast::new($crate::dom::DynamicElement::from(e)))
             }
         }
@@ -650,17 +685,8 @@ macro_rules! impl_try_from_element_with_tag_check {
                 let value: web_sys::Node = value.into();
 
                 value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
+                    .dyn_into::<$tpe>()
                     .map_err(|e| $crate::InvalidCast::new($crate::dom::DynamicNode::from(e)))
-                    .and_then(|inner| {
-                        if inner.tag_name().as_str() == $tag_name {
-                            Ok($tpe { inner })
-                        } else {
-                            Err($crate::InvalidCast::new($crate::dom::DynamicNode::from(
-                                inner.unchecked_into::<web_sys::Node>(),
-                            )))
-                        }
-                    })
             }
         }
 
@@ -672,26 +698,12 @@ macro_rules! impl_try_from_element_with_tag_check {
 
                 let value: web_sys::EventTarget = value.into();
 
-                value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map_err(|e| {
-                        $crate::InvalidCast::new($crate::event::DynamicEventTarget::from(e))
-                    })
-                    .and_then(|inner| {
-                        if inner.tag_name().as_str() == $tag_name {
-                            Ok($tpe { inner })
-                        } else {
-                            Err($crate::InvalidCast::new(
-                                $crate::event::DynamicEventTarget::from(
-                                    inner.unchecked_into::<web_sys::EventTarget>(),
-                                ),
-                            ))
-                        }
-                    })
+                value.dyn_into::<$tpe>().map_err(|e| {
+                    $crate::InvalidCast::new($crate::event::DynamicEventTarget::from(e))
+                })
             }
         }
     };
 }
 
 pub(crate) use impl_try_from_element_with_tag_check;
-

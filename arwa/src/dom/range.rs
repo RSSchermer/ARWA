@@ -1,6 +1,7 @@
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
-use crate::dom::{DynamicNode, DocumentFragment, HierarchyRequestError};
+use crate::dom::{DocumentFragment, DynamicNode, HierarchyRequestError};
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum RangeBoundaryCompare {
@@ -259,3 +260,6 @@ impl ToString for LiveRange {
         js_sys::Object::to_string(self.as_ref()).into()
     }
 }
+
+impl_common_wrapper_traits!(LiveRange);
+impl_js_cast!(LiveRange, Range);

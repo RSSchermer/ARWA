@@ -93,6 +93,7 @@ macro_rules! impl_css_rule_traits {
         }
 
         $crate::impl_common_wrapper_traits!($rule);
+        $crate::impl_js_cast!($rule, $web_sys_tpe);
     };
 }
 

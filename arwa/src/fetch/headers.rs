@@ -1,7 +1,7 @@
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
-use crate::impl_common_wrapper_traits;
 use crate::type_error_wrapper;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 type_error_wrapper!(InvalidHeaderName);
 
@@ -75,3 +75,4 @@ impl AsRef<web_sys::Headers> for Headers {
 }
 
 impl_common_wrapper_traits!(Headers);
+impl_js_cast!(Headers);

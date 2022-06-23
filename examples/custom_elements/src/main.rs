@@ -33,7 +33,9 @@ fn main() -> Result<(), JsValue> {
 
     let reconnect_clicks = reconnect_button.on_click();
     let my_element_clone = my_element.clone();
-    let body = document.body().ok_or(JsError::new("Document has no body element"))?;
+    let body = document
+        .body()
+        .ok_or(JsError::new("Document has no body element"))?;
 
     spawn_local(async move {
         // Let's take just the first 3 clicks and then disconnect the custom element, so we can

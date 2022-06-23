@@ -1,4 +1,4 @@
-use crate::impl_common_wrapper_traits;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TextTrackReadyState {
@@ -26,3 +26,4 @@ impl AsRef<web_sys::TextTrack> for TextTrack {
 }
 
 impl_common_wrapper_traits!(TextTrack);
+impl_js_cast!(TextTrack);

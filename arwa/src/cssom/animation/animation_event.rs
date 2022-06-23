@@ -52,15 +52,15 @@ animation_event! {
     /// Event emitted on [AnimationEventTarget] types when an animation begins.
     AnimationStartEvent, "animationstart"
 }
-animation_event!{
+animation_event! {
     /// Event emitted on [AnimationEventTarget] types when an animation completes.
     AnimationEndEvent, "animationend"
 }
-animation_event!{
+animation_event! {
     /// Event emitted on [AnimationEventTarget] types when an animation iteration completes.
     AnimationIterationEvent, "animationiteration"
 }
-animation_event!{
+animation_event! {
     /// Event emitted on [AnimationEventTarget] types when an animation is cancelled.
     AnimationCancelEvent, "animationcancel"
 }

@@ -165,6 +165,8 @@ pub(crate) use impl_node_traits;
 
 macro_rules! impl_try_from_node {
     ($tpe:ident, $web_sys_tpe:ident) => {
+        $crate::event::impl_try_from_event_target!($tpe, $web_sys_tpe);
+
         impl TryFrom<$crate::dom::DynamicNode> for $tpe {
             type Error = $crate::InvalidCast<$crate::dom::DynamicNode, $tpe>;
 
@@ -174,13 +176,10 @@ macro_rules! impl_try_from_node {
                 let value: web_sys::Node = value.into();
 
                 value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
+                    .dyn_into::<$tpe>()
                     .map_err(|e| $crate::InvalidCast::new(e.into()))
             }
         }
-
-        $crate::event::impl_try_from_event_target!($tpe, $web_sys_tpe);
     };
     ($tpe:ident) => {
         $crate::dom::impl_try_from_node!($tpe, $tpe);

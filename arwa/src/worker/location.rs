@@ -1,5 +1,5 @@
-use crate::impl_common_wrapper_traits;
 use crate::url::Url;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone)]
 pub struct WorkerLocation {
@@ -25,3 +25,4 @@ impl AsRef<web_sys::WorkerLocation> for WorkerLocation {
 }
 
 impl_common_wrapper_traits!(WorkerLocation);
+impl_js_cast!(WorkerLocation);

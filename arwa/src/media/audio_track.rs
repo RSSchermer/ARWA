@@ -1,7 +1,7 @@
 use delegate::delegate;
 
-use crate::impl_common_wrapper_traits;
 use crate::lang::LanguageTag;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AudioTrackKind {
@@ -60,3 +60,4 @@ impl AsRef<web_sys::AudioTrack> for AudioTrack {
 }
 
 impl_common_wrapper_traits!(AudioTrack);
+impl_js_cast!(AudioTrack);

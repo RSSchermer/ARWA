@@ -5,9 +5,9 @@ use web_sys::{
     PerformanceServerTiming,
 };
 
-use crate::impl_common_wrapper_traits;
 use crate::unchecked_cast_array::unchecked_cast_array;
 use crate::InvalidCast;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 // TODO: the spec also allows just and end-mark (from navigation to named mark) by specifying
 // `undefined` for the start mark, but web_sys's API currently does not allow this
@@ -133,6 +133,7 @@ impl AsRef<web_sys::Performance> for Performance {
 }
 
 impl_common_wrapper_traits!(Performance);
+impl_js_cast!(Performance);
 
 #[derive(Clone)]
 pub struct Entry {
@@ -158,6 +159,7 @@ impl AsRef<web_sys::PerformanceEntry> for Entry {
 }
 
 impl_common_wrapper_traits!(Entry);
+impl_js_cast!(Entry, PerformanceEntry);
 
 unchecked_cast_array!(Entry, PerformanceEntry, Entries);
 
@@ -209,6 +211,7 @@ impl AsRef<web_sys::PerformanceEntry> for Mark {
 }
 
 impl_common_wrapper_traits!(Mark);
+impl_js_cast!(Mark, PerformanceMark);
 
 unchecked_cast_array!(Mark, PerformanceMark, Marks);
 
@@ -260,6 +263,7 @@ impl AsRef<web_sys::PerformanceEntry> for Measure {
 }
 
 impl_common_wrapper_traits!(Measure);
+impl_js_cast!(Measure, PerformanceMeasure);
 
 unchecked_cast_array!(Measure, PerformanceMeasure, Measures);
 
@@ -358,6 +362,7 @@ impl AsRef<web_sys::PerformanceEntry> for ResourceTiming {
 }
 
 impl_common_wrapper_traits!(ResourceTiming);
+impl_js_cast!(ResourceTiming, PerformanceResourceTiming);
 
 unchecked_cast_array!(ResourceTiming, PerformanceResourceTiming, ResourceTimings);
 
@@ -391,5 +396,6 @@ impl AsRef<web_sys::PerformanceServerTiming> for ServerTiming {
 }
 
 impl_common_wrapper_traits!(ServerTiming);
+impl_js_cast!(ServerTiming, PerformanceServerTiming);
 
 unchecked_cast_array!(ServerTiming, PerformanceServerTiming, ServerTimings);

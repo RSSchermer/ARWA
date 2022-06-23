@@ -1,7 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::cssom::DynamicCssRule;
-use crate::impl_common_wrapper_traits;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 mod css_style_declaration_read_seal {
     pub trait Seal {
@@ -123,6 +123,7 @@ impl AsRef<web_sys::CssStyleDeclaration> for CssStyleDeclaration {
 }
 
 impl_common_wrapper_traits!(CssStyleDeclaration);
+impl_js_cast!(CssStyleDeclaration);
 
 #[derive(Clone)]
 pub struct CssReadOnlyStyleDeclaration {
@@ -150,3 +151,4 @@ impl AsRef<web_sys::CssStyleDeclaration> for CssReadOnlyStyleDeclaration {
 }
 
 impl_common_wrapper_traits!(CssReadOnlyStyleDeclaration);
+impl_js_cast!(CssReadOnlyStyleDeclaration, CssStyleDeclaration);

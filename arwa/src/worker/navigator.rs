@@ -1,9 +1,9 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::connection::{connection_status_seal, ConnectionStatus};
-use crate::impl_common_wrapper_traits;
 use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone)]
 pub struct WorkerNavigator {
@@ -49,3 +49,4 @@ impl AsRef<web_sys::WorkerNavigator> for WorkerNavigator {
 }
 
 impl_common_wrapper_traits!(WorkerNavigator);
+impl_js_cast!(WorkerNavigator);

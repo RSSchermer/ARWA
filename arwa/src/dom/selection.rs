@@ -2,6 +2,7 @@ use delegate::delegate;
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::dom::{DynamicNode, LiveRange};
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SelectionType {
@@ -81,3 +82,6 @@ impl Selection {
     // created selection even relevant? Anchor node/focus node information may only be useful for
     // browser/user created selections. Holding off on this until a use-case presents itself.
 }
+
+impl_common_wrapper_traits!(Selection);
+impl_js_cast!(Selection);

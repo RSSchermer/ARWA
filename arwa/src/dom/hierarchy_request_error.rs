@@ -1,6 +1,6 @@
 use crate::dom_exception_wrapper;
 
-dom_exception_wrapper!{
+dom_exception_wrapper! {
     /// Error that is returned when an operation would result in an invalid DOM tree hierarchy.
     ///
     /// DOM modifying operations that would result in one of the following DOM state will result in

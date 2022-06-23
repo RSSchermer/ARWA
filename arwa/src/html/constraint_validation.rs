@@ -1,6 +1,6 @@
 use delegate::delegate;
 
-use crate::impl_common_wrapper_traits;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 pub(crate) mod constraint_validation_target_seal {
     pub trait Seal {}
@@ -65,3 +65,4 @@ impl AsRef<web_sys::ValidityState> for ValidityState {
 }
 
 impl_common_wrapper_traits!(ValidityState);
+impl_js_cast!(ValidityState);

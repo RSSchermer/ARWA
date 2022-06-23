@@ -1,8 +1,8 @@
 use delegate::delegate;
 
 use crate::geolocation::{CurrentPosition, WatchPosition};
-use crate::impl_common_wrapper_traits;
 use crate::timer::Duration;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 pub struct Geolocation {
     inner: web_sys::Geolocation,
@@ -31,6 +31,7 @@ impl AsRef<web_sys::Geolocation> for Geolocation {
 }
 
 impl_common_wrapper_traits!(Geolocation);
+impl_js_cast!(Geolocation);
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct PositionOptions {
@@ -102,6 +103,7 @@ impl AsRef<web_sys::Position> for Position {
 }
 
 impl_common_wrapper_traits!(Position);
+impl_js_cast!(Position);
 
 #[derive(Clone)]
 pub struct Coordinates {
@@ -141,3 +143,4 @@ impl AsRef<web_sys::Coordinates> for Coordinates {
 }
 
 impl_common_wrapper_traits!(Coordinates);
+impl_js_cast!(Coordinates);

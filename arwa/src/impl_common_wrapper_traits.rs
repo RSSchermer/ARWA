@@ -12,6 +12,12 @@ macro_rules! impl_common_wrapper_traits {
             }
         }
 
+        impl Into<wasm_bindgen::JsValue> for $tpe {
+            fn into(self) -> wasm_bindgen::JsValue {
+                self.inner.into()
+            }
+        }
+
         impl $crate::console::ToArgument for $tpe {
             fn to_argument(&self) -> $crate::console::Argument {
                 let as_js_value: &wasm_bindgen::JsValue = self.as_ref();

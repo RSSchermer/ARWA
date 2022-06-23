@@ -4,6 +4,7 @@ pub use wasm_bindgen_futures::spawn_local;
 
 pub(crate) use self::exception_wrapper::*;
 pub(crate) use self::impl_common_wrapper_traits::*;
+pub(crate) use self::impl_js_cast::*;
 pub use self::invalid_cast::*;
 pub use self::transferable::*;
 
@@ -40,6 +41,7 @@ pub mod worker;
 mod exception_wrapper;
 mod finalization_registry;
 mod impl_common_wrapper_traits;
+mod impl_js_cast;
 mod invalid_cast;
 mod js_serialize;
 mod transferable;

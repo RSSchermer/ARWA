@@ -2,6 +2,7 @@ use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::security::SecurityError;
 use crate::url::Url;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 pub struct WindowLocation {
     inner: web_sys::Location,
@@ -90,3 +91,6 @@ impl AsRef<web_sys::Location> for WindowLocation {
         &self.inner
     }
 }
+
+impl_common_wrapper_traits!(WindowLocation);
+impl_js_cast!(WindowLocation, Location);

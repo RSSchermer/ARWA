@@ -145,13 +145,13 @@ where
 }
 
 impl<T, E> Clone for CustomElement<T, E>
-    where
-        E: Clone,
+where
+    E: Clone,
 {
     fn clone(&self) -> Self {
         CustomElement {
             data: self.data,
-            extended: self.extended.clone()
+            extended: self.extended.clone(),
         }
     }
 }
@@ -200,17 +200,16 @@ where
 }
 
 impl<T, E> From<CustomElement<T, E>> for DynamicElement
-    where
-        T: 'static,
-        E: ExtendableElement + 'static, {
+where
+    T: 'static,
+    E: ExtendableElement + 'static,
+{
     fn from(element: CustomElement<T, E>) -> Self {
         let web_sys: web_sys::Element = element.extended.into_web_sys_html_element().into();
 
         DynamicElement::from(web_sys)
     }
 }
-
-
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct AttributeChange {
@@ -219,22 +218,42 @@ pub struct AttributeChange {
     pub new_value: Option<String>,
 }
 
-pub struct CustomElementDescriptor<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback>
-{
+pub struct CustomElementDescriptor<
+    'a,
+    T,
+    E,
+    Constructor,
+    ConnectedCallback,
+    DisconnectedCallback,
+    AdoptedCallback,
+    AttributeChangedCallback,
+> {
     pub constructor: Constructor,
     pub connected_callback: ConnectedCallback,
     pub disconnected_callback: DisconnectedCallback,
     pub adopted_callback: AdoptedCallback,
     pub attribute_changed_callback: AttributeChangedCallback,
     pub observed_attributes: &'a [Name],
-    _marker: marker::PhantomData<(*const T, *const E)>
+    _marker: marker::PhantomData<(*const T, *const E)>,
 }
 
 impl CustomElementDescriptor<'_, (), (), (), (), (), (), ()> {
-    pub fn new<T, E, Constructor>(constructor: Constructor) -> CustomElementDescriptor<'static, T, E, Constructor, fn(&CustomElement<T, E>), fn (&CustomElement<T, E>), fn(&CustomElement<T, E>), fn(&CustomElement<T, E>, AttributeChange)> where
+    pub fn new<T, E, Constructor>(
+        constructor: Constructor,
+    ) -> CustomElementDescriptor<
+        'static,
+        T,
+        E,
+        Constructor,
+        fn(&CustomElement<T, E>),
+        fn(&CustomElement<T, E>),
+        fn(&CustomElement<T, E>),
+        fn(&CustomElement<T, E>, AttributeChange),
+    >
+    where
         T: 'static,
         E: ExtendableElement + 'static,
-        Constructor: Fn(&E) -> T  + 'static
+        Constructor: Fn(&E) -> T + 'static,
     {
         CustomElementDescriptor {
             constructor,
@@ -243,15 +262,55 @@ impl CustomElementDescriptor<'_, (), (), (), (), (), (), ()> {
             adopted_callback: default_adopted_callback,
             attribute_changed_callback: default_attribute_changed_callback,
             observed_attributes: &[],
-            _marker: marker::PhantomData
+            _marker: marker::PhantomData,
         }
     }
 }
 
-impl<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback> CustomElementDescriptor<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback> {
-    pub fn connected_callback<F>(self, connected_callback: F) -> CustomElementDescriptor<'a, T, E, Constructor, F, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback> where F: FnMut(&CustomElement<T, E>) + 'static {
+impl<
+        'a,
+        T,
+        E,
+        Constructor,
+        ConnectedCallback,
+        DisconnectedCallback,
+        AdoptedCallback,
+        AttributeChangedCallback,
+    >
+    CustomElementDescriptor<
+        'a,
+        T,
+        E,
+        Constructor,
+        ConnectedCallback,
+        DisconnectedCallback,
+        AdoptedCallback,
+        AttributeChangedCallback,
+    >
+{
+    pub fn connected_callback<F>(
+        self,
+        connected_callback: F,
+    ) -> CustomElementDescriptor<
+        'a,
+        T,
+        E,
+        Constructor,
+        F,
+        DisconnectedCallback,
+        AdoptedCallback,
+        AttributeChangedCallback,
+    >
+    where
+        F: FnMut(&CustomElement<T, E>) + 'static,
+    {
         let CustomElementDescriptor {
-            constructor, disconnected_callback, adopted_callback, attribute_changed_callback, observed_attributes, ..
+            constructor,
+            disconnected_callback,
+            adopted_callback,
+            attribute_changed_callback,
+            observed_attributes,
+            ..
         } = self;
 
         CustomElementDescriptor {
@@ -261,13 +320,33 @@ impl<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCall
             adopted_callback,
             attribute_changed_callback,
             observed_attributes,
-            _marker: marker::PhantomData
+            _marker: marker::PhantomData,
         }
     }
 
-    pub fn disconnected_callback<F>(self, disconnected_callback: F) -> CustomElementDescriptor<'a, T, E, Constructor, ConnectedCallback, F, AdoptedCallback, AttributeChangedCallback> where F: FnMut(&CustomElement<T, E>) + 'static {
+    pub fn disconnected_callback<F>(
+        self,
+        disconnected_callback: F,
+    ) -> CustomElementDescriptor<
+        'a,
+        T,
+        E,
+        Constructor,
+        ConnectedCallback,
+        F,
+        AdoptedCallback,
+        AttributeChangedCallback,
+    >
+    where
+        F: FnMut(&CustomElement<T, E>) + 'static,
+    {
         let CustomElementDescriptor {
-            constructor, connected_callback, adopted_callback, attribute_changed_callback, observed_attributes, ..
+            constructor,
+            connected_callback,
+            adopted_callback,
+            attribute_changed_callback,
+            observed_attributes,
+            ..
         } = self;
 
         CustomElementDescriptor {
@@ -277,13 +356,33 @@ impl<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCall
             adopted_callback,
             attribute_changed_callback,
             observed_attributes,
-            _marker: marker::PhantomData
+            _marker: marker::PhantomData,
         }
     }
 
-    pub fn adopted_callback<F>(self, adopted_callback: F) -> CustomElementDescriptor<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, F, AttributeChangedCallback> where F: FnMut(&CustomElement<T, E>) + 'static {
+    pub fn adopted_callback<F>(
+        self,
+        adopted_callback: F,
+    ) -> CustomElementDescriptor<
+        'a,
+        T,
+        E,
+        Constructor,
+        ConnectedCallback,
+        DisconnectedCallback,
+        F,
+        AttributeChangedCallback,
+    >
+    where
+        F: FnMut(&CustomElement<T, E>) + 'static,
+    {
         let CustomElementDescriptor {
-            constructor, connected_callback, disconnected_callback, attribute_changed_callback, observed_attributes, ..
+            constructor,
+            connected_callback,
+            disconnected_callback,
+            attribute_changed_callback,
+            observed_attributes,
+            ..
         } = self;
 
         CustomElementDescriptor {
@@ -293,13 +392,33 @@ impl<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCall
             adopted_callback,
             attribute_changed_callback,
             observed_attributes,
-            _marker: marker::PhantomData
+            _marker: marker::PhantomData,
         }
     }
 
-    pub fn attribute_changed_callback<'b, F>(self, observed_attributes: &'b [Name], attribute_changed_callback: F) -> CustomElementDescriptor<'b, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, F> where F: FnMut(&CustomElement<T, E>, AttributeChange) + 'static {
+    pub fn attribute_changed_callback<'b, F>(
+        self,
+        observed_attributes: &'b [Name],
+        attribute_changed_callback: F,
+    ) -> CustomElementDescriptor<
+        'b,
+        T,
+        E,
+        Constructor,
+        ConnectedCallback,
+        DisconnectedCallback,
+        AdoptedCallback,
+        F,
+    >
+    where
+        F: FnMut(&CustomElement<T, E>, AttributeChange) + 'static,
+    {
         let CustomElementDescriptor {
-            constructor, connected_callback, disconnected_callback, adopted_callback, ..
+            constructor,
+            connected_callback,
+            disconnected_callback,
+            adopted_callback,
+            ..
         } = self;
 
         CustomElementDescriptor {
@@ -309,7 +428,7 @@ impl<'a, T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCall
             adopted_callback,
             attribute_changed_callback,
             observed_attributes,
-            _marker: marker::PhantomData
+            _marker: marker::PhantomData,
         }
     }
 }
@@ -337,10 +456,26 @@ pub struct CustomElementRegistry {
 }
 
 impl CustomElementRegistry {
-    pub fn register<T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback>(
+    pub fn register<
+        T,
+        E,
+        Constructor,
+        ConnectedCallback,
+        DisconnectedCallback,
+        AdoptedCallback,
+        AttributeChangedCallback,
+    >(
         &self,
         name: &CustomElementName,
-        descriptor: CustomElementDescriptor<T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback>,
+        descriptor: CustomElementDescriptor<
+            T,
+            E,
+            Constructor,
+            ConnectedCallback,
+            DisconnectedCallback,
+            AdoptedCallback,
+            AttributeChangedCallback,
+        >,
     ) -> CustomElementDefinition<T, E>
     where
         T: 'static,
@@ -349,7 +484,7 @@ impl CustomElementRegistry {
         ConnectedCallback: FnMut(&CustomElement<T, E>) + 'static,
         DisconnectedCallback: FnMut(&CustomElement<T, E>) + 'static,
         AdoptedCallback: FnMut(&CustomElement<T, E>) + 'static,
-        AttributeChangedCallback: FnMut(&CustomElement<T, E>, AttributeChange) + 'static
+        AttributeChangedCallback: FnMut(&CustomElement<T, E>, AttributeChange) + 'static,
     {
         match self.try_register(name, descriptor) {
             Ok(ok) => ok,
@@ -357,10 +492,26 @@ impl CustomElementRegistry {
         }
     }
 
-    pub fn try_register<T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback>(
+    pub fn try_register<
+        T,
+        E,
+        Constructor,
+        ConnectedCallback,
+        DisconnectedCallback,
+        AdoptedCallback,
+        AttributeChangedCallback,
+    >(
         &self,
         name: &CustomElementName,
-        descriptor: CustomElementDescriptor<T, E, Constructor, ConnectedCallback, DisconnectedCallback, AdoptedCallback, AttributeChangedCallback>,
+        descriptor: CustomElementDescriptor<
+            T,
+            E,
+            Constructor,
+            ConnectedCallback,
+            DisconnectedCallback,
+            AdoptedCallback,
+            AttributeChangedCallback,
+        >,
     ) -> Result<CustomElementDefinition<T, E>, RegisterCustomElementError>
     where
         T: 'static,
@@ -369,7 +520,7 @@ impl CustomElementRegistry {
         ConnectedCallback: FnMut(&CustomElement<T, E>) + 'static,
         DisconnectedCallback: FnMut(&CustomElement<T, E>) + 'static,
         AdoptedCallback: FnMut(&CustomElement<T, E>) + 'static,
-        AttributeChangedCallback: FnMut(&CustomElement<T, E>, AttributeChange) + 'static
+        AttributeChangedCallback: FnMut(&CustomElement<T, E>, AttributeChange) + 'static,
     {
         let CustomElementDescriptor {
             mut constructor,

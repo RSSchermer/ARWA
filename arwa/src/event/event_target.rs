@@ -14,8 +14,8 @@ use crate::event::on_event::OnEvent;
 use crate::event::type_id_event_name::type_id_to_event_name;
 use crate::event::CustomEventData;
 use crate::finalization_registry::FinalizationRegistry;
-use crate::impl_common_wrapper_traits;
 use crate::js_serialize::{js_deserialize, js_serialize};
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 thread_local! {
     static TYPED_CUSTOM_EVENT_REGISTRY: FinalizationRegistry = {
@@ -281,7 +281,9 @@ macro_rules! impl_event_target_traits {
             fn from(node: $tpe) -> $crate::event::DynamicEventTarget {
                 use wasm_bindgen::JsCast;
 
-                $crate::event::DynamicEventTarget::from(node.inner.unchecked_into::<web_sys::EventTarget>())
+                $crate::event::DynamicEventTarget::from(
+                    node.inner.unchecked_into::<web_sys::EventTarget>(),
+                )
             }
         }
 
@@ -293,6 +295,8 @@ pub(crate) use impl_event_target_traits;
 
 macro_rules! impl_try_from_event_target {
     ($tpe:ident, $web_sys_tpe:ident) => {
+        crate::impl_js_cast!($tpe, $web_sys_tpe);
+
         impl TryFrom<$crate::event::DynamicEventTarget> for $tpe {
             type Error = $crate::InvalidCast<$crate::event::DynamicEventTarget, $tpe>;
 
@@ -302,8 +306,7 @@ macro_rules! impl_try_from_event_target {
                 let value: web_sys::EventTarget = value.into();
 
                 value
-                    .dyn_into::<web_sys::$web_sys_tpe>()
-                    .map(|e| e.into())
+                    .dyn_into::<$tpe>()
                     .map_err(|e| $crate::InvalidCast::new(e.into()))
             }
         }
@@ -350,3 +353,4 @@ impl From<DynamicEventTarget> for web_sys::EventTarget {
 }
 
 impl_common_wrapper_traits!(DynamicEventTarget);
+impl_js_cast!(DynamicEventTarget, EventTarget);

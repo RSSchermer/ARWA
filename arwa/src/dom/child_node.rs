@@ -2,8 +2,8 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use crate::dom::{
-    node_seal, owned_node_seal, Fragment, DynamicElement, DynamicNode,
-    HierarchyRequestError, Node, OwnedNode,
+    node_seal, owned_node_seal, DynamicElement, DynamicNode, Fragment, HierarchyRequestError, Node,
+    OwnedNode,
 };
 use crate::event::impl_event_target_traits;
 
@@ -148,8 +148,8 @@ pub trait ChildNode: child_node_seal::Seal {
     /// [HierarchyRequestError] for details on invalid DOM hierarchies). See
     /// [try_replace_with_fragment] for an alternative that returns an error instead of panicking.
     fn replace_with_fragment<T>(&self, document_fragment: &T)
-        where
-            T: Fragment,
+    where
+        T: Fragment,
     {
         self.as_js_child_node()
             .replace_with(document_fragment.as_web_sys_document_fragment().as_ref())
@@ -168,9 +168,12 @@ pub trait ChildNode: child_node_seal::Seal {
     /// Returns a [HierarchyRequestError] if this operation would result in an invalid DOM
     /// hierarchy (see [HierarchyRequestError] for details on invalid DOM hierarchies). See
     /// [replace_with_fragment] for an alternative that panics instead of returning an error.
-    fn try_replace_with_fragment<T>(&self, document_fragment: &T) -> Result<(), HierarchyRequestError>
-        where
-            T: Fragment,
+    fn try_replace_with_fragment<T>(
+        &self,
+        document_fragment: &T,
+    ) -> Result<(), HierarchyRequestError>
+    where
+        T: Fragment,
     {
         self.as_js_child_node()
             .replace_with(document_fragment.as_web_sys_document_fragment().as_ref())
@@ -246,9 +249,12 @@ pub trait ChildNode: child_node_seal::Seal {
     /// Returns a [HierarchyRequestError] if this operation would result in an invalid DOM
     /// hierarchy (see [HierarchyRequestError] for details on invalid DOM hierarchies). See
     /// [before_insert_fragment] for an alternative that panics instead of returning an error.
-    fn try_before_insert_fragment<T>(&self, document_fragment: &T) -> Result<(), HierarchyRequestError>
-        where
-            T: Fragment,
+    fn try_before_insert_fragment<T>(
+        &self,
+        document_fragment: &T,
+    ) -> Result<(), HierarchyRequestError>
+    where
+        T: Fragment,
     {
         self.as_js_child_node()
             .before(document_fragment.as_web_sys_document_fragment().as_ref())
@@ -306,8 +312,8 @@ pub trait ChildNode: child_node_seal::Seal {
     /// [HierarchyRequestError] for details on invalid DOM hierarchies). See
     /// [try_after_insert_fragment] for an alternative that returns an error instead of panicking.
     fn after_insert_fragment<T>(&self, document_fragment: &T)
-        where
-            T: Fragment,
+    where
+        T: Fragment,
     {
         self.as_js_child_node()
             .after(document_fragment.as_web_sys_document_fragment().as_ref())
@@ -324,9 +330,12 @@ pub trait ChildNode: child_node_seal::Seal {
     /// Returns a [HierarchyRequestError] if this operation would result in an invalid DOM
     /// hierarchy (see [HierarchyRequestError] for details on invalid DOM hierarchies). See
     /// [after_insert_fragment] for an alternative that panics instead of returning an error.
-    fn try_after_insert_fragment<T>(&self, document_fragment: &T) -> Result<(), HierarchyRequestError>
-        where
-            T: Fragment,
+    fn try_after_insert_fragment<T>(
+        &self,
+        document_fragment: &T,
+    ) -> Result<(), HierarchyRequestError>
+    where
+        T: Fragment,
     {
         self.as_js_child_node()
             .after(document_fragment.as_web_sys_document_fragment().as_ref())

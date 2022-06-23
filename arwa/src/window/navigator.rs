@@ -7,6 +7,7 @@ use crate::geolocation::Geolocation;
 use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
 use crate::worker::service::ServiceWorkerContainer;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 pub struct ProtocolHandler<'a> {
     pub scheme: &'a str,
@@ -96,6 +97,9 @@ impl AsRef<web_sys::Navigator> for WindowNavigator {
         &self.inner
     }
 }
+
+impl_common_wrapper_traits!(WindowNavigator);
+impl_js_cast!(WindowNavigator, Navigator);
 
 pub trait VibrationPattern: vibration_pattern_seal::Seal {
     fn vibrate(self, navigator: &WindowNavigator) -> bool;

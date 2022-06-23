@@ -3,7 +3,7 @@ use wasm_bindgen::{throw_val, JsCast, JsValue, UnwrapThrowExt};
 use crate::fetch::{Body, BodySource, Headers, RequestMethod};
 use crate::security::ReferrerPolicy;
 use crate::url::Url;
-use crate::{impl_common_wrapper_traits, type_error_wrapper};
+use crate::{impl_common_wrapper_traits, impl_js_cast, type_error_wrapper};
 
 // Note: decided to duplicate the various web_sys enums, because though at first glance they seem
 // identical, it allows us to implement Default and it gives us the ability to attach documentation.
@@ -356,6 +356,7 @@ impl AsRef<web_sys::Request> for Request {
 }
 
 impl_common_wrapper_traits!(Request);
+impl_js_cast!(Request);
 
 fn create_request_internal(url: &str, descriptor: RequestDescriptor) -> Result<Request, JsValue> {
     let RequestDescriptor {

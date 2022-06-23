@@ -1,6 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::subtle_crypto::SubtleCrypto;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone)]
 pub struct Crypto {
@@ -31,6 +32,9 @@ impl AsRef<web_sys::Crypto> for Crypto {
         &self.inner
     }
 }
+
+impl_common_wrapper_traits!(Crypto);
+impl_js_cast!(Crypto);
 
 pub trait FillRandom: fill_random_seal::Seal {
     fn fill_random(&mut self, crypto: &Crypto);

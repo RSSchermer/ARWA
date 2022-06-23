@@ -41,7 +41,7 @@ macro_rules! transition_event {
     };
 }
 
-transition_event!{
+transition_event! {
     /// Event emitted on [TransitionEventTarget] types when a transition begins.
     ///
     /// Differs from a [TransitionRunEvent] in that a [TransitionStartEvent] is emitted after
@@ -49,11 +49,11 @@ transition_event!{
     /// initial delay.
     TransitionStartEvent, "transitionstart"
 }
-transition_event!{
+transition_event! {
     /// Event emitted on [TransitionEventTarget] types when a transition completes.
     TransitionEndEvent, "transitionend"
 }
-transition_event!{
+transition_event! {
     /// Event emitted on [TransitionEventTarget] types when a transition is first created.
     ///
     /// Differs from a [TransitionStartEvent] in that a [TransitionStartEvent] is emitted after
@@ -61,7 +61,7 @@ transition_event!{
     /// initial delay.
     TransitionRunEvent, "transitionrun"
 }
-transition_event!{
+transition_event! {
     /// Event emitted on [TransitionEventTarget] types when a transition is cancelled.
     TransitionCancelEvent, "transitioncancel"
 }

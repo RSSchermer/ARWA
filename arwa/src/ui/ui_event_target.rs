@@ -1,11 +1,11 @@
 use crate::event::typed_event_iterator;
 use crate::ui::{
-    AuxClickEvent, BeforeInputEvent, ClickEvent, ContextMenuEvent, DragEndEvent, DragEnterEvent,
-    DragEvent, DragLeaveEvent, DragOverEvent, DragStartEvent, DropEvent, FocusInEvent,
-    FocusOutEvent, GotPointerCaptureEvent, InputEvent, KeyDownEvent, KeyUpEvent,
+    AuxClickEvent, BeforeInputEvent, ClickEvent, ContextMenuEvent, DblClickEvent, DragEndEvent,
+    DragEnterEvent, DragEvent, DragLeaveEvent, DragOverEvent, DragStartEvent, DropEvent,
+    FocusInEvent, FocusOutEvent, GotPointerCaptureEvent, InputEvent, KeyDownEvent, KeyUpEvent,
     LostPointerCaptureEvent, PointerCancelEvent, PointerDownEvent, PointerEnterEvent,
     PointerLeaveEvent, PointerMoveEvent, PointerOutEvent, PointerOverEvent, PointerUpEvent,
-    WheelEvent, DblClickEvent
+    WheelEvent,
 };
 
 pub(crate) mod ui_event_target_seal {

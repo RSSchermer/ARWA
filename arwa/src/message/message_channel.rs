@@ -1,7 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::impl_common_wrapper_traits;
 use crate::message::MessagePort;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone)]
 pub struct MessageChannel {
@@ -43,3 +43,4 @@ impl From<web_sys::MessageChannel> for MessageChannel {
 }
 
 impl_common_wrapper_traits!(MessageChannel);
+impl_js_cast!(MessageChannel);

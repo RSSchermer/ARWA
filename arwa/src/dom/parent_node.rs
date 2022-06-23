@@ -3,7 +3,7 @@ use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::collection::{Collection, Sequence};
 use crate::dom::{
-    node_seal, ChildNode, Fragment, DynamicChildNode, DynamicElement, DynamicNode,
+    node_seal, ChildNode, DynamicChildNode, DynamicElement, DynamicNode, Fragment,
     HierarchyRequestError, Node, Selector,
 };
 use crate::event::impl_event_target_traits;

@@ -3,10 +3,10 @@ use wasm_bindgen::{throw_val, JsCast};
 use crate::collection::{Collection, Sequence};
 use crate::cssom::{CssImportRule, DynamicCssRule, InsertRuleError, RemoveRuleError};
 use crate::dom::DynamicNode;
-use crate::impl_common_wrapper_traits;
 use crate::media_type::MediaType;
 use crate::security::SecurityError;
 use crate::url::Url;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 pub struct CssStyleSheet {
     inner: web_sys::CssStyleSheet,
@@ -98,6 +98,7 @@ impl From<web_sys::CssStyleSheet> for CssStyleSheet {
 }
 
 impl_common_wrapper_traits!(CssStyleSheet);
+impl_js_cast!(CssStyleSheet);
 
 pub struct CssStyleSheetRules {
     style_sheet: web_sys::CssStyleSheet,

@@ -179,6 +179,12 @@ macro_rules! impl_typed_event_traits {
             }
         }
 
+        impl<T> Into<wasm_bindgen::JsValue> for $tpe<T> {
+            fn into(self) -> wasm_bindgen::JsValue {
+                self.inner.into()
+            }
+        }
+
         impl<T> $crate::console::ToArgument for $tpe<T> {
             fn to_argument(&self) -> $crate::console::Argument {
                 let as_js_value: &wasm_bindgen::JsValue = self.as_ref();

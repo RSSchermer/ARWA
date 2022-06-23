@@ -1,7 +1,10 @@
-use wasm_bindgen::{UnwrapThrowExt, JsCast};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::dom::{impl_document_traits, Name, DynamicElement};
-use crate::html::{slot_change_event_target_seal, HtmlBodyElement, HtmlHeadElement, SlotChangeEventTarget, CustomElementName};
+use crate::dom::{impl_document_traits, DynamicElement, Name};
+use crate::html::{
+    slot_change_event_target_seal, CustomElementName, HtmlBodyElement, HtmlHeadElement,
+    SlotChangeEventTarget,
+};
 
 pub(crate) mod known_element_seal {
     pub trait Seal {}
@@ -21,11 +24,10 @@ macro_rules! impl_known_element {
         impl $crate::html::known_element_seal::Seal for $tpe {}
 
         impl $crate::html::KnownElement for $tpe {
-            const TAG_NAME: &'static $crate::dom::Name = &$crate::dom::Name::from_statically_parsed(
-                $crate::dom::StaticallyParsedName {
-                    name: $tag_name
-                }
-            );
+            const TAG_NAME: &'static $crate::dom::Name =
+                &$crate::dom::Name::from_statically_parsed($crate::dom::StaticallyParsedName {
+                    name: $tag_name,
+                });
 
             fn create(document: &$crate::html::HtmlDocument) -> Self {
                 use wasm_bindgen::{JsCast, UnwrapThrowExt};

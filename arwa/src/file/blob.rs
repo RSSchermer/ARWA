@@ -2,8 +2,8 @@ use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToIncl
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::impl_common_wrapper_traits;
 use crate::media_type::MediaType;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone)]
 pub struct Blob {
@@ -75,6 +75,7 @@ impl Blob {
 }
 
 impl_common_wrapper_traits!(Blob);
+impl_js_cast!(Blob);
 
 impl From<web_sys::Blob> for Blob {
     fn from(inner: web_sys::Blob) -> Self {

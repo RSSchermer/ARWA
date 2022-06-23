@@ -1,8 +1,12 @@
 use std::cell::Cell;
 
 use arwa::console;
-use arwa::dom::{name, selector, Element, ParentNode, ShadowHost, ShadowRootOptions, Name};
-use arwa::html::{AttributeChange, CustomElement, CustomElementDescriptor, GenericExtendableElement, HtmlDocument, HtmlTemplateElement, CustomElementRegistry, CustomElementName, CustomElementDefinition};
+use arwa::dom::{name, selector, Element, Name, ParentNode, ShadowHost, ShadowRootOptions};
+use arwa::html::{
+    AttributeChange, CustomElement, CustomElementDefinition, CustomElementDescriptor,
+    CustomElementName, CustomElementRegistry, GenericExtendableElement, HtmlDocument,
+    HtmlTemplateElement,
+};
 use arwa::window::window;
 
 thread_local! {
@@ -87,7 +91,10 @@ fn attribute_changed_callback(element: &MyElement, change: AttributeChange) {
 
 const OBSERVED_ATTRIBUTES: &'static [Name] = &[name!("message")];
 
-pub fn register(name: &CustomElementName, registry: &CustomElementRegistry) -> CustomElementDefinition<MyElementData, GenericExtendableElement> {
+pub fn register(
+    name: &CustomElementName,
+    registry: &CustomElementRegistry,
+) -> CustomElementDefinition<MyElementData, GenericExtendableElement> {
     let descriptor = CustomElementDescriptor::new(constructor)
         .connected_callback(connected_callback)
         .disconnected_callback(disconnected_callback)

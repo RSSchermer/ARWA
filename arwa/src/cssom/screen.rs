@@ -1,6 +1,6 @@
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::impl_common_wrapper_traits;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 pub struct Screen {
     inner: web_sys::Screen,
@@ -43,3 +43,4 @@ impl AsRef<web_sys::Screen> for Screen {
 }
 
 impl_common_wrapper_traits!(Screen);
+impl_js_cast!(Screen);

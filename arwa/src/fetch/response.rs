@@ -4,9 +4,9 @@ use delegate::delegate;
 use wasm_bindgen::{throw_val, JsCast, JsValue, UnwrapThrowExt};
 
 use crate::fetch::{Body, BodySource, Headers, Status};
-use crate::impl_common_wrapper_traits;
 use crate::type_error_wrapper;
 use crate::url::Url;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 pub enum ResponseType {
     Default,
@@ -127,6 +127,7 @@ impl AsRef<web_sys::Response> for Response {
 }
 
 impl_common_wrapper_traits!(Response);
+impl_js_cast!(Response);
 
 fn create_response_internal(descriptor: ResponseDescriptor) -> Result<Response, JsValue> {
     let ResponseDescriptor {

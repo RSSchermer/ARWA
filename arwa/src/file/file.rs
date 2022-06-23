@@ -4,7 +4,7 @@ use std::ops::Deref;
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::file::Blob;
-use crate::impl_common_wrapper_traits;
+use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone)]
 pub struct File {
@@ -62,3 +62,4 @@ impl From<web_sys::File> for File {
 }
 
 impl_common_wrapper_traits!(File);
+impl_js_cast!(File);
