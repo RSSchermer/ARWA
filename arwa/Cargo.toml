@@ -163,6 +163,7 @@ features = [
     "HtmlTrackElement",
     "HtmlUListElement",
     "HtmlVideoElement",
+    "ImageBitmap",
     "InputEvent",
     "KeyboardEvent",
     "Location",

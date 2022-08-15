@@ -21,6 +21,7 @@ pub mod file;
 pub mod geolocation;
 pub mod history;
 pub mod html;
+pub mod image_bitmap;
 pub mod lang;
 pub mod loading;
 pub mod media;
