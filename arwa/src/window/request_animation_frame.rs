@@ -67,8 +67,11 @@ impl Future for RequestAnimationFrame {
 
 impl Drop for RequestAnimationFrame {
     fn drop(&mut self) {
-        if let Some(handle) = self.handle.take() {
-            self.context.cancel_animation_frame(handle).unwrap_throw();
+        // Only cancel if the animation frame hasn't already occurred
+        if self.time.is_none() {
+            if let Some(handle) = self.handle.take() {
+                self.context.cancel_animation_frame(handle).unwrap_throw();
+            }
         }
     }
 }
