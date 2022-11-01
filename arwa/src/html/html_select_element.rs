@@ -2,13 +2,16 @@ use delegate::delegate;
 use wasm_bindgen::JsCast;
 
 use crate::collection::{Collection, Sequence};
+use crate::dom::element_seal::Seal;
 use crate::dom::impl_try_from_element;
+use crate::event::{impl_typed_event_traits, typed_event_iterator};
 use crate::html::{
     constraint_validation_target_seal, form_listed_element_seal, impl_extendable_element,
     impl_html_element_traits, impl_known_element, AutoComplete, ConstraintValidationTarget,
     DynamicFormListedElement, FormListedElement, HtmlFormElement, HtmlOptionElement, ValidityState,
 };
 use crate::InvalidCast;
+use std::marker;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SelectType {
@@ -86,6 +89,10 @@ impl HtmlSelectElement {
         }
     }
 
+    pub fn on_selected_change(&self) -> OnSelectedChange<Self> {
+        OnSelectedChange::new(self.as_web_sys_element())
+    }
+
     // Note: ignoring `selectedIndex`, prefer `selected_options().first()` instead.
 
     // Note: ignoring the ability to modify the options through `SelectOptions`, prefer modifying
@@ -161,6 +168,21 @@ impl_html_element_traits!(HtmlSelectElement);
 impl_try_from_element!(HtmlSelectElement);
 impl_known_element!(HtmlSelectElement, "SELECT");
 impl_extendable_element!(HtmlSelectElement, "select");
+
+#[derive(Clone)]
+pub struct SelectedChangeEvent<T> {
+    inner: web_sys::Event,
+    _marker: marker::PhantomData<T>,
+}
+
+impl_typed_event_traits!(SelectedChangeEvent, Event, "change");
+
+typed_event_iterator!(
+    OnSelectedChange,
+    OnSelectedChangeWithOptions,
+    SelectedChangeEvent,
+    "change"
+);
 
 #[derive(Clone)]
 pub struct SelectOptions {
