@@ -1,8 +1,9 @@
+use std::mem;
+
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{throw_val, JsCast, JsValue};
 
 use crate::event::{impl_event_target_traits, impl_try_from_event_target};
-use crate::file::Blob;
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
@@ -46,7 +47,7 @@ impl DedicatedWorker {
                 // Since the worker failed to initialize, the closure does not get used and cleaned
                 // up. Clean it up here
                 unsafe {
-                    Box::from_raw(ptr);
+                    mem::drop(Box::from_raw(ptr));
                 }
 
                 throw_val(err);

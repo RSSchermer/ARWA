@@ -26,7 +26,7 @@ fn main() {
 
     let button = window()
         .document()
-        .query_selector_first(&selector!("#notify_worker"))
+        .query_selector(&selector!("#notify_worker"))
         .unwrap();
 
     spawn_local(async move {
@@ -37,7 +37,7 @@ fn main() {
 
             let as_web_sys: &web_sys::Worker = worker.as_ref();
 
-            as_web_sys.post_message(&JsValue::null());
+            as_web_sys.post_message(&JsValue::null()).unwrap();
         }
     });
 }
