@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::{throw_val, JsCast, JsValue};
 
 use crate::event::{impl_event_target_traits, impl_try_from_event_target};
+use crate::file::Blob;
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
@@ -34,7 +35,12 @@ impl DedicatedWorker {
         let closure = Box::new(Box::new(f) as Box<dyn FnOnce(DedicatedWorkerGlobalScope) + Send>);
         let ptr = Box::into_raw(closure);
 
-        match spawn_worker(&wasm_bindgen::module(), &wasm_bindgen::memory(), ptr) {
+        match spawn_worker(
+            worker_script(),
+            &wasm_bindgen::module(),
+            &wasm_bindgen::memory(),
+            ptr,
+        ) {
             Ok(worker) => worker.into(),
             Err(err) => {
                 // Since the worker failed to initialize, the closure does not get used and cleaned
@@ -98,10 +104,52 @@ fn create_dedicated_worker_internal(
     result.map(|w| w.into())
 }
 
+// Below functions related to building the worker script were modified from
+// https://github.com/chemicstry/wasm_thread
+
+const RESOLVE_WBG_SHIM_JS: &'static str = include_str!("resolve_wbg_shim_path.js");
+const WORKER_SCRIPT_TEMPLATE: &'static str = include_str!("worker_script_template.js");
+
+fn worker_script() -> &'static str {
+    static mut SCRIPT_URL: Option<String> = None;
+
+    // SAFETY - the reads of SCRIPT_URL are safe, because the initial invocation of this function
+    // is guaranteed to happen from the main thread, when no worker threads have been spawned yet,
+    // thus no aliasing occurs when SCRIPT_URL is modified during the initial invocation. After
+    // the initial invocation SCRIPT_URL is never modified again.
+
+    if unsafe { SCRIPT_URL.as_ref() }.is_none() {
+        let wbg_shim_path = js_sys::eval(RESOLVE_WBG_SHIM_JS)
+            .unwrap()
+            .as_string()
+            .unwrap();
+
+        let script = WORKER_SCRIPT_TEMPLATE.replace("__WBG_SHIM_SCRIPT_PATH__", &wbg_shim_path);
+
+        // Create url encoded blob
+        let blob_parts = js_sys::Array::new();
+
+        blob_parts.set(0, JsValue::from_str(&script));
+
+        let mut blob_opts = web_sys::BlobPropertyBag::new();
+
+        blob_opts.type_("text/javascript");
+
+        let blob =
+            web_sys::Blob::new_with_str_sequence_and_options(&blob_parts, &blob_opts).unwrap();
+        let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
+
+        unsafe { SCRIPT_URL = Some(url.clone()) };
+    }
+
+    unsafe { SCRIPT_URL.as_ref() }.unwrap()
+}
+
 #[wasm_bindgen(module = "/src/worker/dedicated/spawn_worker.js")]
 extern "C" {
     #[wasm_bindgen(catch)]
     fn spawn_worker(
+        script: &str,
         module: &JsValue,
         memory: &JsValue,
         pointer: *mut Box<dyn FnOnce(DedicatedWorkerGlobalScope) + Send>,
