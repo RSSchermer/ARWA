@@ -92,8 +92,13 @@ impl Future for Fetch {
 
         let inner = Pin::new(self.inner.as_mut().unwrap_throw());
 
-        inner
-            .poll(cx)
+        let poll_result = inner.poll(cx);
+
+        if poll_result.is_ready() {
+            self.abort_controller = None;
+        }
+
+        poll_result
             .map_ok(|v| Response::from(v.unchecked_into::<web_sys::Response>()))
             .map_err(|e| NetworkError::new(e.unchecked_into()))
     }
