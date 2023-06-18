@@ -311,6 +311,19 @@ impl Url {
             .map_err(|err| InvalidUrl::new(err.unchecked_into()))
     }
 
+    pub fn parse_with_base(relative: &str, base: &Url) -> Result<Self, InvalidUrl> {
+        web_sys::Url::new_with_base(relative, &base.to_string())
+            .map(|parsed| Url {
+                internal: DynamicallyParsedUrl {
+                    raw: parsed.href(),
+                    parsed,
+                    cache: ParsedDynamicCache::uninitialized(),
+                }
+                    .into(),
+            })
+            .map_err(|err| InvalidUrl::new(err.unchecked_into()))
+    }
+
     /// Only meant to be called by the accompanying proc-macro, not part of the public API.
     #[doc(hidden)]
     pub const fn from_statically_parsed(parsed: StaticallyParsedUrl) -> Self {
