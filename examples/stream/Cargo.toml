@@ -1,0 +1,12 @@
+[package]
+name = "stream"
+version = "0.1.0"
+authors = ["Roland Schermer <roland0507@gmail.com>"]
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+arwa = { version = "0.1.0", path = "../../arwa" }
+wasm-bindgen = "0.2.84"
+futures = "0.3.21"

@@ -74,3 +74,15 @@ export function __arwa_define_custom_element(
         extendedName ? { extends: extendedName } : undefined
     );
 }
+
+export function __arwa_create_readable_stream(underlyingSource, queuingStrategy) {
+    return new ReadableStream(underlyingSource, queuingStrategy);
+}
+
+export function __arwa_create_writable_stream(underlyingSink, queuingStrategy) {
+    return new WritableStream(underlyingSink, queuingStrategy);
+}
+
+export function __arwa_create_transform_stream(underlyingSink, writableStrategy, readableStrategy) {
+    return new TransformStream(underlyingSink, writableStrategy, readableStrategy);
+}

@@ -11,4 +11,5 @@ members = [
     "examples/geolocation",
     "examples/media_element",
     "examples/spawn_worker",
+    "examples/stream",
 ]

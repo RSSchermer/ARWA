@@ -38,6 +38,7 @@ pub mod performance;
 pub mod scroll;
 pub mod security;
 pub mod storage;
+pub mod stream;
 pub mod subtle_crypto;
 pub mod timer;
 pub mod ui;
