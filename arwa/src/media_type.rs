@@ -6,14 +6,12 @@
 use std::error::Error;
 use std::fmt;
 
+#[doc(hidden)]
+pub use mime_4::media_type as mime_4_media_type;
+pub use mime_4::Value;
 use wasm_bindgen::{JsError, JsValue};
 
 use crate::console::{Argument, ToArgument};
-
-pub use mime_4::Value;
-
-#[doc(hidden)]
-pub use mime_4::media_type as mime_4_media_type;
 
 #[derive(Clone)]
 pub struct MediaType {

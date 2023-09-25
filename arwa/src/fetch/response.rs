@@ -4,9 +4,8 @@ use delegate::delegate;
 use wasm_bindgen::{throw_val, JsCast, JsValue, UnwrapThrowExt};
 
 use crate::fetch::{Body, BodySource, Headers, Status};
-use crate::type_error_wrapper;
 use crate::url::Url;
-use crate::{impl_common_wrapper_traits, impl_js_cast};
+use crate::{impl_common_wrapper_traits, impl_js_cast, type_error_wrapper};
 
 pub enum ResponseType {
     Default,

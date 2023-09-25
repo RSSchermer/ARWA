@@ -1,8 +1,7 @@
-use arwa::console;
-use arwa::spawn_local;
 use arwa::stream::{CustomReadableStream, ReadableStream};
 use arwa::timer::{Duration, TimerContext};
 use arwa::window::window;
+use arwa::{console, spawn_local};
 use futures::StreamExt;
 use wasm_bindgen::JsValue;
 

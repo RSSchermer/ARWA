@@ -1,30 +1,10 @@
+#[doc(hidden)]
+pub use js_sys::Array as JsArray;
 use wasm_bindgen::JsValue;
-
-pub use crate::log;
-
-pub use crate::info;
-
-pub use crate::warn;
-
-pub use crate::error;
-
-pub use crate::debug;
-
-pub use crate::group;
-
-pub use crate::group_collapsed;
-
-pub use crate::trace;
-
-pub use crate::assert;
-
-pub use crate::time_log;
-
 #[doc(hidden)]
 pub use web_sys::console as web_sys_console;
 
-#[doc(hidden)]
-pub use js_sys::Array as JsArray;
+pub use crate::{assert, debug, error, group, group_collapsed, info, log, time_log, trace, warn};
 
 enum ArgumentInternal<'a> {
     Owned(JsValue),

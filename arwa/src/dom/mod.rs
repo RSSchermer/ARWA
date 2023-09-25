@@ -49,6 +49,8 @@
 //! Certain manipulations of the DOM tree can result in invalid DOM hierarchies. See
 //! [HierarchyRequestError] for details on how an operation might produce an invalid hierarchy.
 
+pub use arwa_macro::{name, non_colon_name, qualified_name, selector, token};
+
 mod attribute;
 pub use self::attribute::*;
 
@@ -144,13 +146,3 @@ pub use selector::*;
 
 mod visibility_change_event;
 pub use self::visibility_change_event::*;
-
-pub use arwa_macro::name;
-
-pub use arwa_macro::non_colon_name;
-
-pub use arwa_macro::qualified_name;
-
-pub use arwa_macro::selector;
-
-pub use arwa_macro::token;

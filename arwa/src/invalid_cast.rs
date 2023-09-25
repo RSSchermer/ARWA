@@ -1,6 +1,7 @@
 use std::any::type_name;
 use std::error::Error;
 use std::{fmt, marker};
+
 use wasm_bindgen::{JsError, JsValue};
 
 pub struct InvalidCast<F, T> {

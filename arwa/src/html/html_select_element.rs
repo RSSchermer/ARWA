@@ -1,3 +1,5 @@
+use std::marker;
+
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
@@ -11,7 +13,6 @@ use crate::html::{
     DynamicFormListedElement, FormListedElement, HtmlFormElement, HtmlOptionElement, ValidityState,
 };
 use crate::InvalidCast;
-use std::marker;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SelectType {

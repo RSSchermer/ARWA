@@ -18,11 +18,10 @@ use crate::dom::{
     impl_try_from_node, impl_try_from_parent_node, range_bound_container_seal, Attribute, Name,
     NonColonName, RangeBoundContainer, Selector, Token,
 };
-use crate::dom_exception_wrapper;
-use crate::impl_common_wrapper_traits;
 use crate::scroll::{impl_scroll_into_view_for_element, impl_scrollable_for_element};
 use crate::ui::impl_ui_event_target_for_element;
 use crate::unchecked_cast_array::unchecked_cast_array;
+use crate::{dom_exception_wrapper, impl_common_wrapper_traits};
 
 dom_exception_wrapper!(InvalidPointerId);
 

@@ -1,4 +1,5 @@
-use crate::cssom::{css_rule_seal::Seal, CssStyleSheet};
+use crate::cssom::css_rule_seal::Seal;
+use crate::cssom::CssStyleSheet;
 use crate::impl_common_wrapper_traits;
 
 pub(crate) mod css_rule_seal {

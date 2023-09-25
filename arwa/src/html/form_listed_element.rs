@@ -1,7 +1,6 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::html::impl_html_element_traits;
-use crate::html::HtmlFormElement;
+use crate::html::{impl_html_element_traits, HtmlFormElement};
 
 pub(crate) mod form_listed_element_seal {
     pub trait Seal {}

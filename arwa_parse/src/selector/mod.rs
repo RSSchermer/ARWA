@@ -1,3 +1,7 @@
+use std::error::Error;
+use std::fmt;
+use std::ops::Deref;
+
 mod parse;
 use self::parse::*;
 
@@ -42,10 +46,6 @@ use self::util::*;
 
 mod parsed;
 pub use self::parsed::*;
-
-use std::error::Error;
-use std::fmt;
-use std::ops::Deref;
 
 pub struct InvalidSelector {
     selector_string: String,

@@ -1,10 +1,9 @@
 use std::fmt;
 
 use arwa_parse::xml_name;
+pub use arwa_parse::xml_name::InvalidNonColonName;
 
 use crate::console::{Argument, ToArgument};
-
-pub use arwa_parse::xml_name::InvalidNonColonName;
 
 #[doc(hidden)]
 #[derive(Clone)]

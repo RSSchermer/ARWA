@@ -2,12 +2,11 @@ use js_sys::Uint32Array;
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::connection::{connection_status_seal, ConnectionStatus};
-use crate::dom_exception_wrapper;
 use crate::geolocation::Geolocation;
 use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
 use crate::worker::service::ServiceWorkerContainer;
-use crate::{impl_common_wrapper_traits, impl_js_cast};
+use crate::{dom_exception_wrapper, impl_common_wrapper_traits, impl_js_cast};
 
 pub struct ProtocolHandler<'a> {
     pub scheme: &'a str,

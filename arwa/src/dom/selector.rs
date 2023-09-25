@@ -1,10 +1,9 @@
 use std::fmt;
 
+pub use arwa_parse::selector::InvalidSelector;
 use arwa_parse::selector::Selector as DynamicallyParsedSelector;
 
 use crate::console::{Argument, ToArgument};
-
-pub use arwa_parse::selector::InvalidSelector;
 
 #[doc(hidden)]
 #[derive(Clone)]

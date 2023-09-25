@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt;
+
 use wasm_bindgen::{JsError, JsValue};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

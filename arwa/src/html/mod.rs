@@ -218,9 +218,9 @@ mod link_types;
 pub use self::link_types::*;
 
 mod media_element;
-pub use self::media_element::*;
-
 pub use arwa_macro::custom_element_name;
+
+pub use self::media_element::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AutoComplete {

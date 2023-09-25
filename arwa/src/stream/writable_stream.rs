@@ -1,9 +1,3 @@
-use crate::finalization_registry::FinalizationRegistry;
-use crate::js_serialize::{js_deserialize, js_serialize};
-use crate::stream::{QueuingStrategy, QueuingStrategyIntoWebSys};
-use crate::type_error_wrapper;
-use js_sys::{Object, Uint8Array};
-use pin_project::pin_project;
 use std::any::Any;
 use std::future::Future;
 use std::mem::MaybeUninit;
@@ -11,11 +5,18 @@ use std::pin::Pin;
 use std::ptr::DynMetadata;
 use std::task::{Context, Poll};
 use std::{fmt, marker, mem, ptr};
+
+use js_sys::{Object, Uint8Array};
+use pin_project::pin_project;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
-use wasm_bindgen::UnwrapThrowExt;
-use wasm_bindgen::{throw_str, JsCast, JsError, JsValue};
+use wasm_bindgen::{throw_str, JsCast, JsError, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
+
+use crate::finalization_registry::FinalizationRegistry;
+use crate::js_serialize::{js_deserialize, js_serialize};
+use crate::stream::{QueuingStrategy, QueuingStrategyIntoWebSys};
+use crate::type_error_wrapper;
 
 thread_local! {
     static WRITABLE_STREAM_FINALIZATION_REGISTRY: FinalizationRegistry = {

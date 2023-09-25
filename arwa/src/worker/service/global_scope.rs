@@ -5,20 +5,16 @@ use std::task::{Context, Poll};
 use delegate::delegate;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::Client as WebSysClient;
-use web_sys::ServiceWorkerRegistration;
+use web_sys::{Client as WebSysClient, ServiceWorkerRegistration};
 
-use crate::dom_exception_wrapper;
 use crate::fetch::{cache_context_seal, CacheContext};
-use crate::impl_common_wrapper_traits;
 use crate::message::{
     message_event_target_seal, message_sender_seal, MessageEventTarget, MessageSender,
 };
-use crate::type_error_wrapper;
 use crate::unchecked_cast_array::unchecked_cast_array;
 use crate::url::Url;
 use crate::worker::impl_worker_global_scope_traits;
-use crate::InvalidCast;
+use crate::{dom_exception_wrapper, impl_common_wrapper_traits, type_error_wrapper, InvalidCast};
 
 #[derive(Clone)]
 pub struct ServiceWorkerGlobalScope {

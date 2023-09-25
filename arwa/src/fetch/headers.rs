@@ -1,7 +1,6 @@
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
-use crate::type_error_wrapper;
-use crate::{impl_common_wrapper_traits, impl_js_cast};
+use crate::{impl_common_wrapper_traits, impl_js_cast, type_error_wrapper};
 
 type_error_wrapper!(InvalidHeaderName);
 

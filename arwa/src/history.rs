@@ -1,8 +1,7 @@
 use wasm_bindgen::{throw_val, JsCast, JsValue};
 
-use crate::dom_exception_wrapper;
 use crate::security::SecurityError;
-use crate::{impl_common_wrapper_traits, impl_js_cast};
+use crate::{dom_exception_wrapper, impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ScrollRestoration {

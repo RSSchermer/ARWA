@@ -6,8 +6,7 @@ use web_sys::{
 };
 
 use crate::unchecked_cast_array::unchecked_cast_array;
-use crate::InvalidCast;
-use crate::{impl_common_wrapper_traits, impl_js_cast};
+use crate::{impl_common_wrapper_traits, impl_js_cast, InvalidCast};
 
 // TODO: the spec also allows just and end-mark (from navigation to named mark) by specifying
 // `undefined` for the start mark, but web_sys's API currently does not allow this

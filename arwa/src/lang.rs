@@ -1,11 +1,10 @@
 use std::error::Error;
 use std::fmt;
 
+pub use arwa_macro::lang;
 use wasm_bindgen::{JsError, JsValue, UnwrapThrowExt};
 
 use crate::console::{Argument, ToArgument};
-
-pub use arwa_macro::lang;
 
 #[doc(hidden)]
 #[derive(Clone)]

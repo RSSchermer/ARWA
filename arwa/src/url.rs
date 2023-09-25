@@ -3,12 +3,11 @@ use std::fmt;
 use std::ops::Range;
 use std::str::FromStr;
 
+pub use arwa_macro::url;
 use lazycell::LazyCell;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::type_error_wrapper;
-
-pub use arwa_macro::url;
 
 #[doc(hidden)]
 #[derive(Clone)]

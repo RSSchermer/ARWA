@@ -1,3 +1,13 @@
+use std::any::Any;
+use std::mem::MaybeUninit;
+use std::ptr::DynMetadata;
+use std::{marker, mem, ptr};
+
+use js_sys::{Object, Uint8Array};
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{JsCast, JsError, JsValue, UnwrapThrowExt};
+
 use crate::finalization_registry::FinalizationRegistry;
 use crate::js_serialize::{js_deserialize, js_serialize};
 use crate::stream::{
@@ -5,16 +15,6 @@ use crate::stream::{
     WritableStream,
 };
 use crate::type_error_wrapper;
-use js_sys::Object;
-use js_sys::Uint8Array;
-use std::any::Any;
-use std::mem::MaybeUninit;
-use std::ptr::DynMetadata;
-use std::{marker, mem, ptr};
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::prelude::wasm_bindgen;
-use wasm_bindgen::UnwrapThrowExt;
-use wasm_bindgen::{JsCast, JsError, JsValue};
 
 pub trait TransformStream {
     type Chunk: JsCast;

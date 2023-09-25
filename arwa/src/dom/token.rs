@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::console::{Argument, ToArgument};
-
 pub use arwa_parse::dom_token::InvalidToken;
+
+use crate::console::{Argument, ToArgument};
 
 #[doc(hidden)]
 #[derive(Clone)]

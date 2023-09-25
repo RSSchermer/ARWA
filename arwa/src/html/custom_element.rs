@@ -14,8 +14,7 @@ use crate::dom::{impl_shadow_host_for_element, DynamicElement, Name, ParentNode}
 use crate::finalization_registry::FinalizationRegistry;
 use crate::html::{impl_html_element_traits, CustomElementName};
 use crate::js_serialize::{js_deserialize, js_serialize};
-use crate::InvalidCast;
-use crate::{dom_exception_wrapper, impl_common_wrapper_traits};
+use crate::{dom_exception_wrapper, impl_common_wrapper_traits, InvalidCast};
 
 thread_local! {
     static CUSTOM_ELEMENT_FINALIZATION_REGISTRY: FinalizationRegistry = {

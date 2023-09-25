@@ -3,8 +3,7 @@ use std::str::FromStr;
 use delegate::delegate;
 use wasm_bindgen::JsCast;
 
-use crate::dom::impl_try_from_element;
-use crate::dom::DynamicDocument;
+use crate::dom::{impl_try_from_element, DynamicDocument};
 use crate::html::{
     constraint_validation_target_seal, form_listed_element_seal, impl_extendable_element,
     impl_html_element_traits, impl_known_element, ConstraintValidationTarget,

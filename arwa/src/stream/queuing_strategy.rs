@@ -1,8 +1,8 @@
-use js_sys::Object;
 use std::marker;
+
+use js_sys::Object;
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::UnwrapThrowExt;
-use wasm_bindgen::{throw_str, JsCast, JsValue};
+use wasm_bindgen::{throw_str, JsCast, JsValue, UnwrapThrowExt};
 
 pub struct QueuingStrategy<T, Size> {
     pub(super) internal: QueuingStrategyInternal<Size>,

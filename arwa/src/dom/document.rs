@@ -2,12 +2,13 @@ use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::connection::{connection_event_target_seal, ConnectionEventTarget};
 use crate::cssom::{styled_seal, StyleSheets, Styled};
+use crate::dom::document_seal::Seal;
 use crate::dom::{
-    document_seal::Seal, impl_node_traits, impl_parent_node, impl_try_from_node,
-    impl_try_from_parent_node, Attribute, Comment, DocumentFragment, DocumentType, DynamicElement,
-    FullscreenChangeEvent, FullscreenErrorEvent, LiveRange, Name, OwnedNode,
-    PointerLockChangeEvent, PointerLockErrorEvent, QualifiedName, ReadyStateChangeEvent,
-    SelectionChangeEvent, Text, TextDirectionality, VisibilityChangeEvent,
+    impl_node_traits, impl_parent_node, impl_try_from_node, impl_try_from_parent_node, Attribute,
+    Comment, DocumentFragment, DocumentType, DynamicElement, FullscreenChangeEvent,
+    FullscreenErrorEvent, LiveRange, Name, OwnedNode, PointerLockChangeEvent,
+    PointerLockErrorEvent, QualifiedName, ReadyStateChangeEvent, SelectionChangeEvent, Text,
+    TextDirectionality, VisibilityChangeEvent,
 };
 use crate::dom_exception_wrapper;
 use crate::event::typed_event_iterator;

@@ -1,9 +1,10 @@
 use std::error::Error;
 use std::fmt;
 
+use wasm_bindgen::JsValue;
+
 use crate::console::{Argument, ToArgument};
 use crate::normalize_exception_message;
-use wasm_bindgen::JsValue;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PositionErrorKind {

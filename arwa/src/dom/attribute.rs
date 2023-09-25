@@ -1,9 +1,9 @@
 use delegate::delegate;
+use wasm_bindgen::UnwrapThrowExt;
 
 use crate::dom::{
     impl_node_traits, impl_owned_node, impl_try_from_node, DynamicElement, Name, NonColonName,
 };
-use wasm_bindgen::UnwrapThrowExt;
 
 /// Represents an attribute on an [Element] node.
 ///

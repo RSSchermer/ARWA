@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::console::{Argument, ToArgument};
-
 pub use arwa_parse::request_method::InvalidRequestMethod;
+
+use crate::console::{Argument, ToArgument};
 
 #[doc(hidden)]
 #[derive(Clone)]

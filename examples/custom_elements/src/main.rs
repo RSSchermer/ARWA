@@ -2,6 +2,8 @@
 
 mod my_element;
 
+use std::ops::Deref;
+
 use arwa::dom::{selector, ChildNode, ParentNode};
 use arwa::html::{custom_element_name, HtmlButtonElement, HtmlDocument};
 use arwa::spawn_local;
@@ -11,7 +13,6 @@ use futures::StreamExt;
 use wasm_bindgen::{JsError, JsValue};
 
 use crate::my_element::{MyElement, MyElementExt};
-use std::ops::Deref;
 
 fn main() -> Result<(), JsValue> {
     let window = window();

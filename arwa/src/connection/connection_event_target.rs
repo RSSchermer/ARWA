@@ -1,5 +1,4 @@
-use crate::connection::OfflineEvent;
-use crate::connection::OnlineEvent;
+use crate::connection::{OfflineEvent, OnlineEvent};
 use crate::event::typed_event_iterator;
 
 pub(crate) mod connection_event_target_seal {

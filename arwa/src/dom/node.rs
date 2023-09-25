@@ -1,6 +1,7 @@
 use bitflags::bitflags;
 use wasm_bindgen::UnwrapThrowExt;
 
+use crate::dom::NonColonName;
 use crate::event::{impl_event_target_traits, impl_try_from_event_target};
 
 bitflags! {
@@ -186,5 +187,4 @@ macro_rules! impl_try_from_node {
     };
 }
 
-use crate::dom::NonColonName;
 pub(crate) use impl_try_from_node;

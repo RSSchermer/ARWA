@@ -1,8 +1,7 @@
 use wasm_bindgen::{throw_val, JsCast, UnwrapThrowExt};
 
 use crate::collection::Collection;
-use crate::dom_exception_wrapper;
-use crate::{impl_common_wrapper_traits, impl_js_cast};
+use crate::{dom_exception_wrapper, impl_common_wrapper_traits, impl_js_cast};
 
 dom_exception_wrapper!(StorageQuotaExceeded);
 
