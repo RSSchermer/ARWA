@@ -319,7 +319,7 @@ impl Url {
                     parsed,
                     cache: ParsedDynamicCache::uninitialized(),
                 }
-                    .into(),
+                .into(),
             })
             .map_err(|err| InvalidUrl::new(err.unchecked_into()))
     }
