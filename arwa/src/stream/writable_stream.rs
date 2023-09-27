@@ -82,8 +82,8 @@ impl ClosureStatePointerData {
 }
 
 pub struct WritableStream<T, E = JsValue, C = JsValue> {
-    pub(super) inner: web_sys::WritableStream,
-    pub(super) _marker: marker::PhantomData<(T, E, C)>,
+    pub(crate) inner: web_sys::WritableStream,
+    pub(crate) _marker: marker::PhantomData<(T, E, C)>,
 }
 
 impl<T, E, C> WritableStream<T, E, C>

@@ -1,34 +1,35 @@
-use crate::stream::{readable_stream_seal, ReadableStream, TransformStream, WritableStream};
 use js_sys::Uint8Array;
-use wasm_bindgen::{JsValue, JsCast};
 use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{JsCast, JsValue};
+
+use crate::stream::{readable_stream_seal, ReadableStream, TransformStream, WritableStream};
 
 pub struct DecompressionStream {
-    inner: DecompressionStreamInternal
+    inner: DecompressionStreamInternal,
 }
 
 impl DecompressionStream {
     pub fn gzip() -> Self {
         DecompressionStream {
-            inner: DecompressionStreamInternal::new("gzip")
+            inner: DecompressionStreamInternal::new("gzip"),
         }
     }
 
     pub fn deflate() -> Self {
         DecompressionStream {
-            inner: DecompressionStreamInternal::new("deflate")
+            inner: DecompressionStreamInternal::new("deflate"),
         }
     }
 
     pub fn deflate_raw() -> Self {
         DecompressionStream {
-            inner: DecompressionStreamInternal::new("deflate-raw")
+            inner: DecompressionStreamInternal::new("deflate-raw"),
         }
     }
 }
 
 pub struct DecompressionReadableStream {
-    inner: web_sys::ReadableStream
+    inner: web_sys::ReadableStream,
 }
 
 impl readable_stream_seal::Seal for DecompressionReadableStream {
@@ -36,9 +37,11 @@ impl readable_stream_seal::Seal for DecompressionReadableStream {
         &self.inner
     }
 
-    fn from_web_sys(web_sys: web_sys::ReadableStream) -> Self where
-        Self: Sized {
-        DecompressionReadableStream {inner: web_sys}
+    fn from_web_sys(web_sys: web_sys::ReadableStream) -> Self
+    where
+        Self: Sized,
+    {
+        DecompressionReadableStream { inner: web_sys }
     }
 }
 
@@ -57,13 +60,13 @@ impl TransformStream for DecompressionStream {
     fn writable(&self) -> WritableStream<Self::Chunk, Self::Error, Self::AbortReason> {
         WritableStream {
             inner: self.inner.writable(),
-            _marker: Default::default()
+            _marker: Default::default(),
         }
     }
 
     fn readable(&self) -> Self::Readable {
         DecompressionReadableStream {
-            inner: self.inner.readable()
+            inner: self.inner.readable(),
         }
     }
 }

@@ -52,7 +52,7 @@ thread_local! {
     };
 }
 
-pub(super) mod readable_stream_seal {
+pub(crate) mod readable_stream_seal {
     pub trait Seal {
         #[doc(hidden)]
         fn as_web_sys(&self) -> &web_sys::ReadableStream;
