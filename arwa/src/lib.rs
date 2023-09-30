@@ -15,6 +15,7 @@ pub use self::invalid_cast::*;
 pub use self::transferable::*;
 
 pub mod collection;
+pub mod compression;
 pub mod connection;
 pub mod console;
 pub mod crypto;
@@ -28,6 +29,7 @@ pub mod geolocation;
 pub mod history;
 pub mod html;
 pub mod image_bitmap;
+pub mod indexed_db;
 pub mod lang;
 pub mod loading;
 pub mod media;

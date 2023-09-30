@@ -2,6 +2,7 @@
 
 use arwa_parse::custom_element_name::CustomElementName;
 use arwa_parse::dom_token::Token;
+use arwa_parse::idb_key_path::IdbKeyPath;
 use arwa_parse::request_method::RequestMethod;
 use arwa_parse::selector::Selector;
 use arwa_parse::xml_name::{Name, NonColonName, QualifiedName};
@@ -22,6 +23,28 @@ pub fn custom_element_name(tokens_in: TokenStream) -> TokenStream {
     let tokens_out = quote! {
         arwa::html::CustomElementName::from_statically_parsed(arwa::html::StaticallyParsedCustomElementName {
             name: #name_string
+        })
+    };
+
+    tokens_out.into()
+}
+
+#[proc_macro]
+pub fn idb_key_path(tokens_in: TokenStream) -> TokenStream {
+    let key_path_string = parse_macro_input!(tokens_in as LitStr);
+
+    if let Err(err) = IdbKeyPath::parse(&key_path_string.value()) {
+        Diagnostic::spanned(
+            key_path_string.span().unwrap(),
+            Level::Error,
+            err.to_string(),
+        )
+        .emit();
+    }
+
+    let tokens_out = quote! {
+        arwa::indexed_db::KeyPath::from_statically_parsed(arwa::indexed_db::StaticallyParsedKeyPath {
+            key_path: #key_path_string
         })
     };
 

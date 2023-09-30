@@ -9,6 +9,7 @@ members = [
     "examples/custom_events",
     "examples/events",
     "examples/geolocation",
+    "examples/indexed_db",
     "examples/media_element",
     "examples/spawn_worker",
     "examples/stream",
