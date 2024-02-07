@@ -1,7 +1,7 @@
 use std::mem;
 use std::ops::Deref;
 
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::file::Blob;
 use crate::{impl_common_wrapper_traits, impl_js_cast};
@@ -36,16 +36,9 @@ impl File {
     pub fn last_modified(&self) -> u64 {
         self.inner.last_modified() as u64
     }
-}
 
-impl Deref for File {
-    type Target = Blob;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe {
-            // Only safe as long as Blob is declared as `Blob { inner: web_sys::Blob }`
-            mem::transmute(self)
-        }
+    pub fn blob(&self) -> Blob {
+        Blob::from(self.inner.clone().unchecked_into::<web_sys::Blob>())
     }
 }
 

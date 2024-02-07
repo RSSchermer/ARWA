@@ -2,7 +2,9 @@ use js_sys::Uint8Array;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::stream::{readable_stream_seal, ReadableStream, TransformStream, WritableStream};
+use crate::stream::{
+    readable_stream_seal, writable_stream_seal, ReadableStream, TransformStream, WritableStream,
+};
 
 pub struct CompressionStream {
     inner: CompressionStreamInternal,
@@ -26,6 +28,22 @@ impl CompressionStream {
             inner: CompressionStreamInternal::new("deflate-raw"),
         }
     }
+}
+
+pub struct CompressionWritableStream {
+    inner: web_sys::WritableStream,
+}
+
+impl writable_stream_seal::Seal for CompressionWritableStream {
+    fn as_web_sys(&self) -> &web_sys::WritableStream {
+        &self.inner
+    }
+}
+
+impl WritableStream for CompressionWritableStream {
+    type Chunk = Uint8Array;
+    type Error = JsValue;
+    type Reason = JsValue;
 }
 
 pub struct CompressionReadableStream {
@@ -52,15 +70,14 @@ impl ReadableStream for CompressionReadableStream {
 }
 
 impl TransformStream for CompressionStream {
-    type Chunk = Uint8Array;
-    type Error = JsValue;
-    type AbortReason = JsValue;
+    type In = Uint8Array;
+
+    type Writable = CompressionWritableStream;
     type Readable = CompressionReadableStream;
 
-    fn writable(&self) -> WritableStream<Self::Chunk, Self::Error, Self::AbortReason> {
-        WritableStream {
+    fn writable(&self) -> Self::Writable {
+        CompressionWritableStream {
             inner: self.inner.writable(),
-            _marker: Default::default(),
         }
     }
 

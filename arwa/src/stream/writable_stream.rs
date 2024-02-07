@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::error::Error;
 use std::future::Future;
 use std::mem::MaybeUninit;
 use std::pin::Pin;
@@ -49,6 +50,61 @@ thread_local! {
     };
 }
 
+type_error_wrapper!(GetWriterError);
+
+pub(crate) mod writable_stream_seal {
+    pub trait Seal {
+        #[doc(hidden)]
+        fn as_web_sys(&self) -> &web_sys::WritableStream;
+    }
+}
+
+pub trait WritableStream: writable_stream_seal::Seal + Sized {
+    type Chunk: JsCast;
+
+    type Error: JsCast;
+
+    type Reason: JsCast;
+
+    fn is_locked(&self) -> bool {
+        self.as_web_sys().locked()
+    }
+
+    fn get_writer(&self) -> WritableStreamDefaultWriter<Self::Chunk, Self::Error, Self::Reason> {
+        WritableStreamDefaultWriter {
+            inner: self.as_web_sys().get_writer().unwrap_throw(),
+            _marker: Default::default(),
+        }
+    }
+
+    fn try_get_writer(
+        &self,
+    ) -> Result<WritableStreamDefaultWriter<Self::Chunk, Self::Error, Self::Reason>, GetWriterError>
+    {
+        self.as_web_sys()
+            .get_writer()
+            .map(|inner| WritableStreamDefaultWriter {
+                inner,
+                _marker: Default::default(),
+            })
+            .map_err(|err| GetWriterError::new(err.unchecked_into()))
+    }
+
+    fn abort(&self, reason: Self::Reason) -> WritableStreamAbort<Self::Reason, Self::Error> {
+        WritableStreamAbort {
+            inner: self.as_web_sys().abort_with_reason(reason.as_ref()).into(),
+            _marker: Default::default(),
+        }
+    }
+
+    fn close(&self) -> WritableStreamClose<Self::Error> {
+        WritableStreamClose {
+            inner: self.as_web_sys().close().into(),
+            _marker: Default::default(),
+        }
+    }
+}
+
 pub struct WritableStreamSink<Start, Write, Close, Abort> {
     pub start: Start,
     pub write: Write,
@@ -81,17 +137,24 @@ impl ClosureStatePointerData {
     }
 }
 
-pub struct WritableStream<T, E = JsValue, C = JsValue> {
+pub struct CustomWritableStream<T, E = JsValue, C = JsValue> {
     pub(crate) inner: web_sys::WritableStream,
     pub(crate) _marker: marker::PhantomData<(T, E, C)>,
 }
 
-impl<T, E, C> WritableStream<T, E, C>
+impl<T, E, C> CustomWritableStream<T, E, C>
 where
     T: JsCast,
     E: JsCast,
     C: JsCast,
 {
+    pub(crate) fn from_web_sys(inner: web_sys::WritableStream) -> Self {
+        CustomWritableStream {
+            inner,
+            _marker: Default::default(),
+        }
+    }
+
     pub fn from_sink<Start, Write, Close, Abort, Size>(
         sink: WritableStreamSink<Start, Write, Close, Abort>,
         queuing_strategy: QueuingStrategy<T, Size>,
@@ -221,68 +284,33 @@ where
         WRITABLE_STREAM_FINALIZATION_REGISTRY
             .with(|r| r.register(inner.as_ref(), serialized.as_ref()));
 
-        WritableStream {
+        CustomWritableStream {
             inner,
             _marker: Default::default(),
         }
     }
 }
 
-impl<T, E, C> WritableStream<T, E, C> {
-    pub fn is_locked(&self) -> bool {
-        self.inner.locked()
-    }
-}
-
-type_error_wrapper!(GetWriterError);
-
-impl<T, E, C> WritableStream<T, E, C>
+impl<T, E, C> writable_stream_seal::Seal for CustomWritableStream<T, E, C>
 where
     T: JsCast,
     E: JsCast,
     C: JsCast,
 {
-    pub fn get_writer(&self) -> WritableStreamDefaultWriter<T, E, C> {
-        WritableStreamDefaultWriter {
-            inner: self.inner.get_writer().unwrap_throw(),
-            _marker: Default::default(),
-        }
-    }
-
-    pub fn try_get_writer(&self) -> Result<WritableStreamDefaultWriter<T, E, C>, GetWriterError> {
-        self.inner
-            .get_writer()
-            .map(|inner| WritableStreamDefaultWriter {
-                inner,
-                _marker: Default::default(),
-            })
-            .map_err(|err| GetWriterError::new(err.unchecked_into()))
+    fn as_web_sys(&self) -> &web_sys::WritableStream {
+        &self.inner
     }
 }
 
-impl<T, E, C> WritableStream<T, E, C>
+impl<T, E, C> WritableStream for CustomWritableStream<T, E, C>
 where
+    T: JsCast,
     E: JsCast,
     C: JsCast,
 {
-    pub fn abort(&self, reason: C) -> WritableStreamAbort<C, E> {
-        WritableStreamAbort {
-            inner: self.inner.abort_with_reason(reason.as_ref()).into(),
-            _marker: Default::default(),
-        }
-    }
-}
-
-impl<T, E, C> WritableStream<T, E, C>
-where
-    E: JsCast,
-{
-    pub fn close(&self) -> WritableStreamClose<E> {
-        WritableStreamClose {
-            inner: self.inner.close().into(),
-            _marker: Default::default(),
-        }
-    }
+    type Chunk = T;
+    type Error = E;
+    type Reason = C;
 }
 
 pub struct WritableStreamError<E> {
@@ -325,6 +353,8 @@ impl<E> fmt::Display for WritableStreamError<E> {
         )
     }
 }
+
+impl<E> Error for WritableStreamError<E> {}
 
 pub struct WritableStreamDefaultController<E = JsValue, C = JsValue> {
     inner: web_sys::WritableStreamDefaultController,

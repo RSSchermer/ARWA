@@ -11,18 +11,18 @@ use wasm_bindgen::{JsCast, JsError, JsValue, UnwrapThrowExt};
 use crate::finalization_registry::FinalizationRegistry;
 use crate::js_serialize::{js_deserialize, js_serialize};
 use crate::stream::{
-    readable_stream_seal, QueuingStrategy, QueuingStrategyIntoWebSys, ReadableStream,
-    WritableStream,
+    readable_stream_seal, writable_stream_seal, QueuingStrategy, QueuingStrategyIntoWebSys,
+    ReadableStream, WritableStream,
 };
 use crate::type_error_wrapper;
 
 pub trait TransformStream {
-    type Chunk: JsCast;
-    type Error: JsCast;
-    type AbortReason: JsCast;
+    type In: JsCast;
+
+    type Writable: WritableStream<Chunk = Self::In>;
     type Readable: ReadableStream;
 
-    fn writable(&self) -> WritableStream<Self::Chunk, Self::Error, Self::AbortReason>;
+    fn writable(&self) -> Self::Writable;
 
     fn readable(&self) -> Self::Readable;
 }
@@ -237,12 +237,12 @@ where
     }
 }
 
-pub struct CustomTransformedReadableStream<T, E = JsValue> {
+pub struct CustomTransformReadableStream<T, E = JsValue> {
     inner: web_sys::ReadableStream,
     _marker: marker::PhantomData<(T, E)>,
 }
 
-impl<T, E> readable_stream_seal::Seal for CustomTransformedReadableStream<T, E>
+impl<T, E> readable_stream_seal::Seal for CustomTransformReadableStream<T, E>
 where
     T: JsCast,
     E: JsCast,
@@ -255,14 +255,14 @@ where
     where
         Self: Sized,
     {
-        CustomTransformedReadableStream {
+        CustomTransformReadableStream {
             inner: web_sys,
             _marker: Default::default(),
         }
     }
 }
 
-impl<T, E> ReadableStream for CustomTransformedReadableStream<T, E>
+impl<T, E> ReadableStream for CustomTransformReadableStream<T, E>
 where
     T: JsCast,
     E: JsCast,
@@ -278,20 +278,20 @@ where
     Out: JsCast,
     E: JsCast,
 {
-    type Chunk = In;
-    type Error = E;
-    type AbortReason = JsValue;
-    type Readable = CustomTransformedReadableStream<Out, E>;
+    type In = In;
 
-    fn writable(&self) -> WritableStream<Self::Chunk, Self::Error, Self::AbortReason> {
-        WritableStream {
+    type Writable = CustomTransformWritableStream<In, E>;
+    type Readable = CustomTransformReadableStream<Out, E>;
+
+    fn writable(&self) -> Self::Writable {
+        CustomTransformWritableStream {
             inner: self.inner.writable(),
             _marker: Default::default(),
         }
     }
 
     fn readable(&self) -> Self::Readable {
-        CustomTransformedReadableStream {
+        CustomTransformReadableStream {
             inner: self.inner.readable(),
             _marker: Default::default(),
         }
@@ -299,6 +299,31 @@ where
 }
 
 type_error_wrapper!(TransformStreamEnqueueError);
+
+pub struct CustomTransformWritableStream<T, E> {
+    inner: web_sys::WritableStream,
+    _marker: marker::PhantomData<(T, E)>,
+}
+
+impl<T, E> writable_stream_seal::Seal for CustomTransformWritableStream<T, E>
+where
+    T: JsCast,
+    E: JsCast,
+{
+    fn as_web_sys(&self) -> &web_sys::WritableStream {
+        &self.inner
+    }
+}
+
+impl<T, E> WritableStream for CustomTransformWritableStream<T, E>
+where
+    T: JsCast,
+    E: JsCast,
+{
+    type Chunk = T;
+    type Error = E;
+    type Reason = JsValue;
+}
 
 pub struct TransformStreamDefaultController<T, E = JsValue> {
     inner: web_sys::TransformStreamDefaultController,

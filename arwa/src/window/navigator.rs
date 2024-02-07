@@ -5,6 +5,7 @@ use crate::connection::{connection_status_seal, ConnectionStatus};
 use crate::geolocation::Geolocation;
 use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
+use crate::storage_manager::StorageManager;
 use crate::worker::service::ServiceWorkerContainer;
 use crate::{dom_exception_wrapper, impl_common_wrapper_traits, impl_js_cast};
 
@@ -74,6 +75,10 @@ impl Navigator for WindowNavigator {
 
     fn user_agent(&self) -> String {
         self.inner.user_agent().unwrap_throw()
+    }
+
+    fn storage(&self) -> StorageManager {
+        StorageManager::from(self.inner.storage())
     }
 }
 

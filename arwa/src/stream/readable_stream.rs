@@ -18,6 +18,7 @@ use wasm_bindgen_futures::JsFuture;
 
 use crate::finalization_registry::FinalizationRegistry;
 use crate::js_serialize::{js_deserialize, js_serialize};
+use crate::stream::writable_stream::writable_stream_seal::Seal;
 use crate::stream::{QueuingStrategy, QueuingStrategyIntoWebSys, TransformStream, WritableStream};
 use crate::{spawn_local, type_error_wrapper};
 
@@ -95,29 +96,26 @@ pub trait ReadableStream: readable_stream_seal::Seal + Sized {
         }
     }
 
-    fn pipe_to<ESink, CSink>(
-        &self,
-        sink: &WritableStream<Self::Chunk, ESink, CSink>,
-    ) -> ReadableStreamPipeTo<Self::Error, ESink>
+    fn pipe_to<W>(&self, sink: &W) -> ReadableStreamPipeTo<Self::Error, W::Error>
     where
-        ESink: JsCast,
+        W: WritableStream<Chunk = Self::Chunk>,
     {
         ReadableStreamPipeTo {
-            inner: self.as_web_sys().pipe_to(&sink.inner).into(),
+            inner: self.as_web_sys().pipe_to(&sink.as_web_sys()).into(),
             _marker: Default::default(),
         }
     }
 
     fn pipe_through<S>(&self, transform_stream: &S) -> S::Readable
     where
-        S: TransformStream,
+        S: TransformStream<In = Self::Chunk>,
     {
         use readable_stream_seal::Seal;
 
         let readable = transform_stream.readable();
         let pair = web_sys::ReadableWritablePair::new(
             readable.as_web_sys(),
-            &transform_stream.writable().inner,
+            &transform_stream.writable().as_web_sys(),
         );
 
         let res = self.as_web_sys().pipe_through(&pair);

@@ -3,6 +3,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::connection::{connection_status_seal, ConnectionStatus};
 use crate::lang::LanguageTag;
 use crate::navigator::{navigator_seal, Navigator};
+use crate::storage_manager::StorageManager;
 use crate::{impl_common_wrapper_traits, impl_js_cast};
 
 #[derive(Clone)]
@@ -25,6 +26,10 @@ impl Navigator for WorkerNavigator {
 
     fn user_agent(&self) -> String {
         self.inner.user_agent().unwrap_throw()
+    }
+
+    fn storage(&self) -> StorageManager {
+        StorageManager::from(self.inner.storage())
     }
 }
 

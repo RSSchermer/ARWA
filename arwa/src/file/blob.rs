@@ -1,9 +1,16 @@
+use std::future::Future;
 use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use wasm_bindgen::UnwrapThrowExt;
+use js_sys::{ArrayBuffer, Uint8Array};
+use pin_project::pin_project;
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen_futures::JsFuture;
 
 use crate::media_type::MediaType;
-use crate::{impl_common_wrapper_traits, impl_js_cast};
+use crate::stream::{readable_stream_seal, ReadableStream};
+use crate::{impl_common_wrapper_traits, impl_js_cast, type_error_wrapper};
 
 #[derive(Clone)]
 pub struct Blob {
@@ -62,6 +69,18 @@ impl Blob {
         R: BlobRange,
     {
         range.get(self)
+    }
+
+    pub fn get_array_buffer(&self) -> GetArrayBuffer {
+        GetArrayBuffer {
+            inner: self.inner.array_buffer().into(),
+        }
+    }
+
+    pub fn to_readable_stream(&self) -> BlobReadableStream {
+        BlobReadableStream {
+            inner: self.inner.stream(),
+        }
     }
 
     // TODO: read interface. Probably something involving piping the blob's ReadableStream into a
@@ -192,5 +211,48 @@ impl BlobRange for RangeToInclusive<u64> {
         } else {
             None
         }
+    }
+}
+
+pub struct BlobReadableStream {
+    inner: web_sys::ReadableStream,
+}
+
+impl readable_stream_seal::Seal for BlobReadableStream {
+    fn as_web_sys(&self) -> &web_sys::ReadableStream {
+        &self.inner
+    }
+
+    fn from_web_sys(inner: web_sys::ReadableStream) -> Self
+    where
+        Self: Sized,
+    {
+        BlobReadableStream { inner }
+    }
+}
+
+impl ReadableStream for BlobReadableStream {
+    type Chunk = Uint8Array;
+    type Error = JsValue;
+    type Reason = JsValue;
+}
+
+type_error_wrapper!(GetArrayBufferError);
+
+#[pin_project]
+pub struct GetArrayBuffer {
+    #[pin]
+    inner: JsFuture,
+}
+
+impl Future for GetArrayBuffer {
+    type Output = Result<ArrayBuffer, GetArrayBufferError>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.project()
+            .inner
+            .poll(cx)
+            .map_ok(|ok| ok.unchecked_into())
+            .map_err(|err| GetArrayBufferError::new(err.unchecked_into()))
     }
 }
