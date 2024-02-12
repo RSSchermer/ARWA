@@ -14,6 +14,7 @@ use crate::console::{Argument, ToArgument};
 use crate::file_system::{file_system_handle_seal, FileHandle, FileSystemHandle};
 use crate::{impl_common_wrapper_traits, impl_js_cast};
 
+#[derive(Clone)]
 pub struct DirectoryHandle {
     inner: web_sys::FileSystemDirectoryHandle,
 }

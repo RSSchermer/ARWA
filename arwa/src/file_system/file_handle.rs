@@ -24,6 +24,7 @@ impl Default for WritableExistingData {
     }
 }
 
+#[derive(Clone)]
 pub struct FileHandle {
     inner: web_sys::FileSystemFileHandle,
 }
